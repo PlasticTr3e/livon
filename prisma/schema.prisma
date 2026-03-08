@@ -47,14 +47,13 @@ enum NotificationType {
 }
 
 //models
-model Village {
-  id          String    @id @default(uuid())
-  name        String    @unique
+// model Village {
+//   id          String    @id @default(uuid())
+//   name        String    @unique
 
-  //relations
-  citizens  CitizenProfile[]
-  projects  Project[]
-}
+//   citizens  CitizenProfile[]
+//   projects  Project[]
+// }
 
 model User {
   id          String    @id @default(uuid())
@@ -63,7 +62,6 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  //relations
   citizenProfile  CitizenProfile?
   agencyProfile   AgencyProfile?
 
@@ -77,13 +75,13 @@ model CitizenProfile {
   id          String  @id @default(uuid())
   fullName    String 
   isVerified  Boolean @default(false)
+  address     String 
 
-  //relations
   userId      String  @unique
   user        User    @relation(fields: [userId], references: [id])
 
-  villageId   String
-  villate     Village @relation(fields: [villageId], references: [id])
+  // villageId   String
+  // villate     Village @relation(fields: [villageId], references: [id])
 
 }
 
@@ -91,7 +89,6 @@ model AgencyProfile {
   id          String  @id @default(uuid())
   agencyName  String 
 
-  //relations
   userId      String  @unique
   user        User    @relation(fields: [userId], references: [id])
 
@@ -109,9 +106,8 @@ model Project {
   latitude        Float
   longitude       Float
 
-  //relations
-  villageId       String
-  village         Village       @relation(fields: [villageId], references: [id])
+  // villageId       String
+  // village         Village       @relation(fields: [villageId], references: [id])
 
   agencyId        String
   agency          AgencyProfile @relation(fields: [agencyId], references: [id])
