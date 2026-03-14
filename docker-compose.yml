@@ -1,20 +1,37 @@
-name: nangorlens
+name: livon
 services:
   db:
     image: postgis/postgis:18-3.6
 
     volumes:
-      - nangorlens_pg_data:/var/lib/postgresql
+      - livon_pg_data:/var/lib/postgresql
 
     env_file: .env
-    
+
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-    
+      
     ports:
       - "5432:5432"
+    
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DATABASE_NAME}
+      DB_USER: ${DATABASE_USER}
+      DB_PASSWORD: ${DATABASE_PASSWORD}
+      POOL_MODE: transaction
+      AUTH_TYPE: scram-sha-256 
+
+    ports:
+      - "6432:5432" 
+
+    depends_on:
+      - db
 
 volumes:
-  nangorlens_pg_data:
+  livon_pg_data:
