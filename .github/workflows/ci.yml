@@ -21,7 +21,9 @@ jobs:
         run: npm ci
 
       - name: Prisma Validate
-        run: npx prisma validate
+        run: |
+          npx prisma generate
+          npx prisma validate
 
       - name: Type Check & Lint
         run: |

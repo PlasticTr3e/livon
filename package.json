@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --max-warnings=1",
     "prepare": "husky"
   },
   "dependencies": {
@@ -15,7 +15,8 @@
     "next": "16.1.6",
     "pg": "^8.20.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
