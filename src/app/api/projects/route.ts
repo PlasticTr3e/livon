@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { success, z } from "zod";
+import { z } from "zod";
 
 const projectSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           message: "Validation failed.",
-          errors: validation.error.flatten().fieldErrors,
+          error: z.treeifyError(validation.error),
         },
         { status: 400 },
       );
