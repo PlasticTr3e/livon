@@ -1,22 +1,34 @@
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "../../../lib/prisma";
 import { VoteType } from "@/generated/prisma/enums";
+import { z } from "zod/mini";
+
+const voteSchema = z.object({
+  projectId: z.uuid("Invalid ProjectId format. Must be a UUID"),
+  userId: z.uuid("Invalid UserId format. Must be a UUID"),
+  type: z.enum(VoteType, {
+    error: "Invalid vote type. Must be UPVOTE or DOWNVOTE",
+  }),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { projectId, userId, type } = body;
 
-    if (!projectId || !userId || !type) {
+    const validation = voteSchema.safeParse(body);
+
+    if (!validation.success) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Missing required fields: projectId, userId, and type are required.",
+          message: "Validation failed.",
+          error: z.treeifyError(validation.error),
         },
         { status: 400 },
       );
     }
+
+    const { projectId, userId, type } = validation.data;
 
     if (type !== VoteType.UPVOTE && type !== VoteType.DOWNVOTE) {
       return NextResponse.json(
