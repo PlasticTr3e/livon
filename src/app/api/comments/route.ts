@@ -11,11 +11,8 @@ const commentSchema = z
       .max(1000, "Comment is too long."),
     userId: z.string().uuid("Invalid user ID format."),
     projectId: z.string().uuid("Invalid project ID format.").optional(),
-    announcementId: z
-      .string()
-      .uuid("Invalid announcement ID format.")
-      .optional(),
-    parentId: z.string().uuid("Invalid parent comment ID format.").optional(),
+    announcementId: z.uuid("Invalid announcement ID format.").optional(),
+    parentId: z.uuid("Invalid parent comment ID format.").optional(),
   })
   .refine((data) => data.projectId || data.announcementId, {
     message:
