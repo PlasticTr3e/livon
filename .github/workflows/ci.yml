@@ -1,31 +1,76 @@
-name: NangorLens CI
+name: livon CS and CI
 
 on:
   pull_request:
-    branches: [ "dev", "main" ]
+    branches: [dev, main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   code-quality-gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.12.0'
-          cache: 'npm'
+          node-version: 22
+          cache: npm
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Prisma Validate
+      - name: Prisma generate and validate
         run: |
           npx prisma generate
           npx prisma validate
 
-      - name: Type Check & Lint
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests if present
+        run: npm run test --if-present
+
+      - name: Build check (without migrate deploy)
         run: |
-          npx tsc --noEmit
-          npm run lint
+          npx prisma generate
+          npx next build
+
+  security-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript, typescript
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
