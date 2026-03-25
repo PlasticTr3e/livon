@@ -35,10 +35,10 @@ export function analyzeSentiment(text: string): {
     if (negativeWords.includes(word)) score -= 1;
   });
 
-  let label: SentimentLabel = SentimentLabel.NEUTRAL;
+  let label: SentimentLabel = SentimentLabel.NETRAL;
 
-  if (score > 0) label = SentimentLabel.POSITIVE;
-  if (score < 0) label = SentimentLabel.NEGATIVE;
+  if (score > 0) label = SentimentLabel.POSITIF;
+  if (score < 0) label = SentimentLabel.NEGATIF;
 
   return { score, label };
 }

@@ -9,28 +9,28 @@ datasource db {
   extensions = [postgis]
 }
 
-//enums
+// enums
 enum Role {
-  CITIZEN
+  WARGA
   AGENCY
 }
 
 enum ProjectStatus {
-  PLANNING
-  FUNDING
-  EXECUTING
-  COMPLETED
-}
-
-enum SentimentLabel {
-  POSITIVE
-  NEGATIVE
-  NEUTRAL
+  USULAN
+  DISETUJUI
+  BERJALAN
+  SELESAI
 }
 
 enum VoteType {
   UPVOTE
   DOWNVOTE
+}
+
+enum SentimentLabel {
+  POSITIF
+  NEGATIF
+  NETRAL
 }
 
 enum DonationStatus {
@@ -39,172 +39,221 @@ enum DonationStatus {
   FAILED
 }
 
-enum NotificationType {
-  NEW_PROJECT
-  REPLY_COMMENT
-  DONATION_STATUS
-  PROJECT_UPDATE
-  NEW_ANNOUNCEMENT
-}
-
 // models
 model User {
-  id          String    @id @default(uuid())
-  email       String    @unique
-  role        Role
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String
+  role         Role?
 
-  citizenProfile  CitizenProfile?
-  agencyProfile   AgencyProfile?
+  citizenProfile CitizenProfile?
+  agencyProfile  AgencyProfile?
+  projects       Project[]       @relation("AgencyProjects")
+  news           News[]          @relation("NewsAuthor")
+  notifications  Notification[]
+  votes          Vote[]
+  comments       Comment[]
+  donations      Donation[]
 
-  comments      Comment[]
-  votes         Vote[]
-  donations     Donation[]
-  notifications Notification[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("users")
 }
 
 model CitizenProfile {
   id          String  @id @default(uuid())
-  fullName    String 
-  isVerified  Boolean @default(false)
-  address     String 
-
   userId      String  @unique
-  user        User    @relation(fields: [userId], references: [id])
+  fullName    String
+  phone       String
+  kkNumber    String  @unique
+  nik         String  @unique
+  blockHouse  String?
+  houseNumber String?
+  isVerified  Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("citizen_profiles")
 }
 
 model AgencyProfile {
-  id          String          @id @default(uuid())
-  agencyName  String 
+  id         String  @id @default(uuid())
+  userId     String  @unique
+  agencyName String
+  phone      String
+  address    String
+  isVerified Boolean @default(false)
 
-  userId      String          @unique
-  user        User            @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  projects    Project[]
-  announcements Announcement[]
+  @@map("agency_profiles")
 }
 
 model Project {
-  id              String        @id @default(uuid())
-  title           String
-  description     String
-  status          ProjectStatus @default(PLANNING)
-  budgetTarget    Decimal       @default(0)
-  currentFunding  Decimal       @default(0)
-  priorityScore   Float         @default(0)
-  latitude        Float
-  longitude       Float
+  id             String         @id @default(uuid())
+  title          String
+  description    String
+  status         ProjectStatus?
+  budgetTarget   Decimal?       @db.Decimal(15, 2)
+  currentFunding Decimal?       @db.Decimal(15, 2)
+  priorityScore  Float?
+  imageUrls      String[]       @default([])
 
-  agencyId        String
-  agency          AgencyProfile @relation(fields: [agencyId], references: [id])
+  latitude     Float?
+  longitude    Float?
+  locationGeom Unsupported("geometry(Point, 4326)")?
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  estimatedDurationDays Int?
+  startDate             DateTime?
 
-  comments        Comment[]
-  votes           Vote[]
-  donations       Donation[]
-  updates         ProjectUpdate[]
-  notifications   Notification[]
+  categoryId Int?
+  category   ProjectCategory? @relation(fields: [categoryId], references: [id])
+
+  agencyId String?
+  agency   User?   @relation("AgencyProjects", fields: [agencyId], references: [id])
+
+  updates       ProjectUpdate[]
+  votes         Vote[]
+  comments      Comment[]
+  donations     Donation[]
+  notifications Notification[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("projects")
 }
 
-model Comment {
-  id              String         @id @default(uuid())
-  text            String         
-  sentimentLabel  SentimentLabel
-  sentimentScore  Float          @default(0)
-  createdAt       DateTime       @default(now())
+model ProjectCategory {
+  id       Int       @id @default(autoincrement())
+  name     String
+  projects Project[]
 
-  userId          String
-  user            User           @relation(fields: [userId], references: [id])
-
-  projectId       String?
-  project         Project?       @relation(fields: [projectId], references: [id])
-
-  announcementId  String?
-  announcement    Announcement?  @relation(fields: [announcementId], references: [id])
-
-  parentId        String?
-  parent          Comment?       @relation("CommentReplies", fields: [parentId], references: [id])
-  replies         Comment[]      @relation("CommentReplies")         
-}
-
-model Vote {
-  id              String        @id @default(uuid())
-  type            VoteType
-
-  projectId       String
-  project         Project       @relation(fields: [projectId], references: [id])
-
-  userId          String
-  user            User          @relation(fields: [userId], references: [id])
-
-  createdAt       DateTime      @default(now())
-
-  @@unique([projectId, userId])
-}
-
-model Donation {
-  id            String         @id @default(uuid())
-  orderId       String         @unique
-  amount        Decimal
-  status        DonationStatus @default(PENDING)
-  paymentMethod String?
-  
-  projectId     String
-  project       Project        @relation(fields: [projectId], references: [id])
-  
-  userId        String?
-  user          User?          @relation(fields: [userId], references: [id])
-  
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  @@map("project_categories")
 }
 
 model ProjectUpdate {
-  id          String          @id @default(uuid())
-  title       String
-  description String
-  
+  id          String   @id @default(uuid())
   projectId   String
-  project     Project         @relation(fields: [projectId], references: [id])
-  
-  createdAt   DateTime        @default(now())
-}
+  title       String
+  description String?
+  imageUrls   String[] @default([])
 
-model Notification {
-  id        String           @id @default(uuid())
-  title     String
-  message   String
-  isRead    Boolean          @default(false)
-  type      NotificationType
-  
-  userId    String
-  user      User             @relation(fields: [userId], references: [id])
-  
-  projectId String?
-  project   Project?         @relation(fields: [projectId], references: [id])
-  
-  createdAt DateTime         @default(now())
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("project_updates")
 }
 
 model RegionBoundary {
-  id    String   @id @default(uuid())
-  name  String
-  geom  Unsupported("geometry(Polygon, 4326)")
+  id   String                                  @id @default(uuid())
+  name String
+  geom Unsupported("geometry(Polygon, 4326)")?
+
+  @@map("region_boundaries")
 }
 
-model Announcement {
-  id          String   @id @default(uuid())
-  title       String
-  content     String
-  
-  agencyId    String
-  agency      AgencyProfile @relation(fields: [agencyId], references: [id])
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Vote {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  type      VoteType
 
-  comments    Comment[]
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, userId])
+  @@map("votes")
+}
+
+model Comment {
+  id             String          @id @default(uuid())
+  projectId      String?
+  newsId         String?
+  userId         String
+  parentId       String?         @map("parent_comment_id")
+  text           String
+  sentimentLabel SentimentLabel?
+  sentimentScore Float?
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  news    News?    @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  parent  Comment?  @relation("ThreadedComments", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("ThreadedComments")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([projectId, createdAt])
+  @@index([newsId, createdAt])
+  @@map("comments")
+}
+
+model Donation {
+  id                   String          @id @default(uuid())
+  orderId              String          @unique
+  gatewayTransactionId String?         @unique
+  projectId            String
+  userId               String
+  amount               Decimal         @db.Decimal(15, 2)
+  status               DonationStatus?
+  paymentMethod        String?
+  paymentUrl           String?
+  paidAt               DateTime?
+
+  project Project @relation(fields: [projectId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("donations")
+}
+
+model News {
+  id           String    @id @default(uuid())
+  createdById  String
+  title        String
+  content      String?
+  thumbnailUrl String?
+  publishedAt  DateTime?
+
+  author   User      @relation("NewsAuthor", fields: [createdById], references: [id])
+  comments Comment[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("news")
+}
+
+model Notification {
+  id          String  @id @default(uuid())
+  userId      String
+  projectId   String?
+  referenceId String?
+  title       String?
+  type        String?
+  message     String?
+  isRead      Boolean @default(false)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
 }
