@@ -1,142 +1,104 @@
 import { NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
-import { Role } from "@/generated/prisma/enums";
-import {
-  badRequest,
-  created,
-  internalError,
-  notFound,
-  ok,
-} from "@/lib/api-response";
 import { z } from "zod";
+import prisma from "@/lib/prisma";
+import { ok, created, badRequest, internalError } from "@/lib/api-response";
+import { getAuthUser } from "@/lib/auth";
+import { ProjectStatus, Role } from "@/generated/prisma/enums";
 
-const projectSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters long."),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters long."),
-  budgetTarget: z.number().nonnegative("Budget target cannot be negative."),
-  latitude: z
-    .number()
-    .refine((val) => val !== undefined, "Latitude is required."),
-  longitude: z
-    .number()
-    .refine((val) => val !== undefined, "Longitude is required."),
-  agencyId: z.uuid("Invalid Agency ID format. Must be a UUID."),
-  categoryId: z.number().nonnegative("Must be a number").optional(),
-});
-
-const getProjectQuerySchema = z.object({
-  id: z.uuid("Invalid project ID format. Must be a UUID."),
-});
-
-export async function GET(request: NextRequest) {
+// To handle PostGIS coordinates using Prisma raw queries for the geometry field
+export async function GET(req: NextRequest) {
   try {
-    const id = request.nextUrl.searchParams.get("id");
+    const { searchParams } = new URL(req.url);
+    const minLat = searchParams.get("minLat");
+    const maxLat = searchParams.get("maxLat");
+    const minLng = searchParams.get("minLng");
+    const maxLng = searchParams.get("maxLng");
 
-    const validation = getProjectQuerySchema.safeParse({ id });
-    if (!validation.success) {
-      return badRequest("Validation failed.", z.treeifyError(validation.error));
-    }
+    let projects;
 
-    const project = await prisma.project.findUnique({
-      where: { id: validation.data.id },
-      include: {
-        agency: {
-          select: {
-            id: true,
-            email: true,
-          },
+    if (minLat && maxLat && minLng && maxLng) {
+      // Bounding box request (Development Map) - Prisma Raw Query for PostGIS
+      projects = await prisma.$queryRaw`
+        SELECT id, title, status, latitude, longitude
+        FROM projects
+        WHERE latitude BETWEEN ${parseFloat(minLat)} AND ${parseFloat(maxLat)}
+          AND longitude BETWEEN ${parseFloat(minLng)} AND ${parseFloat(maxLng)}
+          AND deletedAt IS NULL
+      `;
+    } else {
+      // Fallback: Fetch all active projects if no bounding box provided
+      projects = await prisma.project.findMany({
+        where: { deletedAt: null },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          latitude: true,
+          longitude: true,
         },
-        category: true,
-      },
-    });
-
-    if (!project) {
-      return notFound("Project not found.");
+      });
     }
 
-    return ok("Project fetched successfully.", { data: project });
-  } catch (error: unknown) {
-    console.error("Project API Error:", error);
-    return internalError(
-      "An internal server error occurred while fetching the project.",
-    );
+    return ok("Projects retrieved successfully", { data: projects });
+  } catch (error) {
+    console.error("GET Projects Error:", error);
+    return internalError("An error occurred fetching projects");
   }
 }
 
-export async function POST(request: NextRequest) {
+const createProjectSchema = z.object({
+  title: z.string().min(5),
+  description: z.string().min(10),
+  budgetTarget: z.number().positive(),
+  imageUrls: z.array(z.string()).optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  estimatedDurationDays: z.number().int().positive().optional(),
+  categoryId: z.number().int().optional(),
+});
+
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-
-    const validation = projectSchema.safeParse(body);
-    if (!validation.success) {
-      return badRequest("Validation failed.", z.treeifyError(validation.error));
+    const authUser = getAuthUser(req);
+    if (!authUser || authUser.role !== Role.AGENCY) {
+      return badRequest("Forbidden: Only Agencies can create projects");
     }
 
-    const {
-      title,
-      description,
-      budgetTarget,
-      latitude,
-      longitude,
-      agencyId,
-      categoryId,
-    } = validation.data;
+    const body = await req.json();
+    const result = createProjectSchema.safeParse(body);
+    if (!result.success)
+      return badRequest("Validation failed", result.error.flatten());
 
-    const agencyUser = await prisma.user.findUnique({
-      where: { id: agencyId },
-      select: { id: true, role: true },
+    const data = result.data;
+
+    const project = await prisma.project.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        status: ProjectStatus.USULAN,
+        budgetTarget: data.budgetTarget,
+        currentFunding: 0,
+        imageUrls: data.imageUrls || [],
+        latitude: data.latitude,
+        longitude: data.longitude,
+        estimatedDurationDays: data.estimatedDurationDays,
+        categoryId: data.categoryId,
+        agencyId: authUser.userId,
+      },
     });
 
-    if (!agencyUser) {
-      return notFound("Agency user not found.");
+    if (data.latitude && data.longitude) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE projects SET "locationGeom" = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
+        data.longitude,
+        data.latitude,
+        project.id,
+      );
     }
 
-    if (agencyUser.role !== Role.AGENCY) {
-      return badRequest("Provided agencyId does not belong to an AGENCY user.");
-    }
-
-    const existingCategory = await prisma.projectCategory.findUnique({
-      where: { id: categoryId },
-      select: { id: true, name: true },
-    });
-
-    if (!existingCategory) {
-      return notFound("Category not found");
-    }
-
-    const result = await prisma.$transaction(async (tx) => {
-      const newProject = await tx.project.create({
-        data: {
-          title,
-          description,
-          budgetTarget,
-          latitude,
-          longitude,
-          agencyId,
-          categoryId: categoryId ?? null,
-        },
-      });
-
-      await tx.projectUpdate.create({
-        data: {
-          title: "Perencanaan Dimulai",
-          description: `Rencana untuk proyek "${title}" telah resmi masuk ke dalam sistem NangorLens.`,
-          projectId: newProject.id,
-        },
-      });
-
-      return newProject;
-    });
-
-    return created("Successfully created project and initial update log.", {
-      data: result,
-    });
-  } catch (error: unknown) {
-    console.error("Project API Error:", error);
-    return internalError(
-      "An internal server error occurred while processing the data.",
-    );
+    return created("Project created successfully", { data: project });
+  } catch (error) {
+    console.error("POST Project Error:", error);
+    return internalError("An error occurred creating the project");
   }
 }
