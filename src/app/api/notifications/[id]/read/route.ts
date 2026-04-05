@@ -58,7 +58,7 @@ export async function PATCH(
     const body = await req.json();
     const result = readSchema.safeParse(body);
     if (!result.success)
-      return badRequest("Validation failed", result.error.flatten());
+      return badRequest("Validation failed", z.treeifyError(result.error));
 
     const { id } = await params;
 
