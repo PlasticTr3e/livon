@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
-      .update(`uploads/${fileName}`, buffer, {
+      .upload(`uploads/${fileName}`, buffer, {
         contentType: file.type,
         upsert: false,
       });
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     } = supabase.storage.from(BUCKET_NAME).getPublicUrl(`uploads/${fileName}`);
 
     return ok("File uploaded successfully", {
-      data: { url: publicUrl, path: uploadData.path },
+      data: { url: publicUrl, path: uploadData?.path || "" },
     });
   } catch (error) {
     console.error("Upload API Error:", error);

@@ -1,6 +1,8 @@
 "use client";
 import dynamic from "next/dynamic";
+// @ts-expect-error - swagger-ui-react does not ship CSS type declarations.
 import "swagger-ui-react/swagger-ui.css";
+// @ts-expect-error - swagger-themes does not ship CSS type declarations.
 import "swagger-themes/themes/dark.css";
 
 type Props = {
