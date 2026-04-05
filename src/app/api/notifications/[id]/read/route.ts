@@ -76,7 +76,7 @@ export async function PATCH(
       data: { isRead: result.data.isRead },
     });
 
-    return ok(`Notification updated`, { data: notification });
+    return ok(`Notification updated`, { data: updatedNotification });
   } catch (error) {
     console.error("PATCH Notification Error:", error);
     return internalError("An error occurred updating the notification");
