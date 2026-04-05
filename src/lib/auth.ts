@@ -16,7 +16,7 @@ export function getAuthUser(req: NextRequest): AuthPayload | null {
   try {
     return jwt.verify(
       token,
-      process.env.JWT_SECRET || "fallback_super_secret_dev_key",
+      process.env.JWT_SECRET || "fallback_dev_key",
     ) as AuthPayload;
   } catch {
     return null;
