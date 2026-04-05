@@ -9,6 +9,43 @@ const verifySchema = z.object({
   isVerified: z.boolean(),
 });
 
+/**
+ * @swagger
+ * /api/agency/citizens/{id}/verify:
+ *   patch:
+ *     summary: Verify a Citizen's NIK/KK
+ *     description: Approves a citizen account to allow them to participate (Vote).
+ *     tags: [Agency]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The User ID of the Citizen
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - isVerified
+ *             properties:
+ *               isVerified:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Citizen verified successfully
+ *       400:
+ *         description: Forbidden or validation failed
+ *       404:
+ *         description: Citizen profile not found
+ *       500:
+ *         description: Internal server error
+ */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -22,7 +59,7 @@ export async function PATCH(
     const body = await req.json();
     const result = verifySchema.safeParse(body);
     if (!result.success)
-      return badRequest("Validation failed", result.error.flatten());
+      return badRequest("Validation failed", z.treeifyError(result.error));
 
     const { id: citizenUserId } = await params;
 

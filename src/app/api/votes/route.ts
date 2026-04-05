@@ -18,6 +18,47 @@ const voteSchema = z.object({
   }),
 });
 
+/**
+ * @swagger
+ * /api/votes:
+ *   post:
+ *     summary: Upvote or Downvote a project
+ *     description: Toggles a user's vote on a specific project. Requires Citizen Role.
+ *     tags: [Votes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - projectId
+ *               - userId
+ *               - type
+ *             properties:
+ *               projectId:
+ *                 type: string
+ *                 format: uuid
+ *               userId:
+ *                 type: string
+ *                 format: uuid
+ *               type:
+ *                 type: string
+ *                 enum: [UPVOTE, DOWNVOTE]
+ *     responses:
+ *       200:
+ *         description: Vote updated or toggled off successfully
+ *       201:
+ *         description: Vote created successfully
+ *       400:
+ *         description: Validation failed
+ *       404:
+ *         description: Project or User not found
+ *       500:
+ *         description: Internal server error
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

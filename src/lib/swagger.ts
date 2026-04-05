@@ -7,7 +7,17 @@ export const getApiDocs = async () => {
     apiFolder: apiFolder,
     definition: {
       openapi: "3.0.0",
-      info: { title: "My Next.js API", version: "1.0" },
+      info: { title: "Livon API", version: "1.0" },
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+          },
+        },
+      },
+      security: [],
     },
   });
   return spec;

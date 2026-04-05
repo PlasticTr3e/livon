@@ -5,7 +5,39 @@ import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { ProjectStatus, Role } from "@/generated/prisma/enums";
 
-// To handle PostGIS coordinates using Prisma raw queries for the geometry field
+/**
+ * @swagger
+ * /api/projects:
+ *   get:
+ *     summary: Retrieve projects for the map
+ *     description: Returns a list of projects, optionally filtered by a bounding box.
+ *     parameters:
+ *       - in: query
+ *         name: minLat
+ *         schema:
+ *           type: number
+ *         description: Minimum latitude
+ *       - in: query
+ *         name: maxLat
+ *         schema:
+ *           type: number
+ *         description: Maximum latitude
+ *       - in: query
+ *         name: minLng
+ *         schema:
+ *           type: number
+ *         description: Minimum longitude
+ *       - in: query
+ *         name: maxLng
+ *         schema:
+ *           type: number
+ *         description: Maximum longitude
+ *     responses:
+ *       200:
+ *         description: Projects retrieved successfully
+ *       500:
+ *         description: Internal server error
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -17,7 +49,6 @@ export async function GET(req: NextRequest) {
     let projects;
 
     if (minLat && maxLat && minLng && maxLng) {
-      // Bounding box request (Development Map) - Prisma Raw Query for PostGIS
       projects = await prisma.$queryRaw`
         SELECT id, title, status, latitude, longitude
         FROM projects
@@ -26,7 +57,6 @@ export async function GET(req: NextRequest) {
           AND deletedAt IS NULL
       `;
     } else {
-      // Fallback: Fetch all active projects if no bounding box provided
       projects = await prisma.project.findMany({
         where: { deletedAt: null },
         select: {
@@ -57,6 +87,51 @@ const createProjectSchema = z.object({
   categoryId: z.number().int().optional(),
 });
 
+/**
+ * @swagger
+ * /api/projects:
+ *   post:
+ *     summary: Create a new project (Agency only)
+ *     description: Creates a draft project with status USULAN. Requires Agency role token in Authorization header.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - description
+ *               - budgetTarget
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               budgetTarget:
+ *                 type: number
+ *               imageUrls:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               latitude:
+ *                 type: number
+ *               longitude:
+ *                 type: number
+ *               estimatedDurationDays:
+ *                 type: number
+ *               categoryId:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Project created successfully
+ *       400:
+ *         description: Validation failed or Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 export async function POST(req: NextRequest) {
   try {
     const authUser = getAuthUser(req);

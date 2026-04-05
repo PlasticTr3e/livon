@@ -16,6 +16,50 @@ const updateSchema = z.object({
   imageUrls: z.array(z.string()).optional(),
 });
 
+/**
+ * @swagger
+ * /api/projects/{id}/updates:
+ *   post:
+ *     summary: Post a project update log
+ *     description: Submit log/progress update indicating what has been achieved.
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The UUID of the project
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 minLength: 3
+ *               description:
+ *                 type: string
+ *               imageUrls:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: Project update log added
+ *       400:
+ *         description: Validation failed or Unauthorized
+ *       404:
+ *         description: Project not found
+ *       500:
+ *         description: Internal server error
+ */
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
