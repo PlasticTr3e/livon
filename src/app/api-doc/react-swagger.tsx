@@ -2,10 +2,6 @@
 import SwaggerUI from "swagger-ui-react";
 import "swagger-ui-react/swagger-ui.css";
 
-type Props = {
-  spec: object;
-};
-
-export default function ReactSwagger({ spec }: Props) {
+export default function ReactSwagger({ spec }: { spec: object }) {
   return <SwaggerUI spec={spec} />;
 }

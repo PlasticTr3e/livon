@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { created, badRequest, internalError } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
-import { error } from "console";
 
 const registerSchema = z.object({
   email: z.email(),

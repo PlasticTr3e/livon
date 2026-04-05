@@ -11,6 +11,7 @@ import { ProjectStatus, Role } from "@/generated/prisma/enums";
  *   get:
  *     summary: Retrieve projects for the map
  *     description: Returns a list of projects, optionally filtered by a bounding box.
+ *     tags: [Projects]
  *     parameters:
  *       - in: query
  *         name: minLat
@@ -93,6 +94,7 @@ const createProjectSchema = z.object({
  *   post:
  *     summary: Create a new project (Agency only)
  *     description: Creates a draft project with status USULAN. Requires Agency role token in Authorization header.
+ *     tags: [Projects]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
