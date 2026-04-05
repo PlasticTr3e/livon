@@ -3,6 +3,8 @@ import { NextRequest } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import { ok, badRequest, internalError } from "@/lib/api-response";
 
+export const dynamic = "force-dynamic";
+
 /**
  * @swagger
  * /api/upload:
