@@ -1,209 +1,145 @@
 import { NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
-import { analyzeSentiment } from "@/services/sentiment";
-import {
-  badRequest,
-  created,
-  internalError,
-  notFound,
-  ok,
-} from "@/lib/api-response";
 import { z } from "zod";
-
-const commentSchema = z
-  .object({
-    text: z
-      .string()
-      .min(1, "Comment text cannot be empty.")
-      .max(1000, "Comment is too long."),
-    userId: z.uuid("Invalid user ID format."),
-    projectId: z.uuid("Invalid project ID format.").optional(),
-    newsId: z.uuid("Invalid news ID format.").optional(),
-    parentId: z.uuid("Invalid parent comment ID format.").optional(),
-  })
-  .refine((data) => Boolean(data.projectId) !== Boolean(data.newsId), {
-    message: "Provide exactly one of projectId or newsId.",
-    path: ["projectId"],
-  });
-
-const getCommentSchema = z
-  .object({
-    projectId: z.uuid("Invalid project ID format.").optional(),
-    newsId: z.uuid("Invalid news ID format.").optional(),
-  })
-  .refine((data) => Boolean(data.projectId) !== Boolean(data.newsId), {
-    message: "Provide exactly one of projectId or newsId.",
-    path: ["projectId"],
-  });
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-
-    const validation = commentSchema.safeParse(body);
-
-    if (!validation.success) {
-      return badRequest("Validation failed.", z.treeifyError(validation.error));
-    }
-
-    const { text, userId, projectId, newsId, parentId } = validation.data;
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
-
-    if (!user) {
-      return notFound("User not found.");
-    }
-
-    if (projectId) {
-      const project = await prisma.project.findUnique({
-        where: { id: projectId },
-        select: { id: true },
-      });
-
-      if (!project) {
-        return notFound("Project not found.");
-      }
-    }
-
-    if (newsId) {
-      const news = await prisma.news.findUnique({
-        where: { id: newsId },
-        select: { id: true },
-      });
-
-      if (!news) {
-        return notFound("News not found.");
-      }
-    }
-
-    if (parentId) {
-      const parentComment = await prisma.comment.findUnique({
-        where: { id: parentId },
-      });
-
-      if (!parentComment) {
-        return notFound("Parent comment not found. Cannot create reply.");
-      }
-
-      if (parentComment.parentId) {
-        return badRequest(
-          "Maximum thread depth reached. You cannot reply to a reply.",
-        );
-      }
-
-      const sameProjectTarget = parentComment.projectId === (projectId ?? null);
-      const sameNewsTarget = parentComment.newsId === (newsId ?? null);
-
-      if (!sameProjectTarget || !sameNewsTarget) {
-        return badRequest(
-          "Reply target must match the same project or news as the parent comment.",
-        );
-      }
-    }
-
-    const { score, label } = analyzeSentiment(text);
-
-    const newComment = await prisma.comment.create({
-      data: {
-        text,
-        userId,
-        projectId: projectId ?? null,
-        newsId: newsId ?? null,
-        parentId: parentId || null,
-        sentimentScore: score,
-        sentimentLabel: label,
-      },
-    });
-
-    return created(
-      parentId
-        ? "Reply successfully posted."
-        : "Main comment successfully posted.",
-      { data: newComment },
-    );
-  } catch (error) {
-    console.error("Comment API Error:", error);
-    return internalError(
-      "An internal server error occurred while processing the comment.",
-    );
-  }
-}
+import prisma from "@/lib/prisma";
+import { ok, created, badRequest, internalError } from "@/lib/api-response";
+import { getAuthUser } from "@/lib/auth";
+import { analyzeSentiment } from "@/services/sentiment";
 
 /**
  * @swagger
- * /api/projects:
+ * /api/comments:
  *   get:
- *     description: Returns a projects
+ *     summary: Get comments for a project or news
+ *     description: Retrieve threaded comments associated with either a projectId or newsId.
+ *     tags: [Comments]
+ *     parameters:
+ *       - in: query
+ *         name: projectId
+ *         schema:
+ *           type: string
+ *         description: The ID of the project to fetch comments for.
+ *       - in: query
+ *         name: newsId
+ *         schema:
+ *           type: string
+ *         description: The ID of the news article to fetch comments for.
  *     responses:
  *       200:
- *         description: Success
+ *         description: Comments retrieved successfully
+ *       400:
+ *         description: Missing projectId or newsId
+ *       500:
+ *         description: Internal server error
  */
-
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get("projectId") ?? undefined;
-    const newsId = searchParams.get("newsId") ?? undefined;
+    const { searchParams } = new URL(req.url);
+    const projectId = searchParams.get("projectId");
+    const newsId = searchParams.get("newsId");
 
-    const validation = getCommentSchema.safeParse({
-      projectId,
-      newsId,
-    });
-
-    if (!validation.success) {
-      return badRequest(
-        "Invalid query params.",
-        z.treeifyError(validation.error),
-      );
+    if (!projectId && !newsId) {
+      return badRequest("Either projectId or newsId must be provided");
     }
-
-    const validData = validation.data;
 
     const comments = await prisma.comment.findMany({
       where: {
-        ...(validData.projectId ? { projectId: validData.projectId } : {}),
-        ...(validData.newsId ? { newsId: validData.newsId } : {}),
+        projectId: projectId ?? undefined,
+        newsId: newsId ?? undefined,
         parentId: null,
+        deletedAt: null,
       },
-
-      orderBy: {
-        createdAt: "desc",
-      },
-
       include: {
-        user: {
-          select: {
-            id: true,
-            citizenProfile: {
-              select: { fullName: true },
-            },
-          },
-        },
-
+        user: { select: { id: true, email: true, role: true } },
         replies: {
-          orderBy: { createdAt: "asc" },
-          include: {
-            user: {
-              select: {
-                id: true,
-                citizenProfile: {
-                  select: { fullName: true },
-                },
-              },
-            },
-          },
+          include: { user: { select: { id: true, email: true, role: true } } },
         },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return ok("Comments retrieved successfully", { data: comments });
+  } catch (error) {
+    console.error("GET Comments Error:", error);
+    return internalError("An error occurred fetching comments");
+  }
+}
+
+const commentSchema = z
+  .object({
+    projectId: z.string().optional(),
+    newsId: z.string().optional(),
+    text: z.string().min(1, "Comment text is required"),
+    parentId: z.string().optional(),
+  })
+  .refine((data) => data.projectId !== undefined || data.newsId !== undefined, {
+    message: "Either projectId or newsId must be provided",
+  });
+
+/**
+ * @swagger
+ * /api/comments:
+ *   post:
+ *     summary: Post a comment
+ *     description: Submit a new comment on a project or news post. Also triggers sentiment analysis.
+ *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - text
+ *             properties:
+ *               projectId:
+ *                 type: string
+ *               newsId:
+ *                 type: string
+ *               text:
+ *                 type: string
+ *               parentId:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Comment created successfully
+ *       400:
+ *         description: Validation failed or Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const authUser = getAuthUser(req);
+    if (!authUser)
+      return badRequest("Unauthorized: You must be logged in to comment");
+
+    const body = await req.json();
+    const result = commentSchema.safeParse(body);
+    if (!result.success)
+      return badRequest("Validation failed", result.error.flatten());
+
+    const sentiment = await analyzeSentiment(result.data.text);
+
+    const newComment = await prisma.comment.create({
+      data: {
+        userId: authUser.userId,
+        projectId: result.data.projectId,
+        newsId: result.data.newsId,
+        text: result.data.text,
+        parentId: result.data.parentId,
+        sentimentLabel: sentiment.label,
+        sentimentScore: sentiment.score,
+      },
+      include: {
+        user: { select: { id: true, email: true, role: true } },
       },
     });
 
-    return ok("Comments fetched successfully.", { data: comments });
+    return created("Comment created successfully", { data: newComment });
   } catch (error) {
-    console.error("Fetch Comments API Error:", error);
-    return internalError(
-      "An internal server error occurred while fetching comments.",
-    );
+    console.error("POST Comment Error:", error);
+    return internalError("An error occurred creating the comment");
   }
 }

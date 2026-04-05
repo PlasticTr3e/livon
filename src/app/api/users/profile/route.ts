@@ -5,6 +5,23 @@ import { ok, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { Role } from "@/generated/prisma/enums";
 
+/**
+ * @swagger
+ * /api/users/profile:
+ *   get:
+ *     summary: Get logged-in user profile
+ *     description: Retrieve the current authenticated user's profile and details.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile fetched successfully
+ *       400:
+ *         description: Unauthorized or missing token
+ *       500:
+ *         description: Internal server error
+ */
 export async function GET(req: NextRequest) {
   try {
     const authUser = getAuthUser(req);
@@ -43,6 +60,39 @@ const updateProfileSchema = z.object({
   houseNumber: z.string().optional(), // For citizen
 });
 
+/**
+ * @swagger
+ * /api/users/profile:
+ *   put:
+ *     summary: Update profile details
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               blockHouse:
+ *                 type: string
+ *               houseNumber:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ *       400:
+ *         description: Unauthorized or Invalid data
+ *       500:
+ *         description: Internal server error
+ */
 export async function PUT(req: NextRequest) {
   try {
     const authUser = getAuthUser(req);
