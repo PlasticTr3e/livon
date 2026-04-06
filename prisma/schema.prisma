@@ -51,10 +51,10 @@ enum NotificationType {
 model User {
   id          String    @id @default(uuid())
   email       String    @unique
+  password    String
   role        Role
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   citizenProfile  CitizenProfile?
   agencyProfile   AgencyProfile?
 
@@ -62,6 +62,17 @@ model User {
   votes         Vote[]
   donations     Donation[]
   notifications Notification[]
+  news          News[]
+}
+
+model News {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
 }
 
 model CitizenProfile {
