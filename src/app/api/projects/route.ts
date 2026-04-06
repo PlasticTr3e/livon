@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const projectSchema = z.object({
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     const { title, description, budgetTarget, latitude, longitude, agencyId } =
       validation.data;
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const newProject = await tx.project.create({
         data: {
           title,

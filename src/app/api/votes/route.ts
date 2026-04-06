@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import prisma from "../../../lib/prisma";
+import { prisma } from "../../../lib/prisma";
 import { VoteType } from "@/generated/prisma/enums";
 import { z } from "zod/mini";
 
