@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({
     request: { headers: requestHeaders },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: "Token tidak valid atau expired" }, { status: 403 });
   }
 }

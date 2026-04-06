@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     const { title, description, budgetTarget, latitude, longitude, agencyId } =
       validation.data;
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx) => {
       const newProject = await tx.project.create({
         data: {
           title,

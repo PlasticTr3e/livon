@@ -24,13 +24,14 @@ export async function PATCH(req: Request) {
       data: updatedProfile,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Update Profile Error:", error);
     
-    if (error.code === 'P2025') {
-      return NextResponse.json({ message: "Profil tidak ditemukan" }, { status: 404 });
+    if (error && typeof error === 'object' && 'code' in error) {
+      if ((error as { code: string }).code === 'P2025') {
+        return NextResponse.json({ message: "Profil tidak ditemukan" }, { status: 404 });
+      }
     }
-
     return NextResponse.json({ message: "Gagal memperbarui profil" }, { status: 500 });
   }
 }

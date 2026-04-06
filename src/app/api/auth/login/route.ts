@@ -29,10 +29,11 @@ const token = await new SignJWT({ userId: user.id, role: user.role })
         role: user.role
       }
     }, { status: 200 });
-} catch (error: any) {
-  console.error("Login Error Detail :", error); 
-  return NextResponse.json({ 
-    message: "Gagal Login", 
-    error: error.message 
-  }, { status: 500 });
+// Cari bagian catch (baris 32/36) dan ganti blok catch-nya:
+} catch (error) {
+  if (error instanceof Error) {
+    console.error("Login Error:", error.message);
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ message: "Terjadi kesalahan internal" }, { status: 500 });
 }}
