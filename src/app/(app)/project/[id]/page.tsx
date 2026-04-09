@@ -1,7 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { mockProjects, Comment, ProjectDocument } from "@/data/mockData";
 import { Button, Badge, Card, cn } from "@/components/ui/WireframePrimitives";
 import { useUser } from "@/context/UserContext";
 import { UpdateStatusModal } from "@/components/UpdateStatusModal";
@@ -28,6 +27,44 @@ import {
   Building2,
 } from "lucide-react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+
+// ── Local type definitions (no longer from mockData) ──────────────────────────
+interface Comment {
+  id: string;
+  author: string;
+  role: string;
+  text: string;
+  timestamp: string;
+  likes: number;
+}
+
+interface ProjectDocument {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  category: string;
+  address: string;
+  contractor?: string;
+  startDate: string;
+  endDate: string;
+  budget: number;
+  fundsCollected?: number;
+  progress: number;
+  votes: { agree: number; disagree: number };
+  comments: Comment[];
+  documents: ProjectDocument[];
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, string> = {
   Planning: "bg-blue-100 text-blue-700 border-blue-300",
@@ -60,10 +97,26 @@ function getFileIcon(type: string) {
   }
 }
 
+const EMPTY_PROJECT: Project = {
+  id: "",
+  name: "Proyek tidak ditemukan",
+  description: "",
+  status: "Planning",
+  category: "-",
+  address: "-",
+  startDate: "-",
+  endDate: "-",
+  budget: 0,
+  progress: 0,
+  votes: { agree: 0, disagree: 0 },
+  comments: [],
+  documents: [],
+};
+
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const project = mockProjects.find((p) => p.id === id) || mockProjects[0];
   const { userRole, userName } = useUser();
+  const [project] = useState<Project>({ ...EMPTY_PROJECT, id: id as string });
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>(project.comments);
   const [newComment, setNewComment] = useState("");
@@ -299,7 +352,7 @@ export default function ProjectDetailPage() {
                 >
                   <UploadCloud className="w-8 h-8 text-green-500 mb-2" />
                   <p className="text-sm font-medium text-green-700">
-                    Klik atau drag & drop untuk upload
+                    Klik atau drag &amp; drop untuk upload
                   </p>
                   <p className="text-xs text-green-500 mt-1">
                     PDF, JPG, PNG, ZIP, DWG hingga 20MB
@@ -399,11 +452,11 @@ export default function ProjectDetailPage() {
                       <div
                         className="bg-green-500 h-full transition-all"
                         style={{ width: `${agreePercent}%` }}
-                      ></div>
+                      />
                       <div
                         className="bg-gray-300 dark:bg-slate-600 h-full"
                         style={{ width: `${100 - agreePercent}%` }}
-                      ></div>
+                      />
                     </div>
                     <div className="flex justify-between text-xs text-gray-600 dark:text-slate-400 font-medium">
                       <span className="text-green-600">
@@ -510,8 +563,8 @@ export default function ProjectDetailPage() {
                 </div>
                 <div className="border-t border-gray-100 dark:border-slate-700 pt-5">
                   <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2 mb-4">
-                    <MessageSquare className="w-5 h-5 text-green-600" />
-                    Diskusi Komunitas
+                    <MessageSquare className="w-5 h-5 text-green-600" /> Diskusi
+                    Komunitas
                     <span className="text-xs text-gray-500 font-normal bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                       {comments.length} komentar
                     </span>
@@ -634,7 +687,7 @@ export default function ProjectDetailPage() {
                         style={{
                           width: `${Math.round(((project.fundsCollected || 0) / project.budget) * 100)}%`,
                         }}
-                      ></div>
+                      />
                     </div>
                   </div>
                   <Link
