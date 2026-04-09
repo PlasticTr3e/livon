@@ -7,7 +7,7 @@ services:
       - livon_pg_data:/var/lib/postgresql
 
     env_file: .env
-
+    
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${DATABASE_USER}
