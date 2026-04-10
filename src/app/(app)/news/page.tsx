@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { Badge } from "@/components/ui/WireframePrimitives";
 import { Clock, ChevronRight, Newspaper as NewsIcon } from "lucide-react";
