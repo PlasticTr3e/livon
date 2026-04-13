@@ -1,5 +1,8 @@
+import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { UserProvider } from "../context/UserContext";
+import { ThemeProvider } from "../context/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Livon",
@@ -13,7 +16,11 @@ type RootLayoutProps = {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <UserProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </UserProvider>
+      </body>
     </html>
   );
 }

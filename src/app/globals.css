@@ -1,0 +1,71 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --animate-fade-in: fade-in 0.7s ease-in-out;
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+}
+
+:root {
+  --font-size: 16px;
+  --background: 248 250 252;
+  --foreground: 15 23 42;
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
+  --border: 226 232 240;
+  --input: 240 253 244;
+  --ring: 22 163 74;
+  --radius: 0.625rem;
+
+  /* LIVON green palette */
+  --livon-green-50: #f0fdf4;
+  --livon-green-100: #dcfce7;
+  --livon-green-200: #bbf7d0;
+  --livon-green-300: #86efac;
+  --livon-green-400: #4ade80;
+  --livon-green-500: #22c55e;
+  --livon-green-600: #16a34a;
+  --livon-green-700: #15803d;
+  --livon-green-800: #166534;
+  --livon-green-900: #14532d;
+  --livon-yellow: #eab308;
+  --livon-blue: #3b82f6;
+}
+
+.dark {
+  --background: 15 23 42;
+  --foreground: 241 245 249;
+  --card: 30 41 59;
+  --card-foreground: 241 245 249;
+  --border: 51 65 85;
+  --input: 30 41 59;
+  --ring: 74 222 128;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+}
