@@ -3,8 +3,6 @@ import { NextRequest } from "next/server";
 import { badRequest, ok, internalError } from "@/lib/api-response";
 import { DonationStatus } from "@/generated/prisma/enums";
 import { getAuthUser } from "@/lib/auth";
-import { tuple } from "zod";
-import { projectCompilationEventsSubscribe } from "next/dist/build/swc/generated-native";
 
 /**
  * @swagger

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { DonationStatus } from "@/generated/prisma/enums";
-import { badRequest, internalError, notFound, ok } from "@/lib/api-response";
+import { internalError, notFound, ok } from "@/lib/api-response";
 
 /**
  * @swagger
@@ -19,9 +19,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       order_id,
-      status_code,
-      gross_amount,
-      signature_key,
+      //   status_code,
+      //   gross_amount,
+      //   signature_key,
       transaction_status,
       transaction_id,
       payment_type,
