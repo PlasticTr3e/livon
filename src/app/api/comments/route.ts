@@ -118,9 +118,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const result = commentSchema.safeParse(body);
     if (!result.success)
-      return badRequest("Validation failed", result.error.flatten());
+      return badRequest("Validation failed", z.flattenError(result.error));
 
-    const sentiment = await analyzeSentiment(result.data.text);
+    const sentiment = analyzeSentiment(result.data.text);
 
     const newComment = await prisma.comment.create({
       data: {
