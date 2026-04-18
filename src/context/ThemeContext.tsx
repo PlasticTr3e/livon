@@ -22,20 +22,34 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "light";
-    try {
-      const saved = localStorage.getItem("livon-theme") as Theme;
-      if (saved === "dark" || saved === "light") {
-        if (saved === "dark") document.documentElement.classList.add("dark");
-        return saved;
-      }
-    } catch {}
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("livon-theme") as Theme;
+        if (saved === "dark" || saved === "light") {
+          return saved;
+        }
+      } catch {}
+    }
     return "light";
   });
 
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    // Only used to prevent hydration mismatch for certain UI components
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Sync external systems (DOM class + localStorage) when theme changes
   useEffect(() => {
+    if (!mounted) return;
     try {
       localStorage.setItem("livon-theme", theme);
     } catch {}
@@ -44,9 +58,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       document.documentElement.classList.remove("dark");
     }
-  }, [theme]);
+  }, [theme, mounted]);
 
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
+
+  if (!mounted) {
+    // Avoid hydration mismatch by rendering the same context values on the server and client
+    return (
+      <ThemeContext.Provider
+        value={{ theme: "light", toggleTheme: () => {}, isDark: false }}
+      >
+        {children}
+      </ThemeContext.Provider>
+    );
+  }
 
   return (
     <ThemeContext.Provider
