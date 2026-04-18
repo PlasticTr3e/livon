@@ -1,15 +1,27 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, MapPin, Users, Leaf } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div>Memuat...</div>}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const prefilledEmail = searchParams.get("email") || "";
+  const prefilledName = searchParams.get("name") || "";
 
   const images = [
     {
@@ -32,9 +44,10 @@ export default function RegisterPage() {
     }, 3000);
     return () => clearInterval(interval);
   }, [images.length]);
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
+
+  const [formData, setFormData] = useState(() => ({
+    fullName: prefilledName,
+    email: prefilledEmail,
     password: "",
     confirmPassword: "",
     nomorKK: "",
@@ -45,7 +58,8 @@ export default function RegisterPage() {
     agencyName: "",
     address: "",
     phone: "",
-  });
+  }));
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const set = (key: string, val: string) =>
@@ -172,7 +186,8 @@ export default function RegisterPage() {
                 placeholder="Email address"
                 value={formData.email}
                 onChange={(e) => set("email", e.target.value)}
-                className="w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
+                readOnly={!!prefilledEmail}
+                className={`w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 ${prefilledEmail ? "opacity-70 cursor-not-allowed" : ""}`}
               />
               {errors.email && (
                 <p className="text-red-500 text-[11px] pl-4 mt-1">
@@ -371,8 +386,8 @@ export default function RegisterPage() {
               </span>
               <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
             </div>
-            <button
-              type="button"
+            <a
+              href="/api/auth/google"
               className="w-full h-12 flex items-center justify-center gap-3 rounded-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-green-50 hover:border-green-300 transition-colors"
             >
               <svg
@@ -400,7 +415,7 @@ export default function RegisterPage() {
               <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
                 Lanjutkan dengan Google
               </span>
-            </button>
+            </a>
             <p className="text-center text-xs text-gray-400 mt-1">
               Sudah punya akun?{" "}
               <Link

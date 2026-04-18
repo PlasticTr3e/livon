@@ -99,7 +99,7 @@ export default function ProfilePage() {
     async function fetchActivities() {
       const token = localStorage.getItem("livon-token");
       if (!token) return;
-      const res = await fetch("/api/users/activities", {
+      const res = await fetch("/api/users/activity", {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });

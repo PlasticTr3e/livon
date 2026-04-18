@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { created, badRequest, internalError } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 
 const registerSchema = z.object({
   email: z.email(),
@@ -128,6 +130,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: {
         email,
+        emailVerified: null,
         passwordHash,
         role,
         ...(role === Role.WARGA
@@ -154,6 +157,41 @@ export async function POST(req: NextRequest) {
             }),
       },
       select: { id: true, email: true, role: true },
+    });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const aDay = 1000 * 60 * 60 * 24;
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token: token,
+        expires: new Date(Date.now() + aDay),
+      },
+    });
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const verificationUrl = `${appUrl}/api/auth/verify?token=${token}`;
+
+    await transporter.sendMail({
+      from: `"Livon App" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Verify your Livon Account",
+      html: `
+        <h2>Welcome to Livon!</h2>
+        <p>Please verify your email address by clicking the link below:</p>
+        <a href="${verificationUrl}" target="_blank">Verify Email</a>
+        <p>This link will expire in 24 hours.</p>
+      `,
     });
 
     return created("User registered successfully", { data: user });
