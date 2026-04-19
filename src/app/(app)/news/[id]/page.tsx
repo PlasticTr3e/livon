@@ -263,7 +263,7 @@ export default async function NewsDetailPage({
                     >
                       <div className="w-16 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 dark:border-slate-700">
                         <ImageWithFallback
-                          src={rel.thumbnailUrl || ""}
+                          src={rel.thumbnailUrl}
                           alt={rel.title}
                           className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all"
                         />

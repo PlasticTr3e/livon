@@ -128,7 +128,7 @@ export default function CreateArticlePage() {
                   src={formData.featuredImage}
                   alt="Preview"
                   fill
-                  className="object-cover grayscale"
+                  className="object-cover"
                 />
               </div>
             )}
