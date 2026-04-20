@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/components/ui/WireframePrimitives";
 import {
   BarChart2,
@@ -20,6 +21,19 @@ import {
 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
+import { apiFetch } from "@/lib/api-client";
+
+interface Notification {
+  id: string;
+  userId: string;
+  projectId?: string;
+  referenceId?: string;
+  title?: string;
+  type?: string;
+  message?: string;
+  isRead: boolean;
+  createdAt: Date;
+}
 
 export default function AdminLayout({
   children,
@@ -30,6 +44,92 @@ export default function AdminLayout({
   const router = useRouter();
   const { userRole, userName } = useUser();
   const { theme, toggleTheme } = useTheme();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  // Fetch notifications from API
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("livon-token");
+        const response = await apiFetch<{ data: Notification[] }>(
+          "/api/notifications",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+
+        if (response.success && response.data?.data) {
+          const notifData: Notification[] = response.data.data.map(
+            (notif: unknown) => {
+              const n = notif as Omit<Notification, "createdAt"> & {
+                createdAt: string;
+              };
+              return {
+                ...n,
+                createdAt: new Date(n.createdAt),
+              };
+            },
+          );
+          setNotifications(notifData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+    // Optionally set up polling every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const notificationDiv = document.querySelector(
+        "[data-notification-dropdown]",
+      );
+      if (notificationDiv && !notificationDiv.contains(event.target as Node)) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    if (isNotificationOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isNotificationOpen]);
+
+  // Calculate unread count
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications],
+  );
+
+  // Format time to relative format
+  const formatTime = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - new Date(date).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "baru saja";
+    if (diffMins < 60) return `${diffMins} menit lalu`;
+    if (diffHours < 24) return `${diffHours} jam lalu`;
+    if (diffDays < 7) return `${diffDays} hari lalu`;
+    return new Date(date).toLocaleDateString("id-ID");
+  };
 
   const sidebarLinks = [
     { name: "Dashboard", href: "/admin/dashboard", icon: BarChart2 },
@@ -121,62 +221,78 @@ export default function AdminLayout({
           </button>
 
           {/* Bell */}
-          <div className="relative group">
-            <button className="relative p-2 text-gray-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+          <div className="relative" data-notification-dropdown>
+            <button
+              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+              onMouseEnter={() => setIsNotificationOpen(true)}
+              className="relative p-2 text-gray-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+            >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-green-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-green-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></span>
+              )}
             </button>
-
-            {/* Notification Dropdown */}
-            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-xl hidden group-hover:block z-50">
-              <div className="p-3 border-b border-gray-100 dark:border-slate-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800 rounded-t-xl flex items-center justify-between">
-                <p className="font-bold text-sm text-green-800 dark:text-green-300">
-                  Notifikasi Admin
-                </p>
-                <span className="w-5 h-5 rounded-full bg-green-600 text-white text-[10px] flex items-center justify-center font-bold">
-                  2
-                </span>
-              </div>
-              <div className="max-h-64 overflow-y-auto">
-                {[
-                  {
-                    title: "Komentar Baru",
-                    desc: "3 komentar menunggu moderasi di Community Park.",
-                    time: "30 menit lalu",
-                    dot: "bg-red-400",
-                  },
-                  {
-                    title: "Proyek Diperbarui",
-                    desc: "Main Road Repaving mencapai milestone 60%.",
-                    time: "2 jam lalu",
-                    dot: "bg-green-500",
-                  },
-                ].map((n, i) => (
-                  <div
-                    key={i}
-                    className="p-3 border-b border-gray-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex gap-3"
-                  >
-                    <div
-                      className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.dot}`}
-                    />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-slate-200">
-                        {n.title}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                        {n.desc}
-                      </p>
-                      <p className="text-[10px] text-green-600 dark:text-green-400 mt-1 font-medium">
-                        {n.time}
-                      </p>
+            {isNotificationOpen && (
+              <div
+                className="absolute right-0 mt-0 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-xl z-50"
+                onMouseLeave={() => setIsNotificationOpen(false)}
+              >
+                <div className="p-3 border-b border-gray-100 dark:border-slate-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800 rounded-t-xl flex items-center justify-between">
+                  <p className="font-bold text-sm text-green-800 dark:text-green-300">
+                    Notifikasi
+                  </p>
+                  <span className="w-5 h-5 rounded-full bg-green-600 text-white text-[10px] flex items-center justify-center font-bold">
+                    {unreadCount}
+                  </span>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {loading ? (
+                    <div className="p-3 text-center text-gray-500 dark:text-slate-400 text-sm">
+                      Memuat notifikasi...
                     </div>
-                  </div>
-                ))}
+                  ) : notifications.length === 0 ? (
+                    <div className="p-3 text-center text-gray-500 dark:text-slate-400 text-sm">
+                      Tidak ada notifikasi
+                    </div>
+                  ) : (
+                    notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        className={cn(
+                          "p-3 border-b border-gray-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex gap-3",
+                          !n.isRead ? "bg-green-50 dark:bg-slate-800" : "",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "w-2 h-2 rounded-full mt-1.5 shrink-0",
+                            !n.isRead ? "bg-green-500" : "bg-gray-400",
+                          )}
+                        />
+                        <div className="flex-1">
+                          <p
+                            className={cn(
+                              "text-sm font-semibold",
+                              !n.isRead
+                                ? "text-green-800 dark:text-green-200"
+                                : "text-gray-800 dark:text-slate-200",
+                            )}
+                          >
+                            {n.title || "Notifikasi"}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            {n.message || ""}
+                          </p>
+                          <p className="text-[10px] text-green-600 dark:text-green-400 mt-1 font-medium">
+                            {formatTime(n.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="p-2 border-t border-gray-100 dark:border-slate-700 text-center text-xs text-green-600 dark:text-green-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer rounded-b-xl transition-colors">
-                Lihat Semua Notifikasi
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Profile */}

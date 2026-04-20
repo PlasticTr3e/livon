@@ -1,11 +1,314 @@
 "use client";
-import { ComingSoon } from "@/components/ComingSoon";
+import { useState, useEffect } from "react";
+import { Card, Button, Badge, cn } from "@/components/ui/WireframePrimitives";
+import {
+  Download,
+  AlertCircle,
+  TrendingUp,
+  DollarSign,
+  Clock,
+  BarChart2,
+} from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
+
+interface ProjectData {
+  id: string;
+  title: string;
+  status?: string;
+  budgetTarget?: number;
+  currentFunding?: number;
+}
+
+interface Transaction {
+  id: string;
+  user: string;
+  project: string;
+  amount: number;
+  date: string;
+  status: "Success" | "Pending" | "Failed";
+}
 
 export default function CrowdfundingMonitorPage() {
+  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch projects from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("livon-token");
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const response = await apiFetch<ProjectData[]>("/api/projects", {
+          headers,
+        });
+
+        if (response.success && response.data) {
+          setProjects(response.data);
+
+          // TODO: Integrate with donations endpoint when available
+          // For now, set empty transactions
+          setTransactions([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Filter active/approved campaigns
+  const activeCampaigns = projects.filter(
+    (p) => p.status && p.status.toUpperCase() === "DISETUJUI",
+  );
+
+  // Calculate stats
+  const totalCollected = projects.reduce(
+    (sum, p) => sum + (p.currentFunding || 0),
+    0,
+  );
+  const activeCampaignCount = activeCampaigns.length;
+  const pendingVerificationCount = projects.filter(
+    (p) => p.status?.toUpperCase() === "USULAN",
+  ).length;
+
+  const statusStyle = (s: string) => {
+    switch (s) {
+      case "Success":
+        return "bg-green-100 text-green-700 border-green-300";
+      case "Pending":
+        return "bg-yellow-100 text-yellow-700 border-yellow-300";
+      case "Failed":
+        return "bg-red-100 text-red-600 border-red-300";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-gray-300 border-t-green-600 rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-medium">
+            Memuat data crowdfunding...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <ComingSoon
-      title="Monitor Crowdfunding"
-      description="Lacak seluruh aktivitas donasi, progress kampanye, dan status transaksi. Verifikasi pembayaran dan ekspor laporan keuangan dengan mudah."
-    />
+    <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-full">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">
+            Monitor Crowdfunding
+          </h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            Lacak semua donasi dan progress pendanaan.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="flex items-center gap-2 border-green-300 text-green-700 hover:bg-green-50"
+        >
+          <Download className="w-4 h-4" /> Ekspor Laporan
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-5 border-green-100 bg-green-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-green-700 uppercase tracking-wider mb-1">
+                Total Terkumpul
+              </p>
+              <p className="text-3xl font-black text-green-800">
+                Rp {(totalCollected / 1000000).toFixed(1)}M
+              </p>
+              <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" /> Dari {projects.length} proyek
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-green-200 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-green-700" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-5 border-blue-100 bg-blue-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">
+                Kampanye Aktif
+              </p>
+              <p className="text-3xl font-black text-blue-800">
+                {activeCampaignCount}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Dalam tahap pendanaan
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-blue-200 rounded-xl flex items-center justify-center">
+              <BarChart2 className="w-6 h-6 text-blue-700" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-5 border-yellow-100 bg-yellow-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-yellow-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> Menunggu Verifikasi
+              </p>
+              <p className="text-3xl font-black text-yellow-800">
+                {pendingVerificationCount}
+              </p>
+              <p className="text-xs text-yellow-600 mt-1">
+                Perlu ditindaklanjuti
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-yellow-200 rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6 text-yellow-700" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Active Campaign Progress */}
+      <Card className="p-6 border-green-100 shadow-sm">
+        <h3 className="font-bold text-gray-900 mb-4">Progres Kampanye Aktif</h3>
+        {activeCampaigns.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-8">
+            Tidak ada kampanye aktif
+          </p>
+        ) : (
+          <div className="space-y-6">
+            {activeCampaigns.map((campaign) => {
+              const target = campaign.budgetTarget || 0;
+              const collected = campaign.currentFunding || 0;
+              const progress =
+                target > 0
+                  ? Math.min(Math.round((collected / target) * 100), 100)
+                  : 0;
+
+              return (
+                <div key={campaign.id}>
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="font-semibold text-gray-800">
+                      {campaign.title}
+                    </p>
+                    <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300">
+                      🔥 Aktif
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-500">
+                      Terkumpul:{" "}
+                      <strong className="text-green-700">
+                        Rp {(collected / 1000000).toFixed(1)}M
+                      </strong>
+                    </span>
+                    <span className="text-gray-500">
+                      Target:{" "}
+                      <strong>Rp {(target / 1000000).toFixed(1)}M</strong>
+                    </span>
+                  </div>
+                  <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-1">
+                    <div
+                      className="h-full bg-gradient-to-r from-green-500 to-yellow-400 rounded-full"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>{progress}% tercapai</span>
+                    <span>Estimasi 12+ donatur</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      {/* Transactions Table */}
+      <Card className="p-6 border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="font-bold text-gray-900">Transaksi Terbaru</h3>
+          <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-medium">
+            {transactions.length} transaksi
+          </span>
+        </div>
+        {transactions.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-sm mb-2">
+              Belum ada data transaksi
+            </p>
+            <p className="text-gray-400 text-xs">
+              Transaksi donasi akan ditampilkan di sini setelah integration
+              dengan donations endpoint lengkap
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-gray-200 text-xs text-gray-500 font-bold uppercase tracking-wider">
+                  <th className="py-3 px-4">TRX ID</th>
+                  <th className="py-3 px-4">Donatur</th>
+                  <th className="py-3 px-4">Proyek</th>
+                  <th className="py-3 px-4">Jumlah</th>
+                  <th className="py-3 px-4">Waktu</th>
+                  <th className="py-3 px-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {transactions.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="hover:bg-green-50 transition-colors"
+                  >
+                    <td className="py-3.5 px-4 font-mono text-xs text-gray-500">
+                      {row.id}
+                    </td>
+                    <td className="py-3.5 px-4 font-semibold text-gray-800">
+                      {row.user}
+                    </td>
+                    <td className="py-3.5 px-4 text-gray-600 text-xs">
+                      {row.project}
+                    </td>
+                    <td className="py-3.5 px-4 font-black text-green-700">
+                      Rp {row.amount.toLocaleString("id-ID")}
+                    </td>
+                    <td className="py-3.5 px-4 text-gray-500 text-xs">
+                      {row.date}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <Badge className={cn("text-xs", statusStyle(row.status))}>
+                        {row.status === "Success"
+                          ? "✅ "
+                          : row.status === "Pending"
+                            ? "⏳ "
+                            : "❌ "}
+                        {row.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
