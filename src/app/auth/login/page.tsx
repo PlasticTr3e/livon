@@ -17,18 +17,28 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   const [successMsg] = useState(() => {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
       if (sp.get("registered") === "true") {
-        window.history.replaceState(null, "", "/auth/login");
         return "Pendaftaran akun berhasil disubmit. Untuk mengakses aplikasi, akun Anda wajib diverifikasi terlebih dahulu oleh admin aplikasi LIVON. Estimasi pengerjaan verifikasi adalah 2-3 hari kerja.";
+      } else if (sp.get("verified") === "true") {
+        return "Email Anda berhasil diverifikasi! Silakan masuk menggunakan akun Anda.";
       }
     }
     return "";
   });
 
-  // Image carousel data
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("registered") === "true" || sp.get("verified") === "true") {
+        window.history.replaceState(null, "", "/auth/login");
+      }
+    }
+  }, []);
+
   const images = [
     {
       src: "https://images.unsplash.com/photo-1749018883387-872e5b033a7d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
@@ -257,9 +267,14 @@ export default function LoginPage() {
                   fill="#EA4335"
                 />
               </svg>
-              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                Lanjutkan dengan Google
-              </span>
+              <a
+                href="/api/auth/google"
+                className="w-full h-12 flex items-center justify-center gap-3 rounded-full border-2 border-gray-200 ..."
+              >
+                <span className="text-sm font-medium">
+                  Lanjutkan dengan Google
+                </span>
+              </a>
             </button>
 
             <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-2">

@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       where: { email },
     });
 
-    if (!user) {
+    if (!user || !user.passwordHash) {
       return badRequest("Invalid credentials");
     }
 
