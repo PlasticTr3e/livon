@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button, Badge, Card, cn } from "@/components/ui/WireframePrimitives";
 import { useUser } from "@/context/UserContext";
 import { UpdateStatusModal } from "@/components/UpdateStatusModal";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft,
   MapPin,
@@ -26,6 +26,7 @@ import {
   File,
   Building2,
 } from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
 // ── Local type definitions (no longer from mockData) ──────────────────────────
@@ -63,6 +64,63 @@ interface Project {
   votes: { agree: number; disagree: number };
   comments: Comment[];
   documents: ProjectDocument[];
+}
+
+interface ApiComment {
+  id: string | number;
+  text?: string;
+  createdAt?: string;
+  user?: {
+    email?: string;
+    role?: string;
+  };
+}
+
+interface ApiProjectPayload {
+  id: string | number;
+  title?: string;
+  description?: string;
+  status?: string;
+  category?: { name?: string };
+  address?: string;
+  agency?: { agencyProfile?: { agencyName?: string } };
+  startDate?: string;
+  endDate?: string;
+  budgetTarget?: string | number;
+  currentFunding?: string | number;
+  _count?: { votes?: number };
+}
+
+const PROJECT_STATUS_MAP: Record<string, string> = {
+  USULAN: "Planning",
+  DISETUJUI: "Funding",
+  BERJALAN: "Construction",
+  SELESAI: "Completed",
+};
+
+function mapProjectStatus(status: string) {
+  return PROJECT_STATUS_MAP[status] || "Planning";
+}
+
+function formatDate(dateString?: string) {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function computeProgress(
+  budget: number,
+  fundsCollected?: number,
+  status?: string,
+) {
+  if (status === "Completed") return 100;
+  if (!budget || !fundsCollected) return 0;
+  return Math.min(Math.round((fundsCollected / budget) * 100), 100);
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -116,27 +174,172 @@ const EMPTY_PROJECT: Project = {
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { userRole, userName } = useUser();
-  const [project] = useState<Project>({ ...EMPTY_PROJECT, id: id as string });
+  const [project, setProject] = useState<Project>({
+    ...EMPTY_PROJECT,
+    id: id as string,
+  });
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [comments, setComments] = useState<Comment[]>(project.comments);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [commentLikes, setCommentLikes] = useState<Record<string, number>>(
-    Object.fromEntries(project.comments.map((c) => [c.id, c.likes])),
-  );
+  const [commentLikes, setCommentLikes] = useState<Record<string, number>>({});
   const [votes, setVotes] = useState({
-    agree: project.votes.agree,
-    disagree: project.votes.disagree,
+    agree: 0,
+    disagree: 0,
   });
   const [userVote, setUserVote] = useState<"agree" | "disagree" | null>(null);
   const [documents, setDocuments] = useState<ProjectDocument[]>(
     project.documents,
   );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProjectData() {
+      if (!id) return;
+
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("livon-token");
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const projectResponse = await apiFetch<ApiProjectPayload>(
+          `/api/projects/${id}`,
+          { headers },
+        );
+        if (projectResponse.success && projectResponse.data) {
+          const payload = projectResponse.data;
+          const normalizedProject: Project = {
+            id: String(payload.id),
+            name: String(payload.title || EMPTY_PROJECT.name),
+            description: String(payload.description || ""),
+            status: mapProjectStatus(String(payload.status)),
+            category: String(payload.category?.name || "-"),
+            address: String(payload.address || "-"),
+            contractor: payload.agency?.agencyProfile?.agencyName
+              ? String(payload.agency.agencyProfile.agencyName)
+              : undefined,
+            startDate: formatDate(payload.startDate as string),
+            endDate: formatDate(payload.endDate as string),
+            budget: payload.budgetTarget ? Number(payload.budgetTarget) : 0,
+            fundsCollected: payload.currentFunding
+              ? Number(payload.currentFunding)
+              : 0,
+            progress: computeProgress(
+              payload.budgetTarget ? Number(payload.budgetTarget) : 0,
+              payload.currentFunding ? Number(payload.currentFunding) : 0,
+              mapProjectStatus(String(payload.status)),
+            ),
+            votes: {
+              agree: Number(payload._count?.votes ?? 0),
+              disagree: 0,
+            },
+            comments: [],
+            documents: EMPTY_PROJECT.documents,
+          };
+
+          setProject(normalizedProject);
+          setVotes({
+            agree: Number(payload._count?.votes ?? 0),
+            disagree: 0,
+          });
+        }
+
+        const commentsResponse = await apiFetch<ApiComment[]>(
+          `/api/comments?projectId=${id}`,
+          { headers },
+        );
+        if (commentsResponse.success && commentsResponse.data) {
+          const loadedComments: Comment[] = commentsResponse.data.map(
+            (comment: ApiComment) => ({
+              id: String(comment.id),
+              author: String(comment.user?.email || "Anonymous"),
+              role: String(comment.user?.role || "Resident"),
+              text: String(comment.text || ""),
+              timestamp: formatDate(comment.createdAt as string),
+              likes: 0,
+            }),
+          );
+          setComments(loadedComments);
+          setCommentLikes(
+            Object.fromEntries(
+              loadedComments.map((comment) => [comment.id, 0]),
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load project data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProjectData();
+  }, [id]);
+
+  const handlePostComment = async () => {
+    if (!newComment.trim() || !id) return;
+
+    const token = localStorage.getItem("livon-token");
+    const response = await apiFetch<ApiComment>("/api/comments", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        projectId: id,
+        text: newComment.trim(),
+      }),
+    });
+
+    if (!response.success) {
+      console.error("Failed to post comment:", response.message);
+      return;
+    }
+
+    const comment = response.data;
+    if (!comment) return;
+
+    const newCommentItem: Comment = {
+      id: String(comment.id),
+      author: comment.user?.email || userName || "Anonymous",
+      role: comment.user?.role || userRole || "Resident",
+      text: String(comment.text || newComment.trim()),
+      timestamp: formatDate(comment.createdAt),
+      likes: 0,
+    };
+
+    setComments((prev) => [newCommentItem, ...prev]);
+    setCommentLikes((prev) => ({ ...prev, [newCommentItem.id]: 0 }));
+    setNewComment("");
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const timelineStages = ["Planning", "Funding", "Construction", "Completed"];
   const currentStageIndex = timelineStages.indexOf(project.status);
 
-  const handleVote = (type: "agree" | "disagree") => {
+  const getUserIdFromToken = (token: string) => {
+    try {
+      return JSON.parse(atob(token.split(".")[1])).userId;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleVote = async (type: "agree" | "disagree") => {
+    const token = localStorage.getItem("livon-token");
+    if (!token) {
+      alert("Silakan login untuk memberikan vote.");
+      return;
+    }
+    const userId = getUserIdFromToken(token);
+    if (!userId) {
+      alert("Sesi tidak valid, silakan login ulang.");
+      return;
+    }
+
+    const previousVote = userVote;
+    const prevVotesObj = { ...votes };
+
     if (userVote === type) {
       setVotes((prev) => ({ ...prev, [type]: prev[type] - 1 }));
       setUserVote(null);
@@ -152,21 +355,30 @@ export default function ProjectDetailPage() {
       }
       setUserVote(type);
     }
-  };
 
-  const handlePostComment = () => {
-    if (!newComment.trim()) return;
-    const comment: Comment = {
-      id: `c${Date.now()}`,
-      author: userName,
-      role: userRole,
-      text: newComment.trim(),
-      timestamp: "Baru saja",
-      likes: 0,
-    };
-    setComments((prev) => [comment, ...prev]);
-    setCommentLikes((prev) => ({ ...prev, [comment.id]: 0 }));
-    setNewComment("");
+    try {
+      const res = await fetch("/api/votes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          projectId: id,
+          userId,
+          type: type === "agree" ? "UPVOTE" : "DOWNVOTE",
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Gagal menyimpan vote");
+      }
+    } catch (e) {
+      console.error(e);
+      setVotes(prevVotesObj);
+      setUserVote(previousVote);
+      alert("Gagal menyimpan vote, silakan coba lagi.");
+    }
   };
 
   const handleLikeComment = (commentId: string) => {
@@ -207,7 +419,7 @@ export default function ProjectDetailPage() {
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto">
       <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between shadow-sm">
         <Link
-          href="/app/map"
+          href="/map"
           className="flex items-center text-green-600 hover:text-green-800 dark:text-green-400 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
@@ -408,7 +620,7 @@ export default function ProjectDetailPage() {
               )}
             </Card>
 
-            {userRole === "Admin" && (
+            {(userRole === "Admin" || userRole === "Manager") && (
               <>
                 <Card className="p-6 border-green-100">
                   <h2 className="font-bold text-gray-900 dark:text-slate-100 mb-5 flex items-center gap-2">
@@ -511,7 +723,7 @@ export default function ProjectDetailPage() {
               </>
             )}
 
-            {(userRole === "Resident" || userRole === "Manager") && (
+            {userRole === "Resident" && (
               <Card className="p-6 border-green-100">
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-4">
@@ -594,7 +806,7 @@ export default function ProjectDetailPage() {
                           variant="primary"
                           className="flex items-center gap-1.5 text-sm px-4 py-2 bg-green-600 hover:bg-green-700"
                           onClick={handlePostComment}
-                          disabled={!newComment.trim()}
+                          disabled={!newComment.trim() || loading}
                         >
                           <Send className="w-3.5 h-3.5" /> Kirim
                         </Button>
@@ -742,6 +954,10 @@ export default function ProjectDetailPage() {
         onClose={() => setIsStatusModalOpen(false)}
         currentStatus={project.status}
         projectName={project.name}
+        projectId={project.id}
+        onUpdateSuccess={(newStatus) =>
+          setProject((prev) => ({ ...prev, status: newStatus }))
+        }
       />
     </div>
   );

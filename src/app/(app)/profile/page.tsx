@@ -16,13 +16,49 @@ import React from "react";
 
 type ActiveTab = "personal" | "activity";
 
-export default function ProfilePage() {
-  type ActivityItem = {
-    id: string | number;
-    type: "voted" | "commented" | "donated";
-    project: string;
-    time: string;
+type ActivityItem = {
+  id: string | number;
+  type: "voted" | "commented" | "donated";
+  project: string;
+  time: string;
+};
+
+// Transform database records ke ActivityItem format
+function transformToActivityItem(record: {
+  id: string;
+  type: string;
+  targetTitle: string;
+  createdAt: string;
+}): ActivityItem {
+  const typeMap: { [key: string]: "voted" | "commented" | "donated" } = {
+    VOTE: "voted",
+    COMMENT: "commented",
+    DONATION: "donated",
   };
+
+  return {
+    id: record.id,
+    type: typeMap[record.type] || "voted",
+    project: record.targetTitle || "Unknown Project",
+    time: formatTimeAgo(record.createdAt),
+  };
+}
+
+// Format waktu ke format relatif (e.g., "2 hours ago")
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return "just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+
+  return date.toLocaleDateString();
+}
+
+export default function ProfilePage() {
   const activityLabel = {
     voted: "Voted on project",
     commented: "Commented on project",
@@ -99,13 +135,26 @@ export default function ProfilePage() {
     async function fetchActivities() {
       const token = localStorage.getItem("livon-token");
       if (!token) return;
-      const res = await fetch("/api/users/activity", {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setActivities(data.data || []);
+
+      try {
+        const res = await fetch("/api/users/activity", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            const transformedActivities = json.data
+              .slice(0, 20)
+              .map(transformToActivityItem);
+
+            setActivities(transformedActivities);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching activities:", error);
+        setActivities([]);
       }
     }
     fetchUser();

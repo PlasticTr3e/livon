@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     });
 
     return ok("Comments retrieved successfully", { data: comments });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("GET Comments Error:", error);
     return internalError("An error occurred fetching comments");
   }
@@ -115,10 +115,10 @@ export async function POST(req: NextRequest) {
     if (!authUser)
       return badRequest("Unauthorized: You must be logged in to comment");
 
-    const body = await req.json();
+    const body: unknown = await req.json();
     const result = commentSchema.safeParse(body);
     if (!result.success)
-      return badRequest("Validation failed", z.flattenError(result.error));
+      return badRequest("Validation failed", result.error.flatten());
 
     const sentiment = analyzeSentiment(result.data.text);
 
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
     });
 
     return created("Comment created successfully", { data: newComment });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("POST Comment Error:", error);
     return internalError("An error occurred creating the comment");
   }

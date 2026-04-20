@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowLeft, UploadCloud, MapPin, Save, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 interface UploadedFile {
   id: string;
@@ -25,9 +26,13 @@ export default function CreateProjectPage() {
   });
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [projectImage, setProjectImage] = useState<string | null>(null);
+  const [projectImageFile, setProjectImageFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [saved, setSaved] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const router = useRouter();
 
   const handleInput = (field: string, value: string | number) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -57,9 +62,108 @@ export default function CreateProjectPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setProjectImageFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => setProjectImage(ev.target?.result as string);
     reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setErrorMsg("");
+    try {
+      const token = localStorage.getItem("livon-token");
+      if (!token) throw new Error("Sesi telah habis. Silakan login kembali.");
+
+      if (formData.name.length < 5)
+        throw new Error("Nama proyek minimal 5 karakter.");
+      if (formData.description.length < 10)
+        throw new Error("Deskripsi minimal 10 karakter.");
+
+      const budgetTarget = Number(formData.budget);
+      if (isNaN(budgetTarget) || budgetTarget <= 0) {
+        throw new Error("Anggaran harus berupa angka positif.");
+      }
+
+      const imageUrls: string[] = [];
+
+      if (projectImageFile) {
+        const uploadData = new FormData();
+        uploadData.append("file", projectImageFile);
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: uploadData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Gagal mengupload gambar.");
+        }
+
+        const uJson = await uploadRes.json();
+        if (uJson?.data?.url) {
+          imageUrls.push(uJson.data.url);
+        }
+      }
+
+      let estimatedDurationDays = 0;
+      const durationMatch = formData.duration.match(/(\d+)/);
+      if (durationMatch) {
+        const num = parseInt(durationMatch[1], 10);
+        if (formData.duration.toLowerCase().includes("bulan")) {
+          estimatedDurationDays = num * 30;
+        } else if (formData.duration.toLowerCase().includes("minggu")) {
+          estimatedDurationDays = num * 7;
+        } else {
+          estimatedDurationDays = num;
+        }
+      }
+
+      const payload: Record<string, unknown> = {
+        title: formData.name,
+        description: formData.description,
+        budgetTarget,
+        latitude: formData.lat,
+        longitude: formData.lng,
+      };
+
+      if (imageUrls.length > 0) {
+        payload.imageUrls = imageUrls;
+      }
+
+      if (estimatedDurationDays > 0) {
+        payload.estimatedDurationDays = estimatedDurationDays;
+      }
+
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.message || "Gagal menyimpan proyek");
+      }
+
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        router.push("/admin/projects");
+      }, 2000);
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : "Terjadi kesalahan sistem.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getFileIcon = (type: string) => {
@@ -106,6 +210,13 @@ export default function CreateProjectPage() {
           <p className="font-semibold text-sm">
             Proyek berhasil dipublikasikan!
           </p>
+        </div>
+      )}
+
+      {errorMsg && (
+        <div className="bg-red-50 border border-red-300 rounded-xl p-4 flex items-center gap-3 text-red-700">
+          <span className="text-lg">⚠️</span>
+          <p className="font-semibold text-sm">{errorMsg}</p>
         </div>
       )}
 
@@ -209,7 +320,10 @@ export default function CreateProjectPage() {
                   className="object-cover"
                 />
                 <button
-                  onClick={() => setProjectImage(null)}
+                  onClick={() => {
+                    setProjectImage(null);
+                    setProjectImageFile(null);
+                  }}
                   className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors z-10"
                 >
                   <X className="w-4 h-4" />
@@ -375,12 +489,11 @@ export default function CreateProjectPage() {
           <Button
             variant="primary"
             className="w-full h-12 font-bold flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 shadow-md"
-            onClick={() => {
-              setSaved(true);
-              setTimeout(() => setSaved(false), 3000);
-            }}
+            onClick={handleSubmit}
+            disabled={isSubmitting}
           >
-            <Save className="w-5 h-5" /> Publikasikan Proyek
+            <Save className="w-5 h-5" />{" "}
+            {isSubmitting ? "Menyimpan..." : "Publikasikan Proyek"}
           </Button>
           <Button
             variant="outline"
