@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 
+/**
+ * @swagger
+ * /api/auth/google/callback:
+ *   get:
+ *     summary: Google OAuth Callback
+ *     description: Handles the callback from Google OAuth, exchanges the authorization code for tokens, fetches user info, and logs in or redirects to register depending on whether the user exists in the system.
+ *     tags:
+ *       - Authentication
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         schema:
+ *           type: string
+ *         description: The authorization code returned by Google.
+ *       - in: query
+ *         name: error
+ *         schema:
+ *           type: string
+ *         description: Optional error message if authentication failed at Google.
+ *     responses:
+ *       302:
+ *         description: Redirects to the client app either with user token (success), register view (new user), or login page (error/unverified).
+ */
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
 
@@ -23,6 +46,7 @@ export async function GET(req: NextRequest) {
         grant_type: "authorization_code",
       }),
     });
+
     const tokens = await tokenRes.json();
 
     const userRes = await fetch(
