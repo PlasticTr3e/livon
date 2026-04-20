@@ -40,7 +40,8 @@ import { Role } from "@/generated/prisma/enums";
  *       400:
  *         description: Failed to retrieve project categories
  */
-export async function GET(_req: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function GET(req: NextRequest) {
   try {
     const categories = await prisma.projectCategory.findMany({
       orderBy: {

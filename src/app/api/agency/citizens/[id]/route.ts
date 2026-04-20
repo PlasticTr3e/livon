@@ -81,7 +81,8 @@ export async function GET(
       return notFound("Citizen not found");
     }
 
-    const { passwordHash: _passwordHash, ...safeCitizenData } = citizen;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, ...safeCitizenData } = citizen;
 
     return ok("Citizen details retrieved successfully", {
       data: safeCitizenData,
@@ -194,7 +195,8 @@ export async function PUT(
       },
     });
 
-    const { passwordHash: _passwordHash, ...safeUpdatedData } = updatedUser;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, ...safeUpdatedData } = updatedUser;
 
     return ok("Citizen updated successfully", { data: safeUpdatedData });
   } catch (error) {
