@@ -70,7 +70,11 @@ import { Role } from "@/generated/prisma/enums";
  *       400:
  *         description: Gagal mengambil detail berita
  */
-export async function GET({ params }: { params: Promise<{ id: string }> }) {
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const { id } = await params;
 
