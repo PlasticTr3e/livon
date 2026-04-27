@@ -8,4 +8,4 @@ const supabaseKey =
 export const supabase: SupabaseClient =
   supabaseUrl && supabaseKey
     ? createClient(supabaseUrl, supabaseKey)
-    : ({} as SupabaseClient); // Bypass build environment checks
+    : ({} as SupabaseClient);
