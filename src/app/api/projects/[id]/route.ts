@@ -36,7 +36,9 @@ export async function GET(
   try {
     const authUser = getAuthUser(req);
     if (!authUser) {
-      return badRequest("Forbidden: Only Agencies can post projects");
+      return badRequest(
+        "Unauthorized: Authentication required to view project details",
+      );
     }
 
     const { id } = await params;
@@ -124,7 +126,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const { status, notes, documetnUrl } = body;
+    const { status, notes, documentUrl } = body;
 
     const validStatuses = ["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"];
     const updateData: Prisma.ProjectUpdateInput = {};
@@ -140,11 +142,11 @@ export async function PATCH(
         | "SELESAI";
     }
 
-    if (documetnUrl !== undefined) {
-      if (!Array.isArray(documetnUrl)) {
+    if (documentUrl !== undefined) {
+      if (!Array.isArray(documentUrl)) {
         return badRequest("documentUrl must be an array of strings");
       }
-      updateData.documentUrl = documetnUrl;
+      updateData.documentUrl = documentUrl;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -206,7 +208,7 @@ export async function DELETE(
 ) {
   try {
     const authUser = getAuthUser(req);
-    if (!authUser) {
+    if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Agencies delete projects");
     }
 
@@ -220,6 +222,12 @@ export async function DELETE(
     });
     return ok("Project soft deleted successfully", { data: project });
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return notFound("Project not found");
+    }
     console.error("DELETE Project Error:", error);
     return internalError("An error occurred deleting project");
   }
