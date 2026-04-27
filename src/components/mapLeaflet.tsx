@@ -51,7 +51,7 @@ export function MapLeaflet({
   useEffect(() => {
     // Initialize map
     const map = L.map("map", {
-      center: [-6.9321823, 107.7754652], // Jatinangor coordinates
+      center: [-6.2088, 106.8456], // Jakarta coordinates
       zoom: 13,
       zoomControl: true,
     });
