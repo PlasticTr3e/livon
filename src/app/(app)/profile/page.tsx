@@ -20,7 +20,9 @@ type ActivityItem = {
   id: string | number;
   type: "voted" | "commented" | "donated";
   project: string;
+  targetTitle: string;
   time: string;
+  createdAt: string;
 };
 
 // Transform database records ke ActivityItem format
@@ -40,7 +42,9 @@ function transformToActivityItem(record: {
     id: record.id,
     type: typeMap[record.type] || "voted",
     project: record.targetTitle || "Unknown Project",
+    targetTitle: record.targetTitle || "Unknown Project",
     time: formatTimeAgo(record.createdAt),
+    createdAt: record.createdAt,
   };
 }
 
@@ -208,6 +212,30 @@ export default function ProfilePage() {
       <div className="p-10 text-red-500">User not found or not logged in.</div>
     );
   }
+
+  // --- Insight Computations ---
+  const totalVotes = activities.filter((a) => a.type === "voted").length;
+  const totalComments = activities.filter((a) => a.type === "commented").length;
+  const totalDonations = activities.filter((a) => a.type === "donated").length;
+
+  let mostInteractedProject = "";
+  let maxInteractions = 0;
+  if (activities.length > 0) {
+    const projectCounts: Record<string, number> = {};
+    activities.forEach((a) => {
+      projectCounts[a.targetTitle] = (projectCounts[a.targetTitle] || 0) + 1;
+    });
+    for (const [proj, count] of Object.entries(projectCounts)) {
+      if (count > maxInteractions) {
+        maxInteractions = count;
+        mostInteractedProject = proj;
+      }
+    }
+  }
+
+  const lastActivityTime =
+    activities.length > 0 ? formatTimeAgo(activities[0].createdAt) : null;
+  // -----------------------------
 
   return (
     <div className="flex h-full bg-slate-50 dark:bg-slate-950">
@@ -448,6 +476,99 @@ export default function ProfilePage() {
                 Your latest interactions with community projects.
               </p>
             </div>
+
+            <div className="relative py-2">
+              <div
+                className="absolute inset-0 flex items-center"
+                aria-hidden="true"
+              >
+                <div className="w-full border-t border-gray-200 dark:border-slate-700"></div>
+              </div>
+              <div className="relative flex justify-start">
+                <span className="bg-slate-50 dark:bg-slate-950 pr-3 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                  Ringkasan Aktivitas
+                </span>
+              </div>
+            </div>
+
+            {/* Statistik Akumulasi (Total Counter Card) */}
+            <div className="mb-6 space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-green-50 dark:bg-slate-800 border border-green-200 dark:border-slate-700 p-4 rounded-xl text-center">
+                  <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                    {totalVotes}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 uppercase tracking-wide font-semibold">
+                    Total Vote
+                  </div>
+                </div>
+                <div className="bg-yellow-50 dark:bg-slate-800 border border-yellow-200 dark:border-slate-700 p-4 rounded-xl text-center">
+                  <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+                    {totalComments}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 uppercase tracking-wide font-semibold">
+                    Total Komentar
+                  </div>
+                </div>
+                <div className="bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 p-4 rounded-xl text-center">
+                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                    {totalDonations}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 uppercase tracking-wide font-semibold">
+                    Total Donasi
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-slate-400 italic">
+                Anda telah memberikan {totalVotes} suara, {totalComments}{" "}
+                komentar, dan {totalDonations} donasi untuk kemajuan lingkungan.
+              </p>
+            </div>
+
+            {/* Insights */}
+            {activities.length > 0 && (
+              <div className="mb-8 space-y-3">
+                {mostInteractedProject && (
+                  <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex gap-3 items-start">
+                    <Activity className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-gray-700 dark:text-slate-300">
+                      Anda sangat peduli pada proyek{" "}
+                      <span className="font-semibold text-gray-900 dark:text-slate-100">
+                        {mostInteractedProject}
+                      </span>{" "}
+                      (Anda telah berinteraksi sebanyak {maxInteractions} kali
+                      di proyek ini).
+                    </p>
+                  </div>
+                )}
+                {lastActivityTime && (
+                  <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex gap-3 items-start">
+                    <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-gray-700 dark:text-slate-300">
+                      Aktivitas terakhir Anda tercatat{" "}
+                      <span className="font-semibold">{lastActivityTime}</span>.
+                      Teruslah berkontribusi untuk menjaga transparansi
+                      lingkungan!
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="relative py-2">
+              <div
+                className="absolute inset-0 flex items-center"
+                aria-hidden="true"
+              >
+                <div className="w-full border-t border-gray-200 dark:border-slate-700"></div>
+              </div>
+              <div className="relative flex justify-start">
+                <span className="bg-slate-50 dark:bg-slate-950 pr-3 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                  Riwayat Kontribusi
+                </span>
+              </div>
+            </div>
+
             <div className="space-y-3">
               {activities.length === 0 && (
                 <div className="text-gray-400 dark:text-slate-500 text-center py-8">
