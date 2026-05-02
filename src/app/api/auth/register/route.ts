@@ -28,7 +28,7 @@ const registerSchema = z.object({
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
- *     description: Creates a new user with the specified role and profile information. Based on the role, it also creates the corresponding profile (WARGA or DINAS).
+ *     description: Creates a new user with the specified role and profile information. Based on the role, it also creates the corresponding profile (WARGA or AGENCY).
  *     tags:
  *       - Auth
  *     requestBody:
@@ -50,7 +50,7 @@ const registerSchema = z.object({
  *                 minLength: 6
  *               role:
  *                 type: string
- *                 enum: [WARGA, DINAS]
+ *                 enum: [WARGA, AGENCY]
  *               fullName:
  *                 type: string
  *               phone:
@@ -182,17 +182,22 @@ export async function POST(req: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const verificationUrl = `${appUrl}/api/auth/verify?token=${token}`;
 
-    await transporter.sendMail({
-      from: `"Livon App" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: "Verify your Livon Account",
-      html: `
-        <h2>Welcome to Livon!</h2>
-        <p>Please verify your email address by clicking the link below:</p>
-        <a href="${verificationUrl}" target="_blank">Verify Email</a>
-        <p>This link will expire in 24 hours.</p>
-      `,
-    });
+    try {
+      await transporter.sendMail({
+        from: `"Livon App" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: "Verify your Livon Account",
+        html: `
+          <h2>Welcome to Livon!</h2>
+          <p>Please verify your email address by clicking the link below:</p>
+          <a href="${verificationUrl}" target="_blank">Verify Email</a>
+          <p>This link will expire in 24 hours.</p>
+        `,
+      });
+    } catch (mailError) {
+      console.error("Failed to send verification email:", mailError);
+      // An endpoint to resend verification should be implemented on the frontend.
+    }
 
     return created("User registered successfully", { data: user });
   } catch (error) {

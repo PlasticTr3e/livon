@@ -75,6 +75,31 @@ export async function PATCH(
       data: { status: result.data.status },
     });
 
+    if (existingProject.status !== result.data.status) {
+      const followers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { votes: { some: { projectId: id } } },
+            { donations: { some: { projectId: id, status: "SUCCESS" } } },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (followers.length > 0) {
+        await prisma.notification.createMany({
+          data: followers.map((user) => ({
+            userId: user.id,
+            projectId: id,
+            referenceId: updatedProject.id,
+            title: "Project Status Updated",
+            type: "PROJECT_STATUS",
+            message: `The project "${existingProject.title}" is now ${result.data.status}.`,
+          })),
+        });
+      }
+    }
+
     return ok(`Project status updated to ${result.data.status}`, {
       data: updatedProject,
     });
