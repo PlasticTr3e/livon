@@ -153,6 +153,12 @@ export async function PATCH(
       return badRequest("No valid fields provided for update");
     }
 
+    const existingProject = await prisma.project.findUnique({ where: { id } });
+    if (!existingProject) return notFound("Project not found");
+    if (existingProject.agencyId !== authUser.userId) {
+      return badRequest("Forbidden: You do not own this project");
+    }
+
     const project = await prisma.project.update({
       where: { id },
       data: updateData,
@@ -213,6 +219,12 @@ export async function DELETE(
     }
 
     const { id } = await params;
+
+    const existingProject = await prisma.project.findUnique({ where: { id } });
+    if (!existingProject) return notFound("Project not found");
+    if (existingProject.agencyId !== authUser.userId) {
+      return badRequest("Forbidden: You do not own this project");
+    }
 
     const project = await prisma.project.update({
       where: { id },

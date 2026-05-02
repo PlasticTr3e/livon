@@ -62,6 +62,12 @@ export async function POST(req: NextRequest) {
       return badRequest("Invalid credentials");
     }
 
+    if (!user.emailVerified) {
+      return badRequest(
+        "Please verify your email address before logging in. Check your inbox.",
+      );
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
       return badRequest("Invalid credentials");

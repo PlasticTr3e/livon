@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { VoteType } from "@/generated/prisma/enums";
+import { VoteType, Role } from "@/generated/prisma/enums";
+import { getAuthUser } from "@/lib/auth";
 import {
   badRequest,
   created,
@@ -12,7 +13,6 @@ import { z } from "zod/mini";
 
 const voteSchema = z.object({
   projectId: z.uuid("Invalid ProjectId format. Must be a UUID"),
-  userId: z.uuid("Invalid UserId format. Must be a UUID"),
   type: z.enum(VoteType, {
     error: "Invalid vote type. Must be UPVOTE or DOWNVOTE",
   }),
@@ -35,13 +35,9 @@ const voteSchema = z.object({
  *             type: object
  *             required:
  *               - projectId
- *               - userId
  *               - type
  *             properties:
  *               projectId:
- *                 type: string
- *                 format: uuid
- *               userId:
  *                 type: string
  *                 format: uuid
  *               type:
@@ -61,6 +57,11 @@ const voteSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    const authUser = getAuthUser(request);
+    if (!authUser || authUser.role !== Role.WARGA) {
+      return badRequest("Forbidden: Only Citizens (WARGA) can vote");
+    }
+
     const body = await request.json();
 
     const validation = voteSchema.safeParse(body);
@@ -69,7 +70,8 @@ export async function POST(request: NextRequest) {
       return badRequest("Validation failed.", z.treeifyError(validation.error));
     }
 
-    const { projectId, userId, type } = validation.data;
+    const { projectId, type } = validation.data;
+    const userId = authUser.userId;
 
     const [project, user] = await Promise.all([
       prisma.project.findUnique({

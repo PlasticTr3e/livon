@@ -91,6 +91,30 @@ export async function POST(req: NextRequest) {
           },
         }),
       ]);
+
+      await prisma.notification.create({
+        data: {
+          userId: donation.userId,
+          projectId: donation.projectId,
+          referenceId: donation.id,
+          title: "Donation Successful",
+          type: "DONATION_SUCCESS",
+          message: `Your donation of Rp ${donation.amount} was successful. Thank you!`,
+        },
+      });
+
+      if (donation.project.agencyId) {
+        await prisma.notification.create({
+          data: {
+            userId: donation.project.agencyId,
+            projectId: donation.projectId,
+            referenceId: donation.id,
+            title: "New Donation Received",
+            type: "NEW_DONATION",
+            message: `Your project received a new donation of Rp ${donation.amount}.`,
+          },
+        });
+      }
     } else if (
       transaction_status === "cancel" ||
       transaction_status === "deny" ||
@@ -102,6 +126,17 @@ export async function POST(req: NextRequest) {
           status: DonationStatus.FAILED,
           gatewayTransactionId: transaction_id,
           paymentMethod: payment_type,
+        },
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: donation.userId,
+          projectId: donation.projectId,
+          referenceId: donation.id,
+          title: "Donation Failed",
+          type: "DONATION_FAILED",
+          message: `Your donation of Rp ${donation.amount} failed to process. Please try again.`,
         },
       });
     }

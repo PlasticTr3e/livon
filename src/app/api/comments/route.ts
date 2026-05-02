@@ -137,6 +137,26 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (result.data.parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: result.data.parentId },
+        select: { userId: true },
+      });
+
+      if (parentComment && parentComment.userId !== authUser.userId) {
+        await prisma.notification.create({
+          data: {
+            userId: parentComment.userId,
+            projectId: result.data.projectId,
+            referenceId: newComment.id,
+            title: "New Reply",
+            type: "COMMENT_REPLY",
+            message: "Someone replied to your comment.",
+          },
+        });
+      }
+    }
+
     return created("Comment created successfully", { data: newComment });
   } catch (error: unknown) {
     console.error("POST Comment Error:", error);

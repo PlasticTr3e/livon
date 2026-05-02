@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         FROM projects
         WHERE latitude BETWEEN ${parseFloat(minLat)} AND ${parseFloat(maxLat)}
           AND longitude BETWEEN ${parseFloat(minLng)} AND ${parseFloat(maxLng)}
-          AND deletedAt IS NULL
+          AND "deletedAt" IS NULL
       `;
     } else {
       projects = await prisma.project.findMany({
