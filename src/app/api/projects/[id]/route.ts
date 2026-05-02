@@ -12,8 +12,6 @@ import { Prisma } from "@/generated/prisma/client";
  *     summary: Get project details
  *     description: Fetch complete details of a project including its category, agency profile, updates, and counts (votes/comments).
  *     tags: [Projects]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -34,13 +32,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
-    if (!authUser) {
-      return badRequest(
-        "Unauthorized: Authentication required to view project details",
-      );
-    }
-
     const { id } = await params;
 
     const project = await prisma.project.findUnique({
