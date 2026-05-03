@@ -28,12 +28,28 @@ interface Transaction {
   status: "Success" | "Pending" | "Failed";
 }
 
+interface RawDonation {
+  id: string;
+  orderId?: string;
+  user?: {
+    citizenProfile?: {
+      fullName?: string;
+    };
+  };
+  project?: {
+    title?: string;
+  };
+  amount: number | string;
+  createdAt: string | Date;
+  status: string;
+}
+
 export default function CrowdfundingMonitorPage() {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch projects from API
+  // Fetch projects and transactions from API
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -42,19 +58,64 @@ export default function CrowdfundingMonitorPage() {
         const headers: Record<string, string> = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        const response = await apiFetch<ProjectData[]>("/api/projects", {
+        // 1. Fetch Projects
+        const projectRes = await apiFetch<ProjectData[]>("/api/projects", {
           headers,
         });
+        if (projectRes.success && projectRes.data) {
+          const detailedProjects = await Promise.all(
+            projectRes.data.map(async (project) => {
+              try {
+                const detailRes = await apiFetch<ProjectData>(
+                  `/api/projects/${project.id}`,
+                  { headers },
+                );
+                if (detailRes.success && detailRes.data) {
+                  return { ...project, ...detailRes.data };
+                }
+              } catch (e) {
+                console.error(
+                  `Failed to fetch details for project ${project.id}:`,
+                  e,
+                );
+              }
+              return project;
+            }),
+          );
+          setProjects(detailedProjects);
+        }
 
-        if (response.success && response.data) {
-          setProjects(response.data);
-
-          // TODO: Integrate with donations endpoint when available
-          // For now, set empty transactions
-          setTransactions([]);
+        // 2. Fetch Transactions (Donations)
+        const donationRes = await apiFetch<RawDonation[]>("/api/donations", {
+          headers,
+        });
+        if (donationRes.success && donationRes.data) {
+          // Mapping data dari backend ke format tabel UI
+          const mappedTransactions: Transaction[] = donationRes.data.map(
+            (d) => ({
+              id: d.orderId || d.id, // Pakai orderId Midtrans agar lebih mudah dilacak
+              user: d.user?.citizenProfile?.fullName || "Warga Anonim",
+              project: d.project?.title || "Proyek Tidak Diketahui",
+              amount: Number(d.amount),
+              date: new Date(d.createdAt).toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              status:
+                d.status === "SUCCESS"
+                  ? "Success"
+                  : d.status === "FAILED"
+                    ? "Failed"
+                    : "Pending",
+            }),
+          );
+          setTransactions(mappedTransactions);
         }
       } catch (error) {
-        console.error("Failed to fetch projects:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
@@ -70,7 +131,7 @@ export default function CrowdfundingMonitorPage() {
 
   // Calculate stats
   const totalCollected = projects.reduce(
-    (sum, p) => sum + (p.currentFunding || 0),
+    (sum, p) => sum + (Number(p.currentFunding) || 0),
     0,
   );
   const activeCampaignCount = activeCampaigns.length;
@@ -89,6 +150,43 @@ export default function CrowdfundingMonitorPage() {
       default:
         return "bg-gray-100 text-gray-600";
     }
+  };
+
+  const handleExportCSV = () => {
+    const headers = [
+      "ID Transaksi",
+      "Donatur",
+      "Kampanye",
+      "Jumlah Donasi (Rp)",
+      "Waktu",
+      "Status",
+    ];
+
+    const rows = transactions.map((t) => [
+      t.id,
+      `"${t.user.replace(/"/g, '""')}"`,
+      `"${t.project.replace(/"/g, '""')}"`,
+      t.amount.toString(),
+      `"${t.date}"`,
+      t.status,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `laporan_donasi_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
@@ -119,6 +217,7 @@ export default function CrowdfundingMonitorPage() {
         <Button
           variant="outline"
           className="flex items-center gap-2 border-green-300 text-green-700 hover:bg-green-50"
+          onClick={handleExportCSV}
         >
           <Download className="w-4 h-4" /> Ekspor Laporan
         </Button>
@@ -133,7 +232,7 @@ export default function CrowdfundingMonitorPage() {
                 Total Terkumpul
               </p>
               <p className="text-3xl font-black text-green-800">
-                Rp {(totalCollected / 1000000).toFixed(1)}M
+                Rp {totalCollected.toLocaleString("id-ID")}
               </p>
               <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" /> Dari {projects.length} proyek
@@ -194,8 +293,8 @@ export default function CrowdfundingMonitorPage() {
         ) : (
           <div className="space-y-6">
             {activeCampaigns.map((campaign) => {
-              const target = campaign.budgetTarget || 0;
-              const collected = campaign.currentFunding || 0;
+              const target = Number(campaign.budgetTarget) || 0;
+              const collected = Number(campaign.currentFunding) || 0;
               const progress =
                 target > 0
                   ? Math.min(Math.round((collected / target) * 100), 100)
@@ -208,19 +307,19 @@ export default function CrowdfundingMonitorPage() {
                       {campaign.title}
                     </p>
                     <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300">
-                      🔥 Aktif
+                      Aktif
                     </Badge>
                   </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-500">
                       Terkumpul:{" "}
                       <strong className="text-green-700">
-                        Rp {(collected / 1000000).toFixed(1)}M
+                        Rp {collected.toLocaleString("id-ID")}
                       </strong>
                     </span>
                     <span className="text-gray-500">
                       Target:{" "}
-                      <strong>Rp {(target / 1000000).toFixed(1)}M</strong>
+                      <strong>Rp {target.toLocaleString("id-ID")}</strong>
                     </span>
                   </div>
                   <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden mb-1">
@@ -231,7 +330,6 @@ export default function CrowdfundingMonitorPage() {
                   </div>
                   <div className="flex justify-between text-xs text-gray-500">
                     <span>{progress}% tercapai</span>
-                    <span>Estimasi 12+ donatur</span>
                   </div>
                 </div>
               );
@@ -294,11 +392,6 @@ export default function CrowdfundingMonitorPage() {
                     </td>
                     <td className="py-3.5 px-4">
                       <Badge className={cn("text-xs", statusStyle(row.status))}>
-                        {row.status === "Success"
-                          ? "✅ "
-                          : row.status === "Pending"
-                            ? "⏳ "
-                            : "❌ "}
                         {row.status}
                       </Badge>
                     </td>
