@@ -290,7 +290,7 @@ export default function MapPage() {
         <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-green-50 dark:from-slate-900 dark:to-slate-800">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-gray-800 dark:text-slate-200">
-              Daftar Proyek
+              Projects
             </h2>
             <Button
               variant="ghost"
@@ -305,7 +305,7 @@ export default function MapPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-slate-500" />
             <input
               type="text"
-              placeholder="Cari proyek..."
+              placeholder="Search here..."
               className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

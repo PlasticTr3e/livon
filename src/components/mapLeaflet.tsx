@@ -49,12 +49,29 @@ export function MapLeaflet({
   onProjectSelect,
 }: MapLeafletProps) {
   useEffect(() => {
+    // Define bounds for panning (disamakan dengan area highlight perumahan)
+    const bounds = L.latLngBounds(
+      [-6.944, 107.7725], // South-West bound asli perumahan
+      [-6.9385, 107.7785], // North-East bound asli perumahan
+    );
+
     // Initialize map
     const map = L.map("map", {
-      center: [-6.2088, 106.8456], // Jakarta coordinates
-      zoom: 13,
-      zoomControl: true,
+      center: [-6.941, 107.7755], // Dikembalikan ke titik tengah persis perumahan
+      zoom: 17.5, // View awal di-zoom-in sedikit (tengah-tengah 17 dan 18)
+      minZoom: 17.5, // Max zoom out dikunci
+      zoomSnap: 0.1, // Mengizinkan level zoom desimal (setengah)
+      maxZoom: 19, // Maximum zoom in
+      maxBounds: bounds, // Restrict panning tightly
+      maxBoundsViscosity: 0.5, // Solid bounds, prevent bouncing outside
+      zoomControl: false, // Menghilangkan tombol zoom in/out (+/-)
     });
+
+    // Highlight area perumahan Puri Indah Jatinangor
+    const highlightBounds = L.latLngBounds(
+      [-6.9438, 107.7725], // South-West bound asli perumahan
+      [-6.9385, 107.7785], // North-East bound asli perumahan
+    );
 
     // Add OpenStreetMap tiles
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -68,8 +85,8 @@ export function MapLeaflet({
     projects.forEach((project, idx) => {
       // Mock coordinates - in production, these should come from database
       const baseLatLng: [number, number] = [
-        -6.2088 + idx * 0.01 - 0.02,
-        106.8456 + idx * 0.015 - 0.015,
+        -6.9411 + idx * 0.001 - 0.002, // Spread around Jatinangor
+        107.7756 + idx * 0.001 - 0.0015,
       ];
       const lat = project.lat || baseLatLng[0];
       const lng = project.lng || baseLatLng[1];
