@@ -52,10 +52,10 @@ export function UpdateStatusModal({
       };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch(`/api/projects/${projectId}`, {
+      const res = await fetch(`/api/projects/${projectId}/status`, {
         method: "PATCH",
         headers,
-        body: JSON.stringify({ status: dbStatus, notes }),
+        body: JSON.stringify({ status: dbStatus }),
       });
 
       if (!res.ok) {

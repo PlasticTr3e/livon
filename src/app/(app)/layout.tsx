@@ -18,9 +18,6 @@ import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
 import AdminLayout from "../(admin)/layout";
 import { apiFetch } from "@/lib/api-client";
-// import type { ApiResponse } from "@/lib/api-types";
-// import { init } from "next/dist/compiled/webpack/webpack";
-// import { METHODS } from "http";
 
 interface Notification {
   id: string;
@@ -49,29 +46,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       try {
         setLoading(true);
         const token = localStorage.getItem("livon-token");
-        const response = await apiFetch<{ data: Notification[] }>(
-          "/api/notifications",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
+        const response = await apiFetch<
+          (Omit<Notification, "createdAt"> & { createdAt: string })[]
+        >("/api/notifications", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-        );
+        });
 
-        if (response.success && response.data?.data) {
-          const notifData: Notification[] = response.data.data.map(
-            (notif: unknown) => {
-              const n = notif as Omit<Notification, "createdAt"> & {
-                createdAt: string;
-              };
-              return {
-                ...n,
-                createdAt: new Date(n.createdAt),
-              };
-            },
-          );
+        if (response.success && response.data) {
+          const notifData: Notification[] = response.data.map((notif) => ({
+            ...notif,
+            createdAt: new Date(notif.createdAt),
+          }));
           setNotifications(notifData);
         }
       } catch (error) {
@@ -124,6 +113,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (diffHours < 24) return `${diffHours} jam lalu`;
     if (diffDays < 7) return `${diffDays} hari lalu`;
     return new Date(date).toLocaleDateString("id-ID");
+  };
+
+  const getDotColor = (type?: string) => {
+    const categoryMap: Record<string, string> = {
+      donation_success: "funding",
+      project_status: "project",
+      comment_reply: "comment",
+      system: "system",
+    };
+
+    const dotColorMap: Record<string, string> = {
+      funding: "bg-yellow-400",
+      project: "bg-green-500",
+      comment: "bg-blue-400",
+      system: "bg-purple-400",
+    };
+
+    const notificationType = type?.toLowerCase() || "system";
+    const category = categoryMap[notificationType] || "system";
+    return dotColorMap[category] || "bg-purple-400";
   };
 
   // Jika route diawali /admin, pakai AdminLayout
@@ -250,13 +259,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         key={n.id}
                         className={cn(
                           "p-3 border-b border-gray-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex gap-3",
-                          !n.isRead ? "bg-green-50 dark:bg-slate-800" : "",
                         )}
                       >
                         <div
                           className={cn(
                             "w-2 h-2 rounded-full mt-1.5 shrink-0",
-                            !n.isRead ? "bg-green-500" : "bg-gray-400",
+                            getDotColor(n.type),
+                            !n.isRead && "animate-pulse",
                           )}
                         />
                         <div className="flex-1">
