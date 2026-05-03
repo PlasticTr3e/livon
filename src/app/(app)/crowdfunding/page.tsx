@@ -4,22 +4,15 @@ import Link from "next/link";
 import { Badge, Button, Card, cn } from "@/components/ui/WireframePrimitives";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-client";
-import {
-  HandCoins,
-  Search,
-  CheckCircle2,
-  Zap,
-  Star,
-  Clock,
-} from "lucide-react";
+import { HandCoins, Search, CheckCircle2, Zap, Star } from "lucide-react";
 
 interface ProjectFromDB {
   id: string;
   title: string;
   description: string;
   status?: string;
-  budgetTarget?: number;
-  currentFunding?: number;
+  budgetTarget?: number | string;
+  currentFunding?: number | string;
   imageUrls?: string[];
 }
 
@@ -48,7 +41,27 @@ export default function CrowdfundingListPage() {
         });
 
         if (response.success && response.data) {
-          setProjects(response.data);
+          // Fetch detailed data for each project because /api/projects only returns limited fields
+          const detailedProjects = await Promise.all(
+            response.data.map(async (project) => {
+              try {
+                const detailRes = await apiFetch<ProjectFromDB>(
+                  `/api/projects/${project.id}`,
+                  { headers },
+                );
+                if (detailRes.success && detailRes.data) {
+                  return { ...project, ...detailRes.data };
+                }
+              } catch (e) {
+                console.error(
+                  `Failed to fetch details for project ${project.id}:`,
+                  e,
+                );
+              }
+              return project;
+            }),
+          );
+          setProjects(detailedProjects);
         }
       } catch (error) {
         console.error("Failed to fetch projects:", error);
@@ -164,17 +177,14 @@ export default function CrowdfundingListPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {filteredActive.map((project) => {
+                  const currentFunding = Number(project.currentFunding || 0);
+                  const budgetTarget = Number(project.budgetTarget || 1);
                   const progress = Math.min(
-                    Math.round(
-                      ((project.currentFunding || 0) /
-                        (project.budgetTarget || 1)) *
-                        100,
-                    ),
+                    Math.round((currentFunding / budgetTarget) * 100),
                     100,
                   );
                   const imgSrc =
                     project.imageUrls?.[0] || CAMPAIGN_IMAGES["default"];
-                  const daysLeft = 18; // Mock
 
                   return (
                     <Card
@@ -192,17 +202,8 @@ export default function CrowdfundingListPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                         <div className="absolute top-3 left-3 flex gap-2">
                           <Badge className="bg-yellow-400 text-yellow-900 border-yellow-400 font-bold text-xs">
-                            🔥 Aktif
+                            Aktif
                           </Badge>
-                          <Badge className="bg-white/90 text-gray-700 border-gray-200 text-xs">
-                            {project.status || "Usulan"}
-                          </Badge>
-                        </div>
-                        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-lg px-2 py-1">
-                          <Clock className="w-3 h-3 text-white" />
-                          <span className="text-white text-[11px] font-bold">
-                            {daysLeft} hari lagi
-                          </span>
                         </div>
                       </div>
 
@@ -237,27 +238,15 @@ export default function CrowdfundingListPage() {
                         <div className="flex items-center justify-between mb-4">
                           <div>
                             <p className="text-xs text-gray-400">Terkumpul</p>
-                            <p className="font-black text-green-700">
-                              Rp{" "}
-                              {(
-                                (project.currentFunding || 0) / 1000000
-                              ).toFixed(1)}
-                              M
+                            <p className="font-black text-green-700 text-sm">
+                              Rp {currentFunding.toLocaleString("id-ID")}
                             </p>
                           </div>
                           <div className="text-center">
                             <p className="text-xs text-gray-400">Target</p>
-                            <p className="font-black text-gray-700">
-                              Rp{" "}
-                              {project.budgetTarget
-                                ? (project.budgetTarget / 1000000).toFixed(1)
-                                : "0"}
-                              M
+                            <p className="font-black text-gray-700 text-sm">
+                              Rp {budgetTarget.toLocaleString("id-ID")}
                             </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-400">Donatur</p>
-                            <p className="font-black text-blue-600">12</p>
                           </div>
                         </div>
 
@@ -317,8 +306,9 @@ export default function CrowdfundingListPage() {
                         <span className="text-gray-500">Total Terkumpul</span>
                         <span className="font-bold text-green-600">
                           Rp{" "}
-                          {((project.currentFunding || 0) / 1000000).toFixed(1)}
-                          M
+                          {Number(project.currentFunding || 0).toLocaleString(
+                            "id-ID",
+                          )}
                         </span>
                       </div>
                       <div className="w-full h-2 bg-green-200 rounded-full">
