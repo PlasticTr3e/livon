@@ -25,6 +25,10 @@ import {
   Send,
   File,
   Building2,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  X,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
@@ -46,6 +50,7 @@ interface ProjectDocument {
   size: string;
   uploadedAt: string;
   uploadedBy: string;
+  url?: string;
 }
 
 interface Project {
@@ -89,6 +94,7 @@ interface ApiProjectPayload {
   budgetTarget?: string | number;
   currentFunding?: string | number;
   _count?: { votes?: number };
+  documentUrl?: string[];
 }
 
 const PROJECT_STATUS_MAP: Record<string, string> = {
@@ -112,6 +118,15 @@ function formatDate(dateString?: string) {
     year: "numeric",
   });
 }
+
+const formatRupiah = (value: number) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
 
 function computeProgress(
   budget: number,
@@ -192,6 +207,21 @@ export default function ProjectDetailPage() {
   );
   const [loading, setLoading] = useState(true);
 
+  const MOCK_IMAGES = [
+    "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=900&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1541888081186-e8220641151d?w=900&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?w=900&auto=format&fit=crop&q=80",
+  ];
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % MOCK_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     async function loadProjectData() {
       if (!id) return;
@@ -234,10 +264,27 @@ export default function ProjectDetailPage() {
               disagree: 0,
             },
             comments: [],
-            documents: EMPTY_PROJECT.documents,
+            documents: payload.documentUrl
+              ? payload.documentUrl.map((url, i) => {
+                  const parts = url.split("/");
+                  const filename = parts[parts.length - 1];
+                  const ext =
+                    filename.split(".").pop()?.toUpperCase() || "FILE";
+                  return {
+                    id: `doc-${i}`,
+                    name: decodeURIComponent(filename),
+                    type: ext,
+                    size: "Cloud File",
+                    uploadedAt: "-",
+                    uploadedBy: "Sistem",
+                    url: url,
+                  };
+                })
+              : [],
           };
 
           setProject(normalizedProject);
+          setDocuments(normalizedProject.documents);
           setVotes({
             agree: Number(payload._count?.votes ?? 0),
             disagree: 0,
@@ -417,22 +464,14 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto">
-      <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between shadow-sm">
         <Link
           href="/map"
           className="flex items-center text-green-600 hover:text-green-800 dark:text-green-400 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          <span className="font-medium text-sm">Kembali ke Peta</span>
+          <span className="font-medium text-sm">Kembali ke Map</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <Badge className={cn("text-xs px-2", STATUS_STYLES[project.status])}>
-            {project.status}
-          </Badge>
-          <Button variant="outline" className="p-2 border-green-200">
-            <Share2 className="w-4 h-4 text-green-600" />
-          </Button>
-        </div>
       </div>
 
       <div className="max-w-5xl w-full mx-auto p-4 md:p-8 space-y-8">
@@ -466,66 +505,130 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden border border-green-100 shadow-sm bg-green-50 flex items-center justify-center">
-          <ImageWithFallback
-            src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=900&auto=format&fit=crop&q=80"
-            alt={project.name}
-            className="w-full h-full object-cover"
-          />
+        <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden border border-green-100 shadow-sm bg-black relative group">
+          <div
+            className="flex w-full h-full transition-transform duration-500 ease-in-out cursor-pointer"
+            style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+            onClick={() => setIsImageViewerOpen(true)}
+          >
+            {MOCK_IMAGES.map((src, idx) => (
+              <div key={idx} className="min-w-full h-full relative">
+                <ImageWithFallback
+                  src={src}
+                  alt={`${project.name} - Image ${idx + 1}`}
+                  className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="bg-black/50 p-3 rounded-full text-white backdrop-blur-sm">
+                    <Maximize2 className="w-6 h-6" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 pointer-events-none">
+            {MOCK_IMAGES.map((_, idx) => (
+              <div
+                key={idx}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-all duration-300",
+                  idx === currentImageIndex ? "bg-white w-6" : "bg-white/50",
+                )}
+              />
+            ))}
+          </div>
+
+          <button
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentImageIndex((prev) =>
+                prev === 0 ? MOCK_IMAGES.length - 1 : prev - 1,
+              );
+            }}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          <button
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentImageIndex((prev) => (prev + 1) % MOCK_IMAGES.length);
+            }}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             <Card className="p-6 border-green-100">
               <h2 className="font-bold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-green-600" /> Deskripsi Proyek
+                <FileText className="w-5 h-5 text-green-600" /> Project
+                Description
               </h2>
               <p className="text-gray-700 dark:text-slate-300 leading-relaxed">
                 {project.description}
               </p>
               <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-700">
                 <h3 className="font-bold text-gray-800 dark:text-slate-200 mb-5 flex items-center gap-2 text-sm">
-                  <Clock className="w-4 h-4 text-green-600" /> Tahapan
-                  Pengembangan
+                  <Clock className="w-4 h-4 text-green-600" /> Development
+                  Stages
                 </h3>
-                <div className="relative">
-                  <div className="absolute top-3 left-0 w-full h-1 bg-gray-200 dark:bg-slate-700 -z-0">
+                <div className="relative pb-2">
+                  <div className="absolute top-3 left-[12.5%] right-[12.5%] h-1 bg-gray-200 dark:bg-slate-700 -z-0">
                     <div
-                      className="h-full bg-green-500 transition-all"
+                      className={cn("h-full transition-all", "bg-green-600")}
                       style={{
                         width: `${(currentStageIndex / (timelineStages.length - 1)) * 100}%`,
                       }}
                     />
                   </div>
                   <div className="relative flex justify-between z-10">
-                    {timelineStages.map((stage, idx) => (
-                      <div key={stage} className="flex flex-col items-center">
+                    {timelineStages.map((stage, idx) => {
+                      const isActive = idx === currentStageIndex;
+                      const isPast = idx < currentStageIndex;
+
+                      const stageBgColor = "bg-green-600";
+                      const stageBorderColor = "border-green-600";
+                      const stageRingColor = "ring-green-100";
+                      const stageTextColor =
+                        "text-green-700 dark:text-green-400";
+
+                      return (
                         <div
-                          className={cn(
-                            "w-6 h-6 rounded-full border-4 z-10 transition-all",
-                            idx < currentStageIndex
-                              ? "bg-green-600 border-green-600"
-                              : idx === currentStageIndex
-                                ? "bg-white border-green-600 ring-4 ring-green-100"
-                                : "bg-white border-gray-300 dark:border-slate-600",
-                          )}
+                          key={stage}
+                          className="flex flex-col items-center flex-1 text-center"
                         >
-                          {idx < currentStageIndex && (
-                            <CheckCircle2 className="w-full h-full text-white p-0.5" />
-                          )}
+                          <div
+                            className={cn(
+                              "w-6 h-6 rounded-full border-4 z-10 transition-all mx-auto",
+                              isPast
+                                ? `${stageBgColor} ${stageBorderColor}`
+                                : isActive
+                                  ? `bg-white ${stageBorderColor} ring-4 ${stageRingColor}`
+                                  : "bg-white border-gray-300 dark:border-slate-600",
+                            )}
+                          >
+                            {isPast && (
+                              <CheckCircle2 className="w-full h-full text-white p-0.5" />
+                            )}
+                          </div>
+                          <span
+                            className={cn(
+                              "mt-2 text-[10px] font-bold uppercase tracking-wider block",
+                              isPast || isActive
+                                ? stageTextColor
+                                : "text-gray-400 dark:text-slate-500",
+                            )}
+                          >
+                            {stage}
+                          </span>
                         </div>
-                        <span
-                          className={cn(
-                            "mt-2 text-[10px] font-bold uppercase tracking-wider",
-                            idx <= currentStageIndex
-                              ? "text-green-700 dark:text-green-400"
-                              : "text-gray-400 dark:text-slate-500",
-                          )}
-                        >
-                          {stage}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -534,7 +637,8 @@ export default function ProjectDetailPage() {
             <Card className="p-6 border-green-100">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-green-600" /> Dokumen Proyek
+                  <FileText className="w-5 h-5 text-green-600" /> Project
+                  Documents
                   <span className="text-xs text-gray-500 font-normal bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                     {documents.length} file
                   </span>
@@ -598,9 +702,15 @@ export default function ProjectDetailPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors">
+                        <a
+                          href={doc.url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors inline-block"
+                          title="Lihat / Unduh"
+                        >
                           <Download className="w-4 h-4" />
-                        </button>
+                        </a>
                         {(userRole === "Admin" || userRole === "Manager") && (
                           <button
                             className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
@@ -728,55 +838,87 @@ export default function ProjectDetailPage() {
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
-                      <BarChart2 className="w-5 h-5 text-green-600" /> Voting
-                      Komunitas
+                      <BarChart2 className="w-5 h-5 text-green-600" /> Community
+                      Voting
                     </h2>
-                    <Badge className="bg-green-100 text-green-700 border-green-300">
-                      Aktif
-                    </Badge>
+                    {project.status === "Planning" ? (
+                      <Badge className="bg-green-100 text-green-700 border-green-300">
+                        Active
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-gray-100 text-gray-500 border-gray-300">
+                        Closed
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex gap-3 mb-4">
-                    <button
-                      onClick={() => handleVote("agree")}
-                      className={cn(
-                        "flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 font-bold transition-all",
-                        userVote === "agree"
-                          ? "bg-green-600 border-green-600 text-white shadow-md"
-                          : "bg-green-50 border-green-200 text-green-700 hover:bg-green-100",
+                  {project.status === "Planning" ? (
+                    <>
+                      <div className="flex gap-3 mb-4">
+                        <button
+                          onClick={() => handleVote("agree")}
+                          className={cn(
+                            "flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 font-bold transition-all",
+                            userVote === "agree"
+                              ? "bg-green-600 border-green-600 text-white shadow-md"
+                              : "bg-green-50 border-green-200 text-green-700 hover:bg-green-100",
+                          )}
+                        >
+                          <ThumbsUp className="w-5 h-5" />
+                          <span className="text-xl">{votes.agree}</span>
+                          <span className="text-xs uppercase tracking-wider opacity-75">
+                            Setuju
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handleVote("disagree")}
+                          className={cn(
+                            "flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 font-bold transition-all",
+                            userVote === "disagree"
+                              ? "bg-red-500 border-red-500 text-white shadow-md"
+                              : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100",
+                          )}
+                        >
+                          <ThumbsDown className="w-5 h-5" />
+                          <span className="text-xl">{votes.disagree}</span>
+                          <span className="text-xs uppercase tracking-wider opacity-75">
+                            Tidak
+                          </span>
+                        </button>
+                      </div>
+                      {userVote && (
+                        <p className="text-xs text-center text-green-600 font-medium">
+                          ✅ Vote Anda tercatat. Klik lagi untuk membatalkan.
+                        </p>
                       )}
-                    >
-                      <ThumbsUp className="w-5 h-5" />
-                      <span className="text-xl">{votes.agree}</span>
-                      <span className="text-xs uppercase tracking-wider opacity-75">
-                        Setuju
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handleVote("disagree")}
-                      className={cn(
-                        "flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 font-bold transition-all",
-                        userVote === "disagree"
-                          ? "bg-red-500 border-red-500 text-white shadow-md"
-                          : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100",
-                      )}
-                    >
-                      <ThumbsDown className="w-5 h-5" />
-                      <span className="text-xl">{votes.disagree}</span>
-                      <span className="text-xs uppercase tracking-wider opacity-75">
-                        Tidak
-                      </span>
-                    </button>
-                  </div>
-                  {userVote && (
-                    <p className="text-xs text-center text-green-600 font-medium">
-                      ✅ Vote Anda tercatat. Klik lagi untuk membatalkan.
+                    </>
+                  ) : (
+                    <div className="flex gap-3 mb-4">
+                      <div className="flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed">
+                        <ThumbsUp className="w-5 h-5" />
+                        <span className="text-xl">{votes.agree}</span>
+                        <span className="text-xs uppercase tracking-wider opacity-75">
+                          Setuju
+                        </span>
+                      </div>
+                      <div className="flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed">
+                        <ThumbsDown className="w-5 h-5" />
+                        <span className="text-xl">{votes.disagree}</span>
+                        <span className="text-xs uppercase tracking-wider opacity-75">
+                          Tidak
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {project.status !== "Planning" && (
+                    <p className="text-xs text-center text-gray-400 font-medium">
+                      Proyek sudah memasuki tahap {project.status}.
                     </p>
                   )}
                 </div>
                 <div className="border-t border-gray-100 dark:border-slate-700 pt-5">
                   <h3 className="font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2 mb-4">
-                    <MessageSquare className="w-5 h-5 text-green-600" /> Diskusi
-                    Komunitas
+                    <MessageSquare className="w-5 h-5 text-green-600" />{" "}
+                    Community Discussion
                     <span className="text-xs text-gray-500 font-normal bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                       {comments.length} komentar
                     </span>
@@ -870,79 +1012,68 @@ export default function ProjectDetailPage() {
           </div>
 
           <div className="space-y-5">
-            <Card className="p-5 border-2 border-green-500 bg-gradient-to-br from-green-700 to-green-900 text-white">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-green-300 mb-1">
-                Anggaran Proyek
-              </h3>
-              <p className="text-3xl font-black mb-4">
-                Rp {(project.budget / 1000000).toFixed(1)}M
-              </p>
-              {project.status === "Funding" && (
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-xs text-green-300 mb-1 font-semibold">
-                      <span>
-                        Terkumpul: Rp{" "}
-                        {((project.fundsCollected || 0) / 1000000).toFixed(1)}M
-                      </span>
-                      <span>
-                        {Math.round(
-                          ((project.fundsCollected || 0) / project.budget) *
-                            100,
-                        )}
-                        %
-                      </span>
-                    </div>
-                    <div className="w-full bg-green-900 rounded-full h-2.5 overflow-hidden">
-                      <div
-                        className="bg-yellow-400 h-2.5 rounded-full"
-                        style={{
-                          width: `${Math.round(((project.fundsCollected || 0) / project.budget) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <Link
-                    href={`/app/crowdfunding/${project.id}`}
-                    className="block"
-                  >
-                    <Button className="w-full h-11 font-bold bg-yellow-400 hover:bg-yellow-300 text-yellow-900 border-yellow-400 flex items-center justify-center gap-2">
-                      <DollarSign className="w-4 h-4" /> Donasi Sekarang
-                    </Button>
-                  </Link>
-                </div>
-              )}
-              {project.status !== "Funding" && (
-                <div className="px-3 py-2 bg-green-800 rounded-lg text-xs text-green-300 font-medium text-center">
-                  {project.status === "Planning"
-                    ? "⏳ Pendanaan belum dibuka"
-                    : project.status === "Completed"
-                      ? "✅ Pendanaan selesai"
-                      : "🚧 Sedang konstruksi"}
-                </div>
-              )}
-            </Card>
+            <Card className="p-6 border-0 shadow-lg bg-green-600 text-white rounded-2xl">
+              <div className="relative z-10">
+                <h3 className="text-xs font-medium text-green-100 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+                  <DollarSign className="w-3.5 h-3.5" /> Target Fund
+                </h3>
+                <p className="text-2xl md:text-3xl font-bold mb-5 tracking-tight">
+                  {formatRupiah(project.budget)}
+                </p>
 
-            <Card className="p-5 border-green-100">
-              <h3 className="font-bold text-gray-800 dark:text-slate-200 mb-3 text-sm">
-                Progress Keseluruhan
-              </h3>
-              <div className="flex items-end gap-3 mb-2">
-                <span className="text-4xl font-black text-green-600 dark:text-green-400">
-                  {project.progress}%
-                </span>
-                <span className="text-sm text-gray-500 dark:text-slate-400 mb-1">
-                  selesai
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all",
-                    PROGRESS_COLOR[project.status],
+                <div className="space-y-4 bg-white/10 p-4 rounded-xl border border-white/5">
+                  {project.status !== "Planning" && (
+                    <div>
+                      <div className="flex justify-between text-[13px] text-green-50 mb-2.5">
+                        <span>
+                          Collected:{" "}
+                          <span className="font-semibold text-white">
+                            {formatRupiah(project.fundsCollected || 0)}
+                          </span>
+                        </span>
+                        <span className="font-bold text-white">
+                          {project.budget > 0
+                            ? Math.round(
+                                ((project.fundsCollected || 0) /
+                                  project.budget) *
+                                  100,
+                              )
+                            : 0}
+                          %
+                        </span>
+                      </div>
+                      <div className="w-full bg-black/20 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-yellow-400 h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${project.budget > 0 ? Math.round(((project.fundsCollected || 0) / project.budget) * 100) : 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
                   )}
-                  style={{ width: `${project.progress}%` }}
-                />
+
+                  {project.status === "Funding" ? (
+                    <Link
+                      href={`/app/crowdfunding/${project.id}`}
+                      className="block pt-1"
+                    >
+                      <Button className="w-full h-11 text-sm font-bold bg-white text-green-700 hover:bg-green-50 border-none shadow-sm transition-all rounded-xl">
+                        Donate Now
+                      </Button>
+                    </Link>
+                  ) : (
+                    <div className="pt-1 text-center">
+                      <span className="text-xs text-green-100 font-medium opacity-90">
+                        {project.status === "Planning"
+                          ? "⏳ Pendanaan belum dibuka"
+                          : project.status === "Completed"
+                            ? "Pendanaan selesai"
+                            : "Pendanaan ditutup"}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </Card>
           </div>
@@ -959,6 +1090,68 @@ export default function ProjectDetailPage() {
           setProject((prev) => ({ ...prev, status: newStatus }))
         }
       />
+
+      {isImageViewerOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center backdrop-blur-sm"
+          onClick={() => setIsImageViewerOpen(false)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/70 hover:text-white p-2 bg-black/50 rounded-full transition-colors"
+            onClick={() => setIsImageViewerOpen(false)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div
+            className="w-full max-w-5xl px-4 relative flex items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute left-4 md:-left-12 text-white/50 hover:text-white transition-colors"
+              onClick={() =>
+                setCurrentImageIndex((prev) =>
+                  prev === 0 ? MOCK_IMAGES.length - 1 : prev - 1,
+                )
+              }
+            >
+              <ChevronLeft className="w-12 h-12" />
+            </button>
+
+            <img
+              src={MOCK_IMAGES[currentImageIndex]}
+              alt={project.name}
+              className="w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+            />
+
+            <button
+              className="absolute right-4 md:-right-12 text-white/50 hover:text-white transition-colors"
+              onClick={() =>
+                setCurrentImageIndex((prev) => (prev + 1) % MOCK_IMAGES.length)
+              }
+            >
+              <ChevronRight className="w-12 h-12" />
+            </button>
+          </div>
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+            {MOCK_IMAGES.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex(idx);
+                }}
+                className={cn(
+                  "w-3 h-3 rounded-full transition-all duration-300",
+                  idx === currentImageIndex
+                    ? "bg-white w-8"
+                    : "bg-white/30 hover:bg-white/50",
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
