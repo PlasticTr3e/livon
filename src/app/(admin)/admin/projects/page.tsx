@@ -1,20 +1,64 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card, Button, Input, cn } from "@/components/ui/WireframePrimitives";
 import {
-  Card,
-  Badge,
-  Button,
-  Input,
-  cn,
-} from "@/components/ui/WireframePrimitives";
-import { Search, Plus, Edit2, Trash2, Eye } from "lucide-react";
+  Search,
+  Plus,
+  Edit2,
+  Trash2,
+  Filter,
+  CheckCircle2,
+  FileText,
+  Banknote,
+  HardHat,
+  ChevronDown,
+} from "lucide-react";
 import Link from "next/link";
 
-const STATUS_STYLES: Record<string, string> = {
-  USULAN: "bg-blue-100 text-blue-700 border-blue-300",
-  DISETUJUI: "bg-yellow-100 text-yellow-700 border-yellow-300",
-  BERJALAN: "bg-orange-100 text-orange-700 border-orange-300",
-  SELESAI: "bg-green-100 text-green-700 border-green-300",
+const STATUS_CONFIG: Record<
+  string,
+  {
+    label: string;
+    style: string;
+    dot: string;
+    iconBg: string;
+    iconColor: string;
+    border: string;
+  }
+> = {
+  USULAN: {
+    label: "Planning",
+    style: "bg-blue-50 text-blue-600 border-blue-100",
+    dot: "bg-blue-500",
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-600",
+    border: "border-blue-100",
+  },
+  DISETUJUI: {
+    label: "Funding",
+    style: "bg-yellow-50 text-yellow-700 border-yellow-100",
+    dot: "bg-yellow-600",
+    iconBg: "bg-yellow-50",
+    iconColor: "text-yellow-600",
+    border: "border-yellow-100",
+  },
+  BERJALAN: {
+    label: "Construction",
+    style: "bg-orange-50 text-orange-700 border-orange-100",
+    dot: "bg-orange-600",
+    iconBg: "bg-orange-50",
+    iconColor: "text-orange-600",
+    border: "border-orange-100",
+  },
+  SELESAI: {
+    label: "Completed",
+    style: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    dot: "bg-emerald-600",
+    iconBg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+    border: "border-emerald-100",
+  },
 };
 
 interface ProjectAdmin {
@@ -28,6 +72,7 @@ interface ProjectAdmin {
 }
 
 export default function ProjectManagementPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [allProjectsData, setAllProjectsData] = useState<ProjectAdmin[]>([]);
@@ -52,12 +97,7 @@ export default function ProjectManagementPage() {
 
                 let budgetFormatted = "Rp 0";
                 if (d.budgetTarget) {
-                  const num = Number(d.budgetTarget);
-                  if (num >= 1000000) {
-                    budgetFormatted = `Rp ${(num / 1000000).toFixed(0)}M`;
-                  } else {
-                    budgetFormatted = `Rp ${num.toLocaleString("id-ID")}`;
-                  }
+                  budgetFormatted = `Rp ${Number(d.budgetTarget).toLocaleString("id-ID")}`;
                 }
 
                 return {
@@ -66,17 +106,20 @@ export default function ProjectManagementPage() {
                   status: d.status || "USULAN",
                   budget: budgetFormatted,
                   votes: d._count?.votes || 0,
-                  date: new Date(d.createdAt).toISOString().split("T")[0],
+                  date: new Date(d.createdAt).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  }),
                   category: d.category?.name || "Uncategorized",
                 };
-              } catch (e) {
-                console.error("Error fetching project details for id", p.id, e);
+              } catch {
                 return null;
               }
             }),
           );
 
-          const validProjects = fullProjects.filter(Boolean);
+          const validProjects = fullProjects.filter(Boolean) as ProjectAdmin[];
           setAllProjectsData(validProjects);
           setProjects(validProjects);
         }
@@ -98,221 +141,236 @@ export default function ProjectManagementPage() {
     return matchSearch && matchStatus;
   });
 
-  const handleDelete = (id: string) => {
-    if (confirm("Apakah Anda yakin ingin menghapus proyek ini?")) {
-      setProjects((prev) => prev.filter((p) => p.id !== id));
-      setAllProjectsData((prev) => prev.filter((p) => p.id !== id));
+  const handleDelete = async (id: string) => {
+    if (confirm("Delete this project?")) {
+      try {
+        const token = localStorage.getItem("livon-token");
+        const res = await fetch(`/api/projects/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (res.ok) {
+          setProjects((prev) => prev.filter((p) => p.id !== id));
+          setAllProjectsData((prev) => prev.filter((p) => p.id !== id));
+        }
+      } catch {
+        alert("Deletion failed.");
+      }
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "USULAN":
+        return <FileText className="w-5 h-5" />;
+      case "DISETUJUI":
+        return <Banknote className="w-5 h-5" />;
+      case "BERJALAN":
+        return <HardHat className="w-5 h-5" />;
+      case "SELESAI":
+        return <CheckCircle2 className="w-5 h-5" />;
+      default:
+        return <FileText className="w-5 h-5" />;
     }
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-full">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">
-            Manajemen Proyek
-          </h1>
-          <p className="text-gray-500 text-sm mt-0.5">
-            Kelola semua proyek komunitas.
-          </p>
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto w-full font-sans antialiased">
+      <div className="p-6 md:p-8 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+              Project Management
+            </h1>
+            <p className="text-gray-500 text-sm mt-0.5 font-medium">
+              Monitor and manage community development initiatives.
+            </p>
+          </div>
+          <Link href="/admin/projects/create">
+            <Button
+              variant="primary"
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 shadow-sm h-11 px-6 rounded-xl font-bold text-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Project</span>
+            </Button>
+          </Link>
         </div>
-        {/* "Create New Project" button is here — not in the sidebar */}
-        <Link href="/admin/projects/create">
-          <Button
-            variant="primary"
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Buat Proyek Baru</span>
-          </Button>
-        </Link>
-      </div>
 
-      {/* Stats Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {["All", "USULAN", "DISETUJUI", "BERJALAN", "SELESAI"]
-          .slice(1)
-          .map((status) => {
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"].map((status) => {
             const count = allProjectsData.filter(
               (p) => p.status === status,
             ).length;
+            const config = STATUS_CONFIG[status];
+
             return (
-              <button
+              <Card
                 key={status}
-                onClick={() =>
-                  setFilterStatus(filterStatus === status ? "All" : status)
-                }
                 className={cn(
-                  "p-3 rounded-xl border text-left transition-all",
-                  filterStatus === status ? "ring-2 ring-green-300" : "",
-                  STATUS_STYLES[status] || "bg-white border-gray-200",
+                  "p-5 border-green-100 flex items-center gap-4 bg-white shadow-sm rounded-2xl",
                 )}
               >
-                <p className="text-xl font-black">
-                  {isLoading ? "..." : count}
-                </p>
-                <p className="text-xs font-semibold mt-0.5">{status}</p>
-              </button>
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-colors shadow-inner",
+                    config.iconBg,
+                    config.iconColor,
+                  )}
+                >
+                  {getStatusIcon(status)}
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-medium text-gray-400 tracking-widest mb-0.5">
+                    {config.label}
+                  </p>
+                  <p className="text-2xl font-black text-gray-900 leading-none">
+                    {isLoading ? "..." : count}
+                  </p>
+                </div>
+              </Card>
             );
           })}
-      </div>
+        </div>
 
-      <Card className="p-5 border-gray-200 shadow-sm">
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-5">
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              className="pl-9 bg-white border-green-200 focus:ring-green-400 w-full"
-              placeholder="Cari proyek atau kategori..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2">
-            <select
-              className="px-3 py-2 text-sm border border-green-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-700"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="All">Semua Status</option>
-              <option value="USULAN">Usulan</option>
-              <option value="DISETUJUI">Disetujui</option>
-              <option value="BERJALAN">Berjalan</option>
-              <option value="SELESAI">Selesai</option>
-            </select>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-2">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100 tracking-tight">
+            Project Dashboard
+          </h2>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                className="pl-9 border-green-200 w-full h-11 rounded-xl text-xs font-medium"
+                placeholder="Search projects..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="relative w-40 md:w-48">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full h-11 pl-9 pr-8 bg-white dark:bg-slate-800 border border-green-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
+              >
+                <option value="All">All Statuses</option>
+                <option value="USULAN">Planning</option>
+                <option value="DISETUJUI">Funding</option>
+                <option value="BERJALAN">Construction</option>
+                <option value="SELESAI">Completed</option>
+              </select>
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-green-600">
+                <Filter className="w-3.5 h-3.5" />
+              </div>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <ChevronDown className="w-4 h-4" />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-gray-200 text-xs text-gray-500 font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">Nama Proyek</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Kategori</th>
-                <th className="py-3 px-4">Anggaran</th>
-                <th className="py-3 px-4">Votes</th>
-                <th className="py-3 px-4">Tanggal</th>
-                <th className="py-3 px-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 text-sm">
-              {isLoading ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="py-12 text-center text-gray-400 text-sm"
-                  >
-                    Memuat data proyek...
-                  </td>
+        {/* Table Section */}
+        <Card className="p-5 border-green-100 shadow-sm bg-white overflow-hidden rounded-2xl">
+          <div className="overflow-x-auto -mx-5">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest border-b border-gray-50">
+                  <th className="py-4 px-8">Project Details</th>
+                  <th className="py-4 px-4 text-center">Status</th>
+                  <th className="py-4 px-4 text-center">Category</th>
+                  <th className="py-4 px-4">Budget</th>
+                  <th className="py-4 px-8 text-right">Actions</th>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="py-12 text-center text-gray-400 text-sm"
-                  >
-                    Tidak ada proyek yang cocok dengan filter.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((project) => (
-                  <tr
-                    key={project.id}
-                    className="hover:bg-green-50 transition-colors group"
-                  >
-                    <td className="py-4 px-4 font-semibold text-gray-900 group-hover:text-green-800">
-                      {project.name}
-                    </td>
-                    <td className="py-4 px-4">
-                      <Badge
-                        className={cn(
-                          "px-2.5 py-1 text-xs",
-                          STATUS_STYLES[project.status],
-                        )}
-                      >
-                        {project.status}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs font-medium">
-                        {project.category}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-gray-600 font-medium">
-                      {project.budget}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="font-bold text-green-600">
-                        {project.votes}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-gray-500 text-xs">
-                      {project.date}
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link href={`/app/project/${project.id}`}>
-                          <button className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </Link>
-                        <Link href={`/admin/projects/${project.id}?mode=edit`}>
-                          <button className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(project.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={5} className="py-24 text-center">
+                      <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto" />
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 text-sm text-gray-500">
-          <p>
-            Menampilkan {filtered.length} dari {projects.length} proyek
-          </p>
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              className="px-3 py-1 h-8 text-xs border-green-200 text-green-700"
-            >
-              Sebelumnya
-            </Button>
-            <Button
-              variant="primary"
-              className="px-3 py-1 h-8 text-xs bg-green-600"
-            >
-              1
-            </Button>
-            <Button
-              variant="outline"
-              className="px-3 py-1 h-8 text-xs border-green-200 text-green-700"
-            >
-              2
-            </Button>
-            <Button
-              variant="outline"
-              className="px-3 py-1 h-8 text-xs border-green-200 text-green-700"
-            >
-              Selanjutnya
-            </Button>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="py-24 text-center text-gray-400 font-medium uppercase tracking-widest text-[10px]"
+                    >
+                      No projects found.
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((project) => (
+                    <tr
+                      key={project.id}
+                      className="hover:bg-green-50/50 transition-colors group cursor-pointer"
+                      onClick={() =>
+                        router.push(`/project/${project.id}?from=admin`)
+                      }
+                    >
+                      <td className="py-6 px-8">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-900 text-sm group-hover:text-green-700 transition-colors">
+                            {project.name}
+                          </span>
+                          <span className="text-[11px] text-gray-400 font-medium mt-1">
+                            Created {project.date}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-6 px-4">
+                        <div className="flex justify-center">
+                          <div
+                            className={cn(
+                              "px-4 py-1.5 text-[10px] font-semibold rounded-full flex items-center justify-center border",
+                              STATUS_CONFIG[project.status].style,
+                            )}
+                          >
+                            {STATUS_CONFIG[project.status].label}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-6 px-4">
+                        <div className="flex justify-center">
+                          <span className="bg-slate-50 text-slate-500 border border-slate-100 px-4 py-1 rounded-full text-[10px] font-semibold">
+                            {project.category}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-6 px-4 text-gray-700 font-semibold text-xs">
+                        {project.budget}
+                      </td>
+                      <td className="py-6 px-8">
+                        <div
+                          className="flex items-center justify-end gap-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Link
+                            href={`/admin/projects/${project.id}?mode=edit`}
+                          >
+                            <button className="p-2.5 rounded-xl bg-white border border-gray-100 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm">
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(project.id)}
+                            className="p-2.5 rounded-xl bg-white border border-gray-100 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

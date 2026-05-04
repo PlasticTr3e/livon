@@ -12,8 +12,6 @@ import { Prisma } from "@/generated/prisma/client";
  *     summary: Get project details
  *     description: Fetch complete details of a project including its category, agency profile, updates, and counts (votes/comments).
  *     tags: [Projects]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -34,13 +32,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
-    if (!authUser) {
-      return badRequest(
-        "Unauthorized: Authentication required to view project details",
-      );
-    }
-
     const { id } = await params;
 
     const project = await prisma.project.findUnique({
@@ -129,7 +120,7 @@ export async function PATCH(
     const { status, notes, documentUrl } = body;
 
     const validStatuses = ["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"];
-    const updateData: Prisma.ProjectUpdateInput = {};
+    const updateData: Record<string, unknown> = {};
 
     if (status) {
       if (!validStatuses.includes(status)) {
@@ -151,6 +142,12 @@ export async function PATCH(
 
     if (Object.keys(updateData).length === 0) {
       return badRequest("No valid fields provided for update");
+    }
+
+    const existingProject = await prisma.project.findUnique({ where: { id } });
+    if (!existingProject) return notFound("Project not found");
+    if (existingProject.agencyId !== authUser.userId) {
+      return badRequest("Forbidden: You do not own this project");
     }
 
     const project = await prisma.project.update({
@@ -213,6 +210,12 @@ export async function DELETE(
     }
 
     const { id } = await params;
+
+    const existingProject = await prisma.project.findUnique({ where: { id } });
+    if (!existingProject) return notFound("Project not found");
+    if (existingProject.agencyId !== authUser.userId) {
+      return badRequest("Forbidden: You do not own this project");
+    }
 
     const project = await prisma.project.update({
       where: { id },
