@@ -34,7 +34,7 @@ const getMarkerColor = (status: string) => {
       return "#3b82f6"; // blue
     case "Funding":
       return "#eab308"; // yellow
-    case "Construction":
+    case "Under Construction":
       return "#f97316"; // orange
     case "Completed":
       return "#22c55e"; // green
@@ -66,12 +66,6 @@ export function MapLeaflet({
       maxBoundsViscosity: 0.5, // Solid bounds, prevent bouncing outside
       zoomControl: false, // Menghilangkan tombol zoom in/out (+/-)
     });
-
-    // Highlight area perumahan Puri Indah Jatinangor
-    const highlightBounds = L.latLngBounds(
-      [-6.9438, 107.7725], // South-West bound asli perumahan
-      [-6.9385, 107.7785], // North-East bound asli perumahan
-    );
 
     // Add OpenStreetMap tiles
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
