@@ -257,7 +257,7 @@ export default function ProjectManagementPage() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="w-full h-11 pl-9 pr-8 bg-white dark:bg-slate-800 border border-green-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
               >
-                <option value="All">All Statuses</option>
+                <option value="All">All Status</option>
                 <option value="USULAN">Planning</option>
                 <option value="DISETUJUI">Funding</option>
                 <option value="BERJALAN">Construction</option>

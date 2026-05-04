@@ -126,11 +126,13 @@ interface ProjectMapData {
   imageUrl?: string;
 }
 
-const formatRupiahCompact = (value: number) => {
-  if (value >= 1e9) return `Rp ${Number((value / 1e9).toFixed(1))} Miliar`;
-  if (value >= 1e6) return `Rp ${Number((value / 1e6).toFixed(1))} JT`;
-  if (value >= 1e3) return `Rp ${Number((value / 1e3).toFixed(1))} RB`;
-  return `Rp ${value}`;
+const formatRupiahFull = (value: number) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
 };
 
 export default function MapPage() {
@@ -176,10 +178,23 @@ export default function MapPage() {
                 else if (d.status === "BERJALAN") progress = 60;
                 else if (d.status === "SELESAI") progress = 100;
 
+                // Lokasi: prioritas lat/lng, lalu address, lalu '-'
+                let location = "-";
+                if (
+                  typeof d.latitude === "number" &&
+                  typeof d.longitude === "number" &&
+                  !isNaN(d.latitude) &&
+                  !isNaN(d.longitude)
+                ) {
+                  location = `${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}`;
+                } else if (d.address) {
+                  location = d.address;
+                }
+
                 return {
                   id: d.id,
                   name: d.title,
-                  address: "Area Jakarta",
+                  address: location,
                   category: d.category?.name || "Uncategorized",
                   status: mapStatusToUI(d.status),
                   progress: progress,
@@ -203,8 +218,11 @@ export default function MapPage() {
                   lat: d.latitude,
                   lng: d.longitude,
                   imageUrl:
-                    d.imageUrl ||
-                    d.images?.[0]?.url ||
+                    (Array.isArray(d.imageUrl) && d.imageUrl.length > 0
+                      ? d.imageUrl[0]
+                      : typeof d.imageUrl === "string" && d.imageUrl
+                        ? d.imageUrl
+                        : d.images?.[0]?.url) ||
                     "https://images.unsplash.com/photo-1541888009623-fb944e8bc1a8?q=80&w=400&auto=format&fit=crop",
                 };
               } catch (e) {
@@ -560,7 +578,7 @@ export default function MapPage() {
                     <Wallet className="w-2.5 h-2.5" /> Budget
                   </span>
                   <span className="font-bold text-xs text-gray-900 dark:text-slate-100">
-                    {formatRupiahCompact(selectedProject.budget)}
+                    {formatRupiahFull(selectedProject.budget)}
                   </span>
                 </div>
                 <div className="flex flex-col p-2 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800">
@@ -614,10 +632,10 @@ export default function MapPage() {
                   </div>
                   <div className="flex justify-between items-end">
                     <span className="font-bold text-[11px] text-green-700 dark:text-green-400 leading-none">
-                      {formatRupiahCompact(selectedProject.fundsCollected)}
+                      {formatRupiahFull(selectedProject.fundsCollected)}
                     </span>
                     <span className="text-[9px] text-green-600/70 font-medium leading-none">
-                      / {formatRupiahCompact(selectedProject.budget)}
+                      / {formatRupiahFull(selectedProject.budget)}
                     </span>
                   </div>
                 </div>

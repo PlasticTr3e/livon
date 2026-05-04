@@ -77,7 +77,6 @@ interface Project {
   fundsCollected?: number;
   progress: number;
   priorityScore?: number;
-  aiRecommendation?: string;
   sentimentScore?: number;
   votes: { agree: number; disagree: number };
   comments: Comment[];
