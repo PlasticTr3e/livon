@@ -130,11 +130,14 @@ export default function NewsManagementPage() {
       const res = await fetch("/api/news?page=1&limit=20");
       if (res.ok) {
         const data = await res.json();
-        // Add isHeadline as frontend-only field
+        const headlineId =
+          typeof window !== "undefined"
+            ? localStorage.getItem("headline-news-id")
+            : null;
         setNews(
           (data.data?.items || []).map((item: NewsItem) => ({
             ...item,
-            isHeadline: false,
+            isHeadline: item.id === headlineId,
           })),
         );
       } else {
@@ -209,11 +212,13 @@ export default function NewsManagementPage() {
     setCreating(false);
   }
 
-  // Toggle headline (frontend only)
   function handleToggleHeadline(id: string) {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("headline-news-id", id);
+    }
     setNews((prev: NewsWithExtras[]) =>
       prev.map((n: NewsWithExtras) =>
-        n.id === id ? { ...n, isHeadline: !n.isHeadline } : n,
+        n.id === id ? { ...n, isHeadline: true } : { ...n, isHeadline: false },
       ),
     );
   }
@@ -319,10 +324,10 @@ export default function NewsManagementPage() {
           </div>
           <Button
             variant="primary"
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 shadow-sm h-11 px-6 rounded-xl font-bold text-xs"
           >
-            <Plus className="w-4 h-4" /> <span>Create News</span>
+            <Plus className="w-4 h-4" />
+            <span>New Project</span>
           </Button>
         </div>
 
@@ -481,9 +486,11 @@ export default function NewsManagementPage() {
                     </td>
                     <td className="py-4 px-4 text-center">
                       <input
-                        type="checkbox"
+                        type="radio"
+                        name="headline-news"
                         checked={!!item.isHeadline}
                         onChange={() => handleToggleHeadline(item.id)}
+                        aria-label="Set as headline"
                       />
                     </td>
                     <td className="py-4 px-4 text-right">

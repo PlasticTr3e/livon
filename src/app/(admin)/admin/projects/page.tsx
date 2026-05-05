@@ -184,7 +184,7 @@ export default function ProjectManagementPage() {
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">
               Project Management
             </h1>
-            <p className="text-gray-500 text-sm mt-0.5 font-medium">
+            <p className="text-gray-500 text-sm mt-0.5">
               Monitor and manage community development initiatives.
             </p>
           </div>

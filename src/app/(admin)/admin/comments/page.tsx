@@ -430,7 +430,7 @@ export default function CommentMonitorPage() {
             </div>
             {/* Filters Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100 tracking-tight">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100 tracking-tight">
                 Project Dashboard
               </h2>
 
