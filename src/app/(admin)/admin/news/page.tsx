@@ -246,7 +246,7 @@ export default function NewsManagementPage() {
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1">
-                  Isi Konten
+                  Content
                 </label>
                 <textarea
                   value={editContent}
@@ -257,7 +257,7 @@ export default function NewsManagementPage() {
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1">
-                  Thumbnail / Gambar (Opsional)
+                  Thumbnail Upload
                 </label>
                 <div
                   onDragOver={handleDragOver}
@@ -311,10 +311,10 @@ export default function NewsManagementPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100">
-              Manajemen Berita
+              News Management
             </h1>
             <p className="text-gray-500 dark:text-slate-400 text-sm mt-0.5">
-              Publikasikan pengumuman dan update komunitas.
+              Publish community announcements and updates.
             </p>
           </div>
           <Button
@@ -322,7 +322,7 @@ export default function NewsManagementPage() {
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
             onClick={() => setShowCreate(true)}
           >
-            <Plus className="w-4 h-4" /> <span>Buat Artikel</span>
+            <Plus className="w-4 h-4" /> <span>Create News</span>
           </Button>
         </div>
 
@@ -331,7 +331,7 @@ export default function NewsManagementPage() {
             <form onSubmit={handleCreateNews} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold mb-1">
-                  Judul Artikel
+                  News Title
                 </label>
                 <Input
                   value={newTitle}
@@ -421,12 +421,12 @@ export default function NewsManagementPage() {
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-700 text-xs text-gray-500 dark:text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">Judul Artikel</th>
+                  <th className="py-3 px-4">News Title</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Tanggal Publikasi</th>
+                  <th className="py-3 px-4">Publication Date</th>
                   <th className="py-3 px-4">Author</th>
                   <th className="py-3 px-4">Headline</th>
-                  <th className="py-3 px-4 text-right">Aksi</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
