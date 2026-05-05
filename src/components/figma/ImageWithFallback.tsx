@@ -7,6 +7,9 @@ interface ImageWithFallbackProps {
   alt: string;
   fallback?: string;
   className?: string;
+  fill?: boolean;
+  width?: number;
+  height?: number;
 }
 
 export function ImageWithFallback({
@@ -14,12 +17,13 @@ export function ImageWithFallback({
   alt,
   fallback = "https://images.unsplash.com/photo-1704597037764-46c6ab679d3e?w=800&auto=format&fit=crop&q=80",
   className,
+  fill,
+  width,
+  height,
 }: ImageWithFallbackProps) {
   const [imgSrc, setImgSrc] = useState(src || fallback);
   const [prevSrc, setPrevSrc] = useState(src);
 
-  // Ini adalah cara "Halal" di React modern untuk mereset state
-  // ketika props (src) berubah dari luar, tanpa memicu cascading renders.
   if (src !== prevSrc) {
     setPrevSrc(src);
     setImgSrc(src || fallback);
@@ -29,8 +33,9 @@ export function ImageWithFallback({
     <Image
       src={imgSrc}
       alt={alt}
-      width={800}
-      height={800}
+      fill={fill}
+      width={!fill ? width || 800 : undefined}
+      height={!fill ? height || 800 : undefined}
       className={className}
       onError={() => setImgSrc(fallback)}
       unoptimized

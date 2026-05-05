@@ -120,7 +120,7 @@ export async function PATCH(
     const { status, notes, documentUrl } = body;
 
     const validStatuses = ["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"];
-    const updateData: Prisma.ProjectUpdateInput = {};
+    const updateData: Record<string, unknown> = {};
 
     if (status) {
       if (!validStatuses.includes(status)) {

@@ -202,11 +202,11 @@ export default function UserManagementPage() {
             >
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold mb-4">Detail Data Pengguna</h2>
+            <h2 className="text-lg font-bold mb-4">User Details</h2>
             <form className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold mb-1">
-                  Nama / Instansi
+                  Name / Agency
                 </label>
                 <Input
                   value={editName}
@@ -216,7 +216,7 @@ export default function UserManagementPage() {
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1">
-                  Blok / Alamat
+                  House Number /Address
                 </label>
                 <Input
                   value={editAddress}
@@ -226,7 +226,7 @@ export default function UserManagementPage() {
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1">
-                  Nomor Telepon
+                  Phone Number
                 </label>
                 <Input
                   value={editPhone || "-"}
@@ -274,14 +274,14 @@ export default function UserManagementPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100">
-            Manajemen Pengguna
+            User Management
           </h1>
           <p className="text-gray-500 dark:text-slate-400 text-sm mt-0.5">
-            Kelola akun warga dan verifikasi.
+            Manage citizen accounts and verification.
           </p>
         </div>
         <Badge className="bg-green-100 text-green-700 border-green-300 px-3 py-1.5 flex items-center gap-1.5">
-          <Users className="w-3.5 h-3.5" /> {users.length} Pengguna
+          <Users className="w-3.5 h-3.5" /> {users.length} Users
         </Badge>
       </div>
 
@@ -291,7 +291,7 @@ export default function UserManagementPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               className="pl-9 border-green-200 focus:ring-green-400"
-              placeholder="Cari pengguna..."
+              placeholder="Search user..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -301,28 +301,25 @@ export default function UserManagementPage() {
             onChange={(e) => setRoleFilter(e.target.value)}
             className="text-sm border border-green-300 text-green-700 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white dark:bg-slate-800 cursor-pointer"
           >
-            <option value="ALL">Semua Role</option>
-            <option value="Resident">Warga (Resident)</option>
-            <option value="Manager">Instansi (Manager)</option>
-            <option value="Admin">Admin</option>
+            <option value="ALL">All Role</option>
+            <option value="Resident">Resident</option>
+            <option value="Manager">Manager</option>
           </select>
         </div>
 
         {loading ? (
-          <div className="text-center text-gray-400 py-10">
-            Memuat data pengguna...
-          </div>
+          <div className="text-center text-gray-400 py-10">Loading data...</div>
         ) : error ? (
           <div className="text-center text-red-500 py-10">{error}</div>
         ) : (
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="border-b border-gray-200 dark:border-slate-700 text-xs text-gray-500 dark:text-slate-400 font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">Nama</th>
-                <th className="py-3 px-4">Blok / Alamat</th>
+                <th className="py-3 px-4">Name</th>
+                <th className="py-3 px-4">House Number / Address</th>
                 <th className="py-3 px-4">Role</th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Aksi</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
