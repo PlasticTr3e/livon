@@ -7,7 +7,7 @@ import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div>Memuat...</div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <RegisterForm />
     </Suspense>
   );
@@ -73,24 +73,32 @@ function RegisterForm() {
 
     if (!formData.password) e.password = "Password is required";
     else if (formData.password.length < 6)
-      e.password = "Minimal password 6 karakter";
+      e.password = "Password must be at least 6 characters";
 
     if (formData.password !== formData.confirmPassword)
       e.confirmPassword = "Passwords do not match";
 
     if (!formData.phone.trim()) e.phone = "Phone is required";
     else if (!/^\d{10,12}$/.test(formData.phone.trim()))
-      e.phone = "Nomor Telepon harus berupa 10-12 digit angka";
+      e.phone = "Phone number must be 10-12 digits";
 
-    if (!formData.nomorKK.trim()) e.nomorKK = "Nomor KK is required";
-    else if (!/^\d{16}$/.test(formData.nomorKK.trim()))
-      e.nomorKK = "Nomor KK wajib berisi 16 digit angka";
+    // Validate role-specific fields
+    if (formData.role === "WARGA") {
+      if (!formData.nomorKK.trim())
+        e.nomorKK = "Family Card Number is required";
+      else if (!/^\d{16}$/.test(formData.nomorKK.trim()))
+        e.nomorKK = "Family Card Number must be 16 digits";
 
-    if (formData.nik && !/^\d{16}$/.test(formData.nik.trim()))
-      e.nik = "NIK wajib berisi 16 digit angka";
+      if (formData.nik && !/^\d{16}$/.test(formData.nik.trim()))
+        e.nik = "NIK must be 16 digits";
 
-    if (!formData.blokRumah.trim()) e.blokRumah = "Blok rumah is required";
-    if (!formData.noRumah.trim()) e.noRumah = "No rumah is required";
+      if (!formData.blokRumah.trim()) e.blokRumah = "Block is required";
+      if (!formData.noRumah.trim()) e.noRumah = "House Number is required";
+    } else if (formData.role === "AGENCY") {
+      if (!formData.agencyName.trim()) e.agencyName = "Agency name is required";
+      if (!formData.address.trim()) e.address = "Address is required";
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -158,14 +166,15 @@ function RegisterForm() {
           </div>
 
           <h1 className="text-[2.4rem] font-extrabold text-gray-900 dark:text-slate-100 leading-tight mb-2">
-            Buat Akunmu!
+            Join Now!
           </h1>
           <p className="text-gray-400 dark:text-slate-500 text-sm leading-relaxed mb-6">
-            Gabung komunitas perumahanmu di LIVON.
+            Join your neighborhood community on LIVON.
             <br />
           </p>
 
           <form onSubmit={handleRegister} className="flex flex-col gap-3">
+            {/* Full name */}
             <div>
               <input
                 type="text"
@@ -180,6 +189,8 @@ function RegisterForm() {
                 </p>
               )}
             </div>
+
+            {/* Email address */}
             <div>
               <input
                 type="email"
@@ -195,6 +206,8 @@ function RegisterForm() {
                 </p>
               )}
             </div>
+
+            {/* Password */}
             <div>
               <div className="relative">
                 <input
@@ -222,6 +235,8 @@ function RegisterForm() {
                 </p>
               )}
             </div>
+
+            {/* Confirm password */}
             <div>
               <div className="relative">
                 <input
@@ -249,6 +264,8 @@ function RegisterForm() {
                 </p>
               )}
             </div>
+
+            {/* Phone */}
             <div>
               <input
                 type="tel"
@@ -264,28 +281,8 @@ function RegisterForm() {
                 </p>
               )}
             </div>
-            <div>
-              <input
-                type="text"
-                placeholder="Nomor KK"
-                value={formData.nomorKK}
-                onChange={(e) => set("nomorKK", e.target.value)}
-                className="w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
-              />
-              {errors.nomorKK && (
-                <p className="text-red-500 text-[11px] pl-4 mt-1">
-                  {errors.nomorKK}
-                </p>
-              )}
-            </div>
-            <input
-              type="text"
-              placeholder="NIK"
-              value={formData.nik}
-              onChange={(e) => set("nik", e.target.value)}
-              className="w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
 
+            {/* Role selector */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Role
@@ -300,7 +297,7 @@ function RegisterForm() {
                     onChange={(e) => set("role", e.target.value)}
                     className="mr-2"
                   />
-                  Warga
+                  Resident
                 </label>
                 <label className="flex items-center">
                   <input
@@ -316,6 +313,71 @@ function RegisterForm() {
               </div>
             </div>
 
+            {/* Database-specific fields - Warga */}
+            {formData.role === "WARGA" && (
+              <>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Family Card Number (16 digits)"
+                    value={formData.nomorKK}
+                    onChange={(e) => set("nomorKK", e.target.value)}
+                    className="w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
+                  />
+                  {errors.nomorKK && (
+                    <p className="text-red-500 text-[11px] pl-4 mt-1">
+                      {errors.nomorKK}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="NIK (16 digits, optional)"
+                    value={formData.nik}
+                    onChange={(e) => set("nik", e.target.value)}
+                    className="w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                  {errors.nik && (
+                    <p className="text-red-500 text-[11px] pl-4 mt-1">
+                      {errors.nik}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      placeholder="Block"
+                      value={formData.blokRumah}
+                      onChange={(e) => set("blokRumah", e.target.value)}
+                      className="w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
+                    />
+                    {errors.blokRumah && (
+                      <p className="text-red-500 text-[11px] pl-4 mt-1">
+                        {errors.blokRumah}
+                      </p>
+                    )}
+                  </div>
+                  <div className="w-28">
+                    <input
+                      type="text"
+                      placeholder="House Number"
+                      value={formData.noRumah}
+                      onChange={(e) => set("noRumah", e.target.value)}
+                      className="w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
+                    />
+                    {errors.noRumah && (
+                      <p className="text-red-500 text-[11px] pl-2 mt-1">
+                        {errors.noRumah}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Database-specific fields - Agency */}
             {formData.role === "AGENCY" && (
               <>
                 <input
@@ -336,42 +398,11 @@ function RegisterForm() {
                 />
               </>
             )}
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Blok rumah"
-                  value={formData.blokRumah}
-                  onChange={(e) => set("blokRumah", e.target.value)}
-                  className="w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
-                />
-                {errors.blokRumah && (
-                  <p className="text-red-500 text-[11px] pl-4 mt-1">
-                    {errors.blokRumah}
-                  </p>
-                )}
-              </div>
-              <div className="w-28">
-                <input
-                  type="text"
-                  placeholder="No. rumah"
-                  value={formData.noRumah}
-                  onChange={(e) => set("noRumah", e.target.value)}
-                  className="w-full h-12 px-5 rounded-full border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
-                />
-                {errors.noRumah && (
-                  <p className="text-red-500 text-[11px] pl-2 mt-1">
-                    {errors.noRumah}
-                  </p>
-                )}
-              </div>
-            </div>
             <button
-              type="button"
+              type="submit"
               className="w-full h-12 bg-green-600 text-white rounded-full font-semibold text-sm hover:bg-green-700 transition-colors mt-1 shadow-sm"
-              onClick={handleRegister}
             >
-              Daftar
+              Register
             </button>
 
             {errors.general && (
@@ -382,7 +413,7 @@ function RegisterForm() {
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
               <span className="text-xs text-gray-400 whitespace-nowrap">
-                atau lanjutkan dengan
+                or continue with
               </span>
               <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
             </div>
@@ -413,11 +444,11 @@ function RegisterForm() {
                 />
               </svg>
               <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                Lanjutkan dengan Google
+                Continue with Google
               </span>
             </a>
             <p className="text-center text-xs text-gray-400 mt-1">
-              Sudah punya akun?{" "}
+              Already have an account?{" "}
               <Link
                 href="./login"
                 className="font-semibold text-green-600 hover:underline"
@@ -447,34 +478,6 @@ function RegisterForm() {
             LIVON
           </span>
         </div>
-        <div className="absolute top-20 left-10 bg-white/10 backdrop-blur-sm rounded-2xl p-4 w-52 border border-white/20">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 bg-yellow-400 rounded-lg flex items-center justify-center">
-              <MapPin className="w-3.5 h-3.5 text-yellow-900" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white">LIVON Map</p>
-              <p className="text-[10px] text-green-200">8 Active Projects</p>
-            </div>
-          </div>
-          <div className="mt-2 flex gap-1">
-            <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 rounded-full text-[10px] font-bold">
-              Housing
-            </span>
-            <span className="px-2 py-0.5 bg-white/20 text-white rounded-full text-[10px] font-medium">
-              Infra
-            </span>
-          </div>
-        </div>
-        <div className="absolute bottom-28 right-10 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20 flex items-center gap-2">
-          <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-            <Users className="w-4 h-4 text-yellow-900" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-white">342 Residents</p>
-            <p className="text-[10px] text-green-200">Active community</p>
-          </div>
-        </div>
         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-white/30 shadow-2xl relative transition-all duration-700 group hover:scale-105">
           <ImageWithFallback
             key={currentImageIndex} // forces re-render for fading
@@ -490,9 +493,6 @@ function RegisterForm() {
             <span className="text-yellow-300 animate-pulse inline-block">
               transparent & organized
             </span>
-          </p>
-          <p className="text-green-200 text-sm mt-2 font-medium">
-            Living Vision Online — LIVON
           </p>
           <div className="flex justify-center gap-2 mt-4">
             {images.map((_, index) => (
