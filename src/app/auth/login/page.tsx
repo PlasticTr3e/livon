@@ -22,9 +22,9 @@ export default function LoginPage() {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
       if (sp.get("registered") === "true") {
-        return "Pendaftaran akun berhasil disubmit. Untuk mengakses aplikasi, akun Anda wajib diverifikasi terlebih dahulu oleh admin aplikasi LIVON. Estimasi pengerjaan verifikasi adalah 2-3 hari kerja.";
+        return "Your registration has been successfully submitted. To access the application, your account must be verified by the LIVON admin first. Estimated verification time is 2-3 business days.";
       } else if (sp.get("verified") === "true") {
-        return "Email Anda berhasil diverifikasi! Silakan masuk menggunakan akun Anda.";
+        return "Your email has been successfully verified! Please log in with your account.";
       }
     }
     return "";
@@ -88,7 +88,7 @@ export default function LoginPage() {
       // Check verification
       const isVerified = await checkUserVerification(result.data.user.id);
       if (!isVerified) {
-        setError("Akun belum diverifikasi oleh admin.");
+        setError("Your account has not been verified by the admin yet.");
         return;
       }
 
@@ -302,34 +302,6 @@ export default function LoginPage() {
             LIVON
           </span>
         </div>
-        <div className="absolute top-20 left-10 bg-white/10 backdrop-blur-sm rounded-2xl p-4 w-52 border border-white/20">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 bg-yellow-400 rounded-lg flex items-center justify-center">
-              <MapPin className="w-3.5 h-3.5 text-yellow-900" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white">LIVON Map</p>
-              <p className="text-[10px] text-green-200">8 Active Projects</p>
-            </div>
-          </div>
-          <div className="mt-2 flex gap-1">
-            <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 rounded-full text-[10px] font-bold">
-              Housing
-            </span>
-            <span className="px-2 py-0.5 bg-white/20 text-white rounded-full text-[10px] font-medium">
-              Infra
-            </span>
-          </div>
-        </div>
-        <div className="absolute bottom-28 right-10 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20 flex items-center gap-2">
-          <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-            <Users className="w-4 h-4 text-yellow-900" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-white">342 Residents</p>
-            <p className="text-[10px] text-green-200">Active community</p>
-          </div>
-        </div>
         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-white/30 shadow-2xl relative transition-all duration-700 group hover:scale-105">
           <ImageWithFallback
             key={currentImageIndex} // forces re-render for fading
@@ -345,9 +317,6 @@ export default function LoginPage() {
             <span className="text-yellow-300 animate-pulse inline-block">
               transparent & organized
             </span>
-          </p>
-          <p className="text-green-200 text-sm mt-2 font-medium">
-            Living Vision Online — LIVON
           </p>
           <div className="flex justify-center gap-2 mt-4">
             {images.map((_, index) => (
