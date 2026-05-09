@@ -56,6 +56,15 @@ export async function PATCH(
     if (authUser.role !== Role.AGENCY)
       return badRequest("Forbidden: Only Agencies can verify citizens");
 
+    const agencyProfile = await prisma.agencyProfile.findUnique({
+      where: { userId: authUser.userId },
+      select: { id: true },
+    });
+
+    if (!agencyProfile) {
+      return badRequest("Forbidden: Agency profile not found");
+    }
+
     const body = await req.json();
     const result = verifySchema.safeParse(body);
     if (!result.success)
@@ -69,15 +78,20 @@ export async function PATCH(
 
     if (!citizen) return notFound("Citizen profile not found");
 
+    const isVerified = result.data.isVerified;
+
     const updatedCitizen = await prisma.citizenProfile.update({
       where: { userId: citizenUserId },
-      data: { isVerified: result.data.isVerified },
+      data: {
+        isVerified,
+        verifiedAt: isVerified ? new Date() : null,
+        verifiedBy: isVerified ? agencyProfile.id : null,
+      },
     });
 
-    return ok(
-      `Citizen verification status updated to ${result.data.isVerified}`,
-      { data: updatedCitizen },
-    );
+    return ok(`Citizen verification status updated to ${isVerified}`, {
+      data: updatedCitizen,
+    });
   } catch (error) {
     console.error("Verification Error:", error);
     return internalError("An error occurred during verification");
