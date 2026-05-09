@@ -134,19 +134,19 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      // Update local state optimistically
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  // const handleMarkAllAsRead = async () => {
+  //   try {
+  //     // Update local state optimistically
+  //     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
 
-      // Call API to update all in database (if endpoint exists)
-      // await apiFetch("/api/notifications/mark-all-as-read", {
-      //   method: "POST",
-      // });
-    } catch (error) {
-      console.error("Failed to mark all as read:", error);
-    }
-  };
+  //     // Call API to update all in database (if endpoint exists)
+  //     // await apiFetch("/api/notifications/mark-all-as-read", {
+  //     //   method: "POST",
+  //     // });
+  //   } catch (error) {
+  //     console.error("Failed to mark all as read:", error);
+  //   }
+  // };
 
   const handleDelete = async (id: string) => {
     try {

@@ -74,7 +74,8 @@ function PaymentContent() {
     transactionStatus === "settlement" || transactionStatus === "capture";
 
   // Jika URL punya status sukses, langsung buka halaman "success", jika tidak "confirm"
-  const [step, setStep] = useState<Step>(
+  // const [step, setStep] = useState<Step>(
+  const [step] = useState<Step>(
     isFromMidtransSuccess ? "success" : "confirm",
   );
   const [isProcessing, setIsProcessing] = useState(false);
