@@ -3,8 +3,18 @@ import { Card, Button, Input } from "@/components/ui/WireframePrimitives";
 import Image from "next/image";
 import { ArrowLeft, UploadCloud, MapPin, Save, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const DynamicMapPicker = dynamic(() => import("@/components/mapPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full bg-gray-100 animate-pulse flex items-center justify-center text-gray-500 rounded-lg">
+      Memuat Peta...
+    </div>
+  ),
+});
 
 interface UploadedFile {
   id: string;
@@ -21,9 +31,16 @@ export default function CreateProjectPage() {
     duration: "",
     category: "Infrastructure",
     status: "Planning",
-    lat: -6.2088,
-    lng: 106.8456,
+    // -6.9321823, 107.7754652
+    lat: -6.9321823,
+    lng: 107.7754652,
   });
+  const [position, setPosition] = useState({
+    lat: formData.lat,
+    lng: formData.lng,
+  });
+  const [modalPosition, setModalPosition] = useState(position);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [projectImage, setProjectImage] = useState<string | null>(null);
   const [projectImageFile, setProjectImageFile] = useState<File | null>(null);
@@ -33,6 +50,10 @@ export default function CreateProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, lat: position.lat, lng: position.lng }));
+  }, [position]);
 
   const handleInput = (field: string, value: string | number) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -66,6 +87,20 @@ export default function CreateProjectPage() {
     const reader = new FileReader();
     reader.onload = (ev) => setProjectImage(ev.target?.result as string);
     reader.readAsDataURL(file);
+  };
+
+  const openMapModal = () => {
+    setModalPosition(position);
+    setIsMapModalOpen(true);
+  };
+
+  const closeMapModal = () => {
+    setIsMapModalOpen(false);
+  };
+
+  const confirmLocation = () => {
+    setPosition(modalPosition);
+    setIsMapModalOpen(false);
   };
 
   const handleSubmit = async () => {
@@ -431,27 +466,22 @@ export default function CreateProjectPage() {
             <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
               Tentukan koordinat lokasi proyek.
             </p>
-            <div className="w-full h-60 bg-gradient-to-br from-green-100 via-green-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 rounded-xl border-2 border-green-200 dark:border-slate-600 relative flex items-center justify-center mb-3">
-              <div
-                className="absolute inset-0 opacity-10 rounded-xl"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(to right, #16a34a 1px, transparent 1px), linear-gradient(to bottom, #16a34a 1px, transparent 1px)",
-                  backgroundSize: "30px 30px",
-                }}
-              ></div>
-              <div className="text-center z-10">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-                  <MapPin className="w-7 h-7 text-white" />
-                </div>
-                <p className="text-green-700 dark:text-green-400 font-bold text-sm">
-                  Lokasi Proyek
-                </p>
-                <p className="text-green-500 text-xs mt-1">
-                  {formData.lat.toFixed(4)}, {formData.lng.toFixed(4)}
-                </p>
+            <button
+              type="button"
+              onClick={openMapModal}
+              className="w-full h-60 rounded-xl border-2 border-green-200 dark:border-slate-600 overflow-hidden mb-3 relative focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <div className="absolute inset-0 bg-black/10 z-10 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center text-white font-semibold">
+                Klik untuk pilih lokasi
               </div>
-            </div>
+              <div className="h-full w-full">
+                <DynamicMapPicker
+                  position={position}
+                  setPosition={() => {}}
+                  readOnly
+                />
+              </div>
+            </button>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-xs text-gray-500 font-medium">
@@ -485,6 +515,59 @@ export default function CreateProjectPage() {
               </div>
             </div>
           </Card>
+
+          {isMapModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-8">
+              <div className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-green-100 dark:border-slate-700">
+                <div className="flex items-center justify-between p-5 border-b border-green-100 dark:border-slate-700 bg-green-50 dark:bg-slate-800">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">
+                      Pilih Lokasi Proyek
+                    </h2>
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      Klik peta untuk memindahkan titik penanda.
+                    </p>
+                  </div>
+                  <button
+                    onClick={closeMapModal}
+                    className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-slate-800"
+                  >
+                    Batal
+                  </button>
+                </div>
+                <div className="h-[420px] bg-slate-100 dark:bg-slate-950">
+                  <DynamicMapPicker
+                    position={modalPosition}
+                    setPosition={setModalPosition}
+                  />
+                </div>
+                <div className="flex flex-col gap-3 p-5 border-t border-green-100 dark:border-slate-700 bg-white dark:bg-slate-900 sm:flex-row sm:justify-between sm:items-center">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                      Titik terpilih: {modalPosition.lat.toFixed(6)},{" "}
+                      {modalPosition.lng.toFixed(6)}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={closeMapModal}
+                      className="h-11 px-5 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmLocation}
+                      className="h-11 px-5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700"
+                    >
+                      Set Lokasi
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <Button
             variant="primary"

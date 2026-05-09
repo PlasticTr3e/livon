@@ -175,6 +175,7 @@ export async function GET(
  *       400:
  *         description: Gagal memperbarui berita
  */
+//
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -222,6 +223,16 @@ export async function PUT(
         author: {
           select: { id: true, agencyProfile: { select: { agencyName: true } } },
         },
+      },
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: authUser.userId,
+        referenceId: updatedNews.id,
+        title: "Memperbarui Berita",
+        type: "ACTIVITY_LOG",
+        message: `Anda telah memperbarui berita: ${updatedNews.title}`,
       },
     });
 

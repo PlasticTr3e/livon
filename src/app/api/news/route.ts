@@ -112,6 +112,37 @@ const createNewsSchema = z.object({
  *       500:
  *         description: Internal server error
  */
+// export async function POST(req: NextRequest) {
+//   try {
+//     const authUser = getAuthUser(req);
+//     if (!authUser || authUser.role !== Role.AGENCY) {
+//       return badRequest("Forbidden: Only Agencies can publish news");
+//     }
+
+//     const body = await req.json();
+//     const result = createNewsSchema.safeParse(body);
+//     if (!result.success)
+//       return badRequest("Validation failed", z.treeifyError(result.error));
+
+//     const { title, content, thumbnailUrl } = result.data;
+
+//     const newsItem = await prisma.news.create({
+//       data: {
+//         title,
+//         content,
+//         thumbnailUrl: thumbnailUrl || null,
+//         createdById: authUser.userId,
+//         publishedAt: new Date(),
+//       },
+//     });
+
+//     return created("News published successfully", { data: newsItem });
+//   } catch (error) {
+//     console.error("POST News Error", error);
+//     return internalError("An error occured publishing news");
+//   }
+// }
+
 export async function POST(req: NextRequest) {
   try {
     const authUser = getAuthUser(req);
@@ -135,6 +166,35 @@ export async function POST(req: NextRequest) {
         publishedAt: new Date(),
       },
     });
+
+    await prisma.notification.create({
+      data: {
+        userId: authUser.userId,
+        referenceId: newsItem.id,
+        title: "Membuat Berita",
+        type: "ACTIVITY_LOG",
+        message: `Anda telah mempublikasikan berita baru : ${newsItem.title}`,
+      },
+    });
+
+    const wargaUsers = await prisma.user.findMany({
+      where: { role: Role.WARGA },
+      select: { id: true },
+    });
+
+    if (wargaUsers.length > 0) {
+      const wargaNotifications = wargaUsers.map((user) => ({
+        userId: user.id,
+        referenceId: newsItem.id,
+        title: "Berita Baru !",
+        type: "NEW_NEWS",
+        message: `Ada berita terbaru : ${newsItem.title}. Yuk baca selengkapnya!`,
+      }));
+
+      await prisma.notification.createMany({
+        data: wargaNotifications,
+      });
+    }
 
     return created("News published successfully", { data: newsItem });
   } catch (error) {

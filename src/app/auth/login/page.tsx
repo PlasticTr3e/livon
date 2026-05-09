@@ -226,7 +226,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full h-12 bg-linear-to-r from-green-600 to-green-700 text-white rounded-full font-semibold text-sm hover:from-green-700 hover:to-green-800 transition-all mt-1 shadow-sm shadow-green-200 dark:shadow-green-900"
+              className="w-full h-12 bg-linear-to-r from-green-600 to-green-700 text-green rounded-full font-semibold text-sm hover:from-green-700 hover:to-green-800 transition-all mt-1 shadow-sm shadow-green-200 dark:shadow-green-900"
             >
               Masuk
             </button>

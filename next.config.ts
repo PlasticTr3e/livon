@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: false,
   reactCompiler: true,
   allowedDevOrigins: ["local-origin.dev", "*.local-origin.dev"],
   images: {
