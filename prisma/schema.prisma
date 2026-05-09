@@ -12,7 +12,7 @@ datasource db {
 model User {
   id             String          @id @default(uuid())
   email          String          @unique
-  emailVerified  DateTime?    //track if email is verified
+  emailVerified  DateTime?    
   passwordHash   String?
   role           Role?
   createdAt      DateTime        @default(now())
@@ -72,6 +72,10 @@ model CitizenProfile {
   blockHouse  String?
   houseNumber String?
   isVerified  Boolean @default(false)
+  verifiedAt  DateTime?
+  verifiedBy  String?
+
+  verifier    AgencyProfile?   @relation("VerifiedCitizens", fields: [verifiedBy], references: [id])
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("citizen_profiles")
@@ -84,6 +88,8 @@ model AgencyProfile {
   phone      String
   address    String
   isVerified Boolean @default(false)
+
+  verifiedCitizens  CitizenProfile[] @relation("VerifiedCitizens")
   user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("agency_profiles")
