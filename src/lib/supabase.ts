@@ -28,4 +28,7 @@ const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "sb_publishable_ALz4ZbLvvUrAnhnOAosCsg_hVpy-pZg";
 
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
+export const supabase: SupabaseClient =
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey)
+    : ({} as SupabaseClient);

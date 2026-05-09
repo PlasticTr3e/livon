@@ -34,7 +34,7 @@ const getMarkerColor = (status: string) => {
       return "#3b82f6"; // blue
     case "Funding":
       return "#eab308"; // yellow
-    case "Construction":
+    case "Under Construction":
       return "#f97316"; // orange
     case "Completed":
       return "#22c55e"; // green
@@ -49,11 +49,22 @@ export function MapLeaflet({
   onProjectSelect,
 }: MapLeafletProps) {
   useEffect(() => {
+    // Define bounds for panning (disamakan dengan area highlight perumahan)
+    const bounds = L.latLngBounds(
+      [-6.944, 107.7725], // South-West bound asli perumahan
+      [-6.9385, 107.7785], // North-East bound asli perumahan
+    );
+
     // Initialize map
     const map = L.map("map", {
-      center: [-6.9321823, 107.7754652], // Jatinangor coordinates
-      zoom: 13,
-      zoomControl: true,
+      center: [-6.941, 107.7755], // Dikembalikan ke titik tengah persis perumahan
+      zoom: 17.5, // View awal di-zoom-in sedikit (tengah-tengah 17 dan 18)
+      minZoom: 17.5, // Max zoom out dikunci
+      zoomSnap: 0.1, // Mengizinkan level zoom desimal (setengah)
+      maxZoom: 19, // Maximum zoom in
+      maxBounds: bounds, // Restrict panning tightly
+      maxBoundsViscosity: 0.5, // Solid bounds, prevent bouncing outside
+      zoomControl: false, // Menghilangkan tombol zoom in/out (+/-)
     });
 
     // Add OpenStreetMap tiles
@@ -68,8 +79,8 @@ export function MapLeaflet({
     projects.forEach((project, idx) => {
       // Mock coordinates - in production, these should come from database
       const baseLatLng: [number, number] = [
-        -6.2088 + idx * 0.01 - 0.02,
-        106.8456 + idx * 0.015 - 0.015,
+        -6.9411 + idx * 0.001 - 0.002, // Spread around Jatinangor
+        107.7756 + idx * 0.001 - 0.0015,
       ];
       const lat = project.lat || baseLatLng[0];
       const lng = project.lng || baseLatLng[1];

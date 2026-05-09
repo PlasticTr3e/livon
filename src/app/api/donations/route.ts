@@ -5,6 +5,7 @@ import {
   created,
   badRequest,
   internalError,
+  ok,
   notFound,
 } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
@@ -118,5 +119,28 @@ export async function POST(req: NextRequest) {
     return internalError(
       "An internal server error occurred processing the donation",
     );
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const authUser = getAuthUser(req);
+    if (!authUser || authUser.role !== Role.AGENCY) {
+      return badRequest("Forbidden");
+    }
+
+    const donations = await prisma.donation.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        user: { include: { citizenProfile: true } },
+        project: true,
+      },
+    });
+
+    return ok("Donations fetched", { data: donations });
+  } catch (error) {
+    console.error("GET Donations Error:", error);
+    return internalError("Error fetching donations");
   }
 }

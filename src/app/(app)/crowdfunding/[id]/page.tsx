@@ -9,8 +9,6 @@ import {
   ArrowLeft,
   Target,
   TrendingUp,
-  Users,
-  Clock,
   Shield,
   CreditCard,
   Smartphone,
@@ -30,15 +28,6 @@ interface ProjectData {
   createdAt?: string;
 }
 
-interface Donor {
-  id: string;
-  name: string;
-  amount: number;
-  isAnonymous: boolean;
-  message?: string;
-  timestamp: string;
-}
-
 const CAMPAIGN_IMAGES: Record<string, string> = {
   "2": "https://images.unsplash.com/photo-1759702132600-731687499b41?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
   default:
@@ -49,12 +38,9 @@ export default function CrowdfundingPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [project, setProject] = useState<ProjectData | null>(null);
-  const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
   const [customAmount, setCustomAmount] = useState("");
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [message, setMessage] = useState("");
 
   // Fetch project data from API
   useEffect(() => {
@@ -71,9 +57,6 @@ export default function CrowdfundingPage() {
 
         if (response.success && response.data) {
           setProject(response.data);
-          // For now, set empty donors since donations endpoint not available
-          // TODO: Add donations endpoint integration when available
-          setDonors([]);
         }
       } catch (error) {
         console.error("Failed to fetch project:", error);
@@ -122,7 +105,6 @@ export default function CrowdfundingPage() {
   const collected = project.currentFunding || 0;
   const progress =
     target > 0 ? Math.min(Math.round((collected / target) * 100), 100) : 0;
-  const daysLeft = 18;
 
   const presetAmounts = [25000, 50000, 100000, 500000];
 
@@ -134,10 +116,8 @@ export default function CrowdfundingPage() {
   const finalAmount = parseInt(customAmount || "0");
 
   const handleDonate = () => {
-    if (!finalAmount || finalAmount < 1000) return;
-    router.push(
-      `/payment/${project.id}?amount=${finalAmount}&anonymous=${isAnonymous}`,
-    );
+    if (!finalAmount || finalAmount < 10000) return;
+    router.push(`/payment/${project.id}?amount=${finalAmount}`);
   };
 
   const imgSrc =
@@ -176,7 +156,7 @@ export default function CrowdfundingPage() {
           <div className="md:col-span-3 space-y-4">
             <div>
               <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300 mb-2">
-                🔥 {project.status || "Aktif"}
+                {project.status || "Aktif"}
               </Badge>
               <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100 leading-tight">
                 {project.title}
@@ -185,7 +165,7 @@ export default function CrowdfundingPage() {
             <p className="text-sm text-gray-600 dark:text-slate-300 leading-relaxed line-clamp-3">
               {project.description}
             </p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3 text-center">
                 <p className="text-xs text-green-700 dark:text-green-400 font-semibold uppercase tracking-wider mb-1">
                   <TrendingUp className="w-3 h-3 inline mr-0.5" />
@@ -204,15 +184,6 @@ export default function CrowdfundingPage() {
                   Rp {(target / 1000000).toFixed(1)}M
                 </p>
               </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-center">
-                <p className="text-xs text-blue-700 dark:text-blue-400 font-semibold uppercase tracking-wider mb-1">
-                  <Clock className="w-3 h-3 inline mr-0.5" />
-                  Sisa Waktu
-                </p>
-                <p className="font-black text-blue-800 dark:text-blue-300 text-sm">
-                  {daysLeft} Hari
-                </p>
-              </div>
             </div>
             <div>
               <div className="flex justify-between text-sm font-semibold mb-1.5">
@@ -226,21 +197,6 @@ export default function CrowdfundingPage() {
                   className="h-full bg-gradient-to-r from-green-500 to-yellow-400 rounded-full"
                   style={{ width: `${progress}%` }}
                 />
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                {donors.slice(0, 5).map((d) => (
-                  <div
-                    key={d.id}
-                    className="w-6 h-6 rounded-full bg-green-100 border-2 border-white dark:border-slate-800 -ml-1.5 first:ml-0 flex items-center justify-center shadow-sm"
-                  >
-                    <span className="text-[10px] font-bold text-green-700">
-                      {d.isAnonymous ? "?" : d.name.charAt(0)}
-                    </span>
-                  </div>
-                ))}
-                <span className="text-xs text-gray-500 dark:text-slate-400 font-medium">
-                  {donors.length} donatur
-                </span>
               </div>
             </div>
           </div>
@@ -297,59 +253,41 @@ export default function CrowdfundingPage() {
                 placeholder="Masukkan jumlah..."
                 className="w-full pl-12 pr-4 h-14 text-lg font-bold border-2 border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 transition-all"
                 value={customAmount}
-                min="1000"
+                min="10000"
                 onChange={(e) => {
                   setCustomAmount(e.target.value);
                   setSelectedPreset(null);
                 }}
+                onKeyDown={(e) => {
+                  // Mencegah user mengetik tombol minus (-) atau huruf (e)
+                  if (e.key === "-" || e.key === "e") {
+                    e.preventDefault();
+                  }
+                }}
               />
             </div>
-            {finalAmount > 0 && finalAmount < 1000 && (
-              <p className="text-xs text-red-500 mt-1">
-                Minimum donasi Rp 1.000
+            {finalAmount > 0 && finalAmount < 10000 ? (
+              <p className="text-xs text-red-500 mt-2 font-medium">
+                Nominal tidak bisa kurang dari Rp 10.000
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
+                Minimal donasi Rp 10.000
               </p>
             )}
           </div>
-          <div className="space-y-3 mb-5">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-700 rounded-xl border border-gray-100 dark:border-slate-600">
-              <input
-                type="checkbox"
-                id="anonymous"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
-                className="w-4 h-4 accent-green-600 rounded"
-              />
-              <label
-                htmlFor="anonymous"
-                className="text-sm font-medium text-gray-700 dark:text-slate-300 cursor-pointer"
-              >
-                Donasi secara anonim
-              </label>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2">
-                Pesan untuk komunitas (opsional)
-              </label>
-              <textarea
-                className="w-full p-3 border border-gray-200 dark:border-slate-600 rounded-xl bg-gray-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm resize-none h-20 text-gray-800 dark:text-slate-200"
-                placeholder="Tulis pesan dukungan Anda..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-            </div>
-          </div>
           <button
             onClick={handleDonate}
-            disabled={!finalAmount || finalAmount < 1000}
+            disabled={!finalAmount || finalAmount < 10000}
             className={cn(
               "w-full h-16 rounded-xl font-black uppercase tracking-widest text-lg transition-all flex items-center justify-center gap-3",
-              finalAmount >= 1000
+              finalAmount >= 10000
                 ? "bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
                 : "bg-gray-200 dark:bg-slate-700 text-gray-400 cursor-not-allowed",
             )}
           >
             <HandCoins className="w-6 h-6" />
-            {finalAmount >= 1000
+            {finalAmount >= 10000
               ? `Donasi Rp ${finalAmount.toLocaleString("id-ID")}`
               : "Pilih Jumlah Donasi"}
           </button>
@@ -392,57 +330,6 @@ export default function CrowdfundingPage() {
               </div>
             ))}
           </div>
-        </Card>
-
-        <Card className="p-5 border-green-100">
-          <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5 text-green-600" /> Donatur Terbaru
-          </h3>
-          {donors.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">
-              Jadilah yang pertama berdonasi!
-            </p>
-          ) : (
-            <div className="divide-y divide-gray-100 dark:divide-slate-700">
-              {donors.map((donor) => (
-                <div
-                  key={donor.id}
-                  className="py-3.5 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center border-2 shrink-0",
-                        donor.isAnonymous
-                          ? "bg-gray-100 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
-                          : "bg-green-100 border-green-200",
-                      )}
-                    >
-                      <span className="text-sm font-bold text-green-700">
-                        {donor.isAnonymous ? "?" : donor.name.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900 dark:text-slate-100 text-sm">
-                        {donor.isAnonymous ? "Donatur Anonim" : donor.name}
-                      </p>
-                      {donor.message && (
-                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 italic">
-                          &ldquo;{donor.message}&rdquo;
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-                        {donor.timestamp}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800 border-green-200 font-bold px-3">
-                    Rp {donor.amount.toLocaleString("id-ID")}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
         </Card>
 
         <div className="flex items-center justify-between">

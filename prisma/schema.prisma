@@ -112,6 +112,7 @@ model Project {
   donations             Donation[]
   notifications         Notification[]
   updates               ProjectUpdate[]
+  documentUrl           String[]                 @default([])
   agency                User?                    @relation("AgencyProjects", fields: [agencyId], references: [id])
   category              ProjectCategory?         @relation(fields: [categoryId], references: [id])
   votes                 Vote[]

@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         FROM projects
         WHERE latitude BETWEEN ${parseFloat(minLat)} AND ${parseFloat(maxLat)}
           AND longitude BETWEEN ${parseFloat(minLng)} AND ${parseFloat(maxLng)}
-          AND deletedAt IS NULL
+          AND "deletedAt" IS NULL
       `;
     } else {
       projects = await prisma.project.findMany({
@@ -82,6 +82,7 @@ const createProjectSchema = z.object({
   description: z.string().min(10),
   budgetTarget: z.number().positive(),
   imageUrls: z.array(z.string()).optional(),
+  documentUrls: z.array(z.string()).optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   estimatedDurationDays: z.number().int().positive().optional(),
@@ -118,6 +119,10 @@ const createProjectSchema = z.object({
  *                 type: array
  *                 items:
  *                   type: string
+ *               documentUrls:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               latitude:
  *                 type: number
  *               longitude:
@@ -144,7 +149,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const result = createProjectSchema.safeParse(body);
     if (!result.success)
-      return badRequest("Validation failed", result.error.flatten());
+      return badRequest("Validation failed", z.treeifyError(result.error));
 
     const data = result.data;
 
@@ -156,6 +161,7 @@ export async function POST(req: NextRequest) {
         budgetTarget: data.budgetTarget,
         currentFunding: 0,
         imageUrls: data.imageUrls || [],
+        documentUrl: data.documentUrls || [],
         latitude: data.latitude,
         longitude: data.longitude,
         estimatedDurationDays: data.estimatedDurationDays,

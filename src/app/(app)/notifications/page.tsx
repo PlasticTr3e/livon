@@ -51,9 +51,9 @@ export default function NotificationsPage() {
               string,
               "funding" | "project" | "comment" | "system"
             > = {
-              funding: "funding",
-              project: "project",
-              comment: "comment",
+              donation_success: "funding",
+              project_status: "project",
+              comment_reply: "comment",
               system: "system",
             };
 
@@ -66,7 +66,7 @@ export default function NotificationsPage() {
 
             const notificationType = notif.type?.toLowerCase() || "system";
             const category = categoryMap[notificationType] || "system";
-            const dotColor = dotColorMap[notificationType] || "bg-purple-400";
+            const dotColor = dotColorMap[category] || "bg-purple-400";
 
             return {
               id: notif.id,
@@ -215,16 +215,6 @@ export default function NotificationsPage() {
               Belum Dibaca {unreadCount > 0 && `(${unreadCount})`}
             </button>
           </div>
-
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllAsRead}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-            >
-              <CheckCheck className="w-4 h-4" />
-              Tandai Semua Dibaca
-            </button>
-          )}
         </div>
 
         {/* Notifications List */}

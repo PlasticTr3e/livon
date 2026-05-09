@@ -13,10 +13,6 @@ import {
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import prisma from "@/lib/prisma";
 
-const categoryColor: Record<string, string> = {
-  Featured: "bg-gray-900 text-white",
-};
-
 type AgencyProfile = { agencyName: string };
 type Author = {
   name?: string;
@@ -73,13 +69,6 @@ export default async function NewsDetailPage({
     );
   }
 
-  const category =
-    article.category &&
-    typeof article.category === "object" &&
-    "name" in article.category
-      ? (article.category as { name: string }).name
-      : "Featured";
-
   let author = "Admin";
   if (article.author) {
     if (
@@ -127,52 +116,41 @@ export default async function NewsDetailPage({
 
   return (
     <div className="flex flex-col h-full overflow-y-auto bg-slate-50 dark:bg-slate-950">
-      <div className="max-w-5xl mx-auto w-full px-4 md:px-8 py-8">
+      <div className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between shadow-sm shrink-0">
         <Link
           href="/news"
-          className="flex items-center gap-2 text-sm font-semibold text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors mb-8 group"
+          className="flex items-center text-green-600 hover:text-green-800 dark:text-green-400 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Back to News
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          <span className="font-medium text-sm">Kembali ke Berita</span>
         </Link>
+      </div>
 
+      <div className="max-w-5xl mx-auto w-full px-4 md:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-10">
           <article className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-4">
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${categoryColor[category] || "bg-green-100 text-green-800"}`}
-              >
-                {category}
-              </span>
-              <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500 font-medium">
-                <Clock className="w-3.5 h-3.5" /> {readTime}
-              </span>
-            </div>
-
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-slate-100 leading-tight mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-slate-100 leading-tight mb-4">
               {article.title}
             </h1>
 
-            <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-slate-400 pb-6 border-b border-gray-200 dark:border-slate-700 mb-6">
+            <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-slate-400 pb-6 border-b border-gray-200 dark:border-slate-700 mb-6">
               <span className="flex items-center gap-1.5">
-                <User className="w-4 h-4" />
-                <span className="font-medium">{author}</span>
+                <User className="w-3.5 h-3.5" />
+                <span>{author}</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4" />
+                <Clock className="w-3.5 h-3.5" />
                 {date}
               </span>
             </div>
 
-            {image && (
-              <div className="w-full h-72 md:h-96 rounded-2xl overflow-hidden mb-8 border border-gray-200 dark:border-slate-700">
-                <ImageWithFallback
-                  src={image}
-                  alt={article.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+            <div className="w-full h-72 md:h-96 rounded-2xl overflow-hidden mb-8 border border-gray-200 dark:border-slate-700">
+              <ImageWithFallback
+                src={article.thumbnailUrl}
+                alt={article.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
 
             <p className="text-lg text-gray-600 dark:text-slate-300 leading-relaxed font-medium border-l-4 border-green-600 dark:border-green-500 pl-5 mb-8 italic">
               {excerpt}
@@ -207,7 +185,7 @@ export default async function NewsDetailPage({
           <aside className="w-full lg:w-72 flex-shrink-0">
             <div className="lg:sticky lg:top-0 space-y-6">
               <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-5">
-                <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-4">
                   About this article
                 </p>
                 <dl className="space-y-3 text-sm">
@@ -227,18 +205,7 @@ export default async function NewsDetailPage({
                       {date}
                     </dd>
                   </div>
-                  <div>
-                    <dt className="text-gray-400 dark:text-slate-500 text-xs uppercase tracking-wider mb-0.5">
-                      Category
-                    </dt>
-                    <dd>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-bold ${categoryColor[category] || "bg-green-100 text-green-800"}`}
-                      >
-                        {category}
-                      </span>
-                    </dd>
-                  </div>
+
                   <div>
                     <dt className="text-gray-400 dark:text-slate-500 text-xs uppercase tracking-wider mb-0.5">
                       Reading Time
@@ -280,14 +247,6 @@ export default async function NewsDetailPage({
                   ))}
                 </div>
               </div>
-
-              <Link
-                href="/news"
-                className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border-2 border-gray-900 dark:border-slate-400 text-sm font-bold text-gray-900 dark:text-slate-300 hover:bg-gray-900 dark:hover:bg-slate-700 hover:text-white transition-all"
-              >
-                <ChevronRight className="w-4 h-4" />
-                Back to News
-              </Link>
             </div>
           </aside>
         </div>

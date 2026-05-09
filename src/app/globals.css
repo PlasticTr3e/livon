@@ -52,8 +52,7 @@
     box-sizing: border-box;
   }
   body {
-    background-color: rgb(var(--background));
-    color: rgb(var(--foreground));
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   h1 {

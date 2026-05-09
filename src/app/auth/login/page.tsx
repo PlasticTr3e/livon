@@ -22,9 +22,9 @@ export default function LoginPage() {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
       if (sp.get("registered") === "true") {
-        return "Pendaftaran akun berhasil disubmit. Untuk mengakses aplikasi, akun Anda wajib diverifikasi terlebih dahulu oleh admin aplikasi LIVON. Estimasi pengerjaan verifikasi adalah 2-3 hari kerja.";
+        return "Your registration has been successfully submitted. To access the application, your account must be verified by the LIVON admin first. Estimated verification time is 2-3 business days.";
       } else if (sp.get("verified") === "true") {
-        return "Email Anda berhasil diverifikasi! Silakan masuk menggunakan akun Anda.";
+        return "Your email has been successfully verified! Please log in with your account.";
       }
     }
     return "";
@@ -88,7 +88,7 @@ export default function LoginPage() {
       // Check verification
       const isVerified = await checkUserVerification(result.data.user.id);
       if (!isVerified) {
-        setError("Akun belum diverifikasi oleh admin.");
+        setError("Your account has not been verified by the admin yet.");
         return;
       }
 
@@ -151,12 +151,12 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-[2.2rem] font-extrabold text-gray-900 dark:text-slate-100 leading-tight mb-2">
-            Selamat Datang!
+            Welcome!
           </h1>
           <p className="text-gray-400 dark:text-slate-500 text-sm leading-relaxed mb-6">
-            Masuk ke LIVON dan bantu buat perumahan
+            Log in to LIVON and help make your neighborhood
             <br />
-            jadi lebih baik lagi yuk.
+            even better!
           </p>
 
           {successMsg && (
@@ -175,7 +175,7 @@ export default function LoginPage() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                Pendaftaran Berhasil!
+                Registration Successful!
               </div>
               <p className="text-center">{successMsg}</p>
             </div>
@@ -185,7 +185,7 @@ export default function LoginPage() {
             <input
               type="email"
               name="email"
-              placeholder="Alamat email"
+              placeholder="Email address"
               value={formData.email}
               onChange={handleInputChange}
               className="w-full h-12 px-5 rounded-full border border-gray-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-colors"
@@ -196,7 +196,7 @@ export default function LoginPage() {
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="Kata sandi"
+                placeholder="Password"
                 value={formData.password}
                 onChange={handleInputChange}
                 className="w-full h-12 px-5 pr-12 rounded-full border border-gray-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-colors"
@@ -220,15 +220,15 @@ export default function LoginPage() {
                 href="/forgot-password"
                 className="text-xs text-gray-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400 font-medium transition-colors"
               >
-                Lupa kata sandi?
+                Forgot password?
               </Link>
             </div>
 
             <button
               type="submit"
-              className="w-full h-12 bg-linear-to-r from-green-600 to-green-700 text-green rounded-full font-semibold text-sm hover:from-green-700 hover:to-green-800 transition-all mt-1 shadow-sm shadow-green-200 dark:shadow-green-900"
+              className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-full font-bold text-base shadow-sm shadow-green-200 dark:shadow-green-900 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all mt-1"
             >
-              Masuk
+              Log In
             </button>
             {error && (
               <p className="text-red-500 text-sm text-center mt-2">{error}</p>
@@ -236,14 +236,15 @@ export default function LoginPage() {
             <div className="flex items-center gap-3 my-1">
               <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
               <span className="text-xs text-gray-400 dark:text-slate-500 whitespace-nowrap">
-                atau lanjutkan dengan
+                or continue with
               </span>
               <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
             </div>
 
-            <button
-              type="button"
-              className="w-full h-12 flex items-center justify-center gap-3 rounded-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-600 transition-colors"
+            <a
+              href="/api/auth/google"
+              className="w-full h-12 flex items-center justify-center gap-3 rounded-full border-2 border-gray-200 bg-white text-gray-800 font-bold hover:bg-gray-50 hover:border-green-400 transition-colors"
+              style={{ textDecoration: "none" }}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -267,23 +268,16 @@ export default function LoginPage() {
                   fill="#EA4335"
                 />
               </svg>
-              <a
-                href="/api/auth/google"
-                className="w-full h-12 flex items-center justify-center gap-3 rounded-full border-2 border-gray-200 ..."
-              >
-                <span className="text-sm font-medium">
-                  Lanjutkan dengan Google
-                </span>
-              </a>
-            </button>
+              <span className="text-sm font-medium">Continue with Google</span>
+            </a>
 
             <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-2">
-              Belum punya akun?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href="./register"
                 className="font-semibold text-green-600 dark:text-green-400 hover:underline"
               >
-                Daftar
+                Register
               </Link>
             </p>
           </form>
@@ -308,34 +302,6 @@ export default function LoginPage() {
             LIVON
           </span>
         </div>
-        <div className="absolute top-20 left-10 bg-white/10 backdrop-blur-sm rounded-2xl p-4 w-52 border border-white/20">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 bg-yellow-400 rounded-lg flex items-center justify-center">
-              <MapPin className="w-3.5 h-3.5 text-yellow-900" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white">LIVON Map</p>
-              <p className="text-[10px] text-green-200">8 Active Projects</p>
-            </div>
-          </div>
-          <div className="mt-2 flex gap-1">
-            <span className="px-2 py-0.5 bg-yellow-400 text-yellow-900 rounded-full text-[10px] font-bold">
-              Housing
-            </span>
-            <span className="px-2 py-0.5 bg-white/20 text-white rounded-full text-[10px] font-medium">
-              Infra
-            </span>
-          </div>
-        </div>
-        <div className="absolute bottom-28 right-10 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20 flex items-center gap-2">
-          <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-            <Users className="w-4 h-4 text-yellow-900" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-white">342 Residents</p>
-            <p className="text-[10px] text-green-200">Active community</p>
-          </div>
-        </div>
         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-white/30 shadow-2xl relative transition-all duration-700 group hover:scale-105">
           <ImageWithFallback
             key={currentImageIndex} // forces re-render for fading
@@ -351,9 +317,6 @@ export default function LoginPage() {
             <span className="text-yellow-300 animate-pulse inline-block">
               transparent & organized
             </span>
-          </p>
-          <p className="text-green-200 text-sm mt-2 font-medium">
-            Living Vision Online — LIVON
           </p>
           <div className="flex justify-center gap-2 mt-4">
             {images.map((_, index) => (
