@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { Role } from "@/generated/prisma/enums";
+import { broadcastNotification } from "@/lib/notifications";
 
 /**
  * @swagger
@@ -134,6 +135,14 @@ export async function POST(req: NextRequest) {
         createdById: authUser.userId,
         publishedAt: new Date(),
       },
+    });
+
+    await broadcastNotification({
+      recipientRole: Role.WARGA,
+      title: "News Baru",
+      type: "NEW_NEWS",
+      message: `Ada news baru: "${newsItem.title}".`,
+      referenceId: newsItem.id,
     });
 
     return created("News published successfully", { data: newsItem });

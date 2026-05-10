@@ -6,6 +6,7 @@ import { created, badRequest, internalError } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { broadcastNotification } from "@/lib/notifications";
 
 const registerSchema = z.object({
   email: z.email(),
@@ -169,6 +170,15 @@ export async function POST(req: NextRequest) {
         expires: new Date(Date.now() + aDay),
       },
     });
+
+    if (role === Role.WARGA) {
+      await broadcastNotification({
+        recipientRole: Role.AGENCY,
+        title: "Warga Baru Mendaftar",
+        type: "NEW_REGISTRATION",
+        message: `${profileData.fullName || email} mendaftar dan menunggu verifikasi.`,
+      });
+    }
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
