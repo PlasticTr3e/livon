@@ -152,58 +152,6 @@ export async function GET(
  *       400:
  *         description: Failed to update citizen
  */
-// export async function PUT(
-//   req: NextRequest,
-//   { params }: { params: Promise<{ id: string }> },
-// ) {
-//   try {
-//     const authUser = getAuthUser(req);
-//     if (!authUser || authUser.role !== Role.AGENCY) {
-//       return NextResponse.json(
-//         { success: false, message: "Unauthorized access" },
-//         { status: 401 },
-//       );
-//     }
-
-//     const { id } = await params;
-//     const body = await req.json();
-
-//     const existingUser = await prisma.user.findFirst({
-//       where: { id, role: Role.WARGA, deletedAt: null },
-//     });
-
-//     if (!existingUser) {
-//       return notFound("Citizen not found");
-//     }
-
-//     const updatedUser = await prisma.user.update({
-//       where: { id },
-//       data: {
-//         ...(body.role && { role: body.role }), // Allow role modification if necessary
-//         citizenProfile: {
-//           update: {
-//             ...(body.fullName && { fullName: body.fullName }),
-//             ...(body.phone && { phone: body.phone }),
-//             ...(body.isVerified !== undefined && {
-//               isVerified: body.isVerified,
-//             }),
-//           },
-//         },
-//       },
-//       include: {
-//         citizenProfile: true,
-//       },
-//     });
-
-//     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-//     const { passwordHash, ...safeUpdatedData } = updatedUser;
-
-//     return ok("Citizen updated successfully", { data: safeUpdatedData });
-//   } catch (error) {
-//     console.error("[AGENCY_CITIZEN_PUT]", error);
-//     return badRequest("Failed to update citizen", error);
-//   }
-// }
 
 export async function PUT(
   req: NextRequest,

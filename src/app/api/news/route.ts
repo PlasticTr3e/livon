@@ -112,36 +112,6 @@ const createNewsSchema = z.object({
  *       500:
  *         description: Internal server error
  */
-// export async function POST(req: NextRequest) {
-//   try {
-//     const authUser = getAuthUser(req);
-//     if (!authUser || authUser.role !== Role.AGENCY) {
-//       return badRequest("Forbidden: Only Agencies can publish news");
-//     }
-
-//     const body = await req.json();
-//     const result = createNewsSchema.safeParse(body);
-//     if (!result.success)
-//       return badRequest("Validation failed", z.treeifyError(result.error));
-
-//     const { title, content, thumbnailUrl } = result.data;
-
-//     const newsItem = await prisma.news.create({
-//       data: {
-//         title,
-//         content,
-//         thumbnailUrl: thumbnailUrl || null,
-//         createdById: authUser.userId,
-//         publishedAt: new Date(),
-//       },
-//     });
-
-//     return created("News published successfully", { data: newsItem });
-//   } catch (error) {
-//     console.error("POST News Error", error);
-//     return internalError("An error occured publishing news");
-//   }
-// }
 
 export async function POST(req: NextRequest) {
   try {
