@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { z } from "zod";
+import { treeifyError, z } from "zod";
 import prisma from "@/lib/prisma";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
@@ -118,9 +118,9 @@ export async function POST(req: NextRequest) {
     const body: unknown = await req.json();
     const result = commentSchema.safeParse(body);
     if (!result.success)
-      return badRequest("Validation failed", result.error.flatten());
+      return badRequest("Validation failed", treeifyError(result.error));
 
-    const sentiment = analyzeSentiment(result.data.text);
+    const sentiment = await analyzeSentiment(result.data.text);
 
     const newComment = await prisma.comment.create({
       data: {
