@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { ProjectStatus, Role } from "@/generated/prisma/enums";
+import { broadcastNotification } from "@/lib/notifications";
 
 /**
  * @swagger
@@ -207,6 +208,14 @@ export async function POST(req: NextRequest) {
         data: wargaNotifications,
       });
     }
+
+    await broadcastNotification({
+      recipientRole: Role.WARGA,
+      title: "Proyek Baru",
+      type: "NEW_PROJECT",
+      message: `Ada proyek baru berjudul "${project.title}".`,
+      projectId: project.id,
+    });
 
     return created("Project created successfully", { data: project });
   } catch (error) {

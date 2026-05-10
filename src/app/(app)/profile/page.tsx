@@ -9,6 +9,10 @@ import {
   ThumbsUp,
   MessageSquare,
   Heart,
+  FolderPlus,
+  RefreshCw,
+  FileText,
+  UserCheck,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase"; // pastikan sudah ada
 import { useState, useEffect } from "react";
@@ -16,35 +20,55 @@ import React from "react";
 
 type ActiveTab = "personal" | "activity";
 
+// Menambahkan semua tipe yang mungkin dikirim oleh backend
+type ActivityType =
+  | "voted"
+  | "commented"
+  | "donated"
+  | "project_created"
+  | "project_updated"
+  | "news_created"
+  | "news_updated"
+  | "warga_verified";
+
 type ActivityItem = {
   id: string | number;
-  type: "voted" | "commented" | "donated";
+  type: ActivityType;
   project: string;
   targetTitle: string;
   time: string;
   createdAt: string;
+  actionDesc: string; // Tambahan untuk menyimpan teks deskripsi aksi
 };
 
 // Transform database records ke ActivityItem format
 function transformToActivityItem(record: {
   id: string;
   type: string;
+  action: string;
   targetTitle: string;
   createdAt: string;
 }): ActivityItem {
-  const typeMap: { [key: string]: "voted" | "commented" | "donated" } = {
+  // Mapping dari ENUM backend ke tipe frontend
+  const typeMap: Record<string, ActivityType> = {
     VOTE: "voted",
     COMMENT: "commented",
     DONATION: "donated",
+    PROJECT_CREATED: "project_created",
+    PROJECT_UPDATED: "project_updated",
+    NEWS_CREATED: "news_created",
+    NEWS_UPDATED: "news_updated",
+    WARGA_VERIFIED: "warga_verified",
   };
 
   return {
     id: record.id,
-    type: typeMap[record.type] || "voted",
-    project: record.targetTitle || "Unknown Project",
-    targetTitle: record.targetTitle || "Unknown Project",
+    type: typeMap[record.type] || "voted", // Default fallback
+    project: record.targetTitle || "Unknown Target",
+    targetTitle: record.targetTitle || "Unknown Target",
     time: formatTimeAgo(record.createdAt),
     createdAt: record.createdAt,
+    actionDesc: record.action || "Interacted",
   };
 }
 
@@ -63,15 +87,51 @@ function formatTimeAgo(dateString: string): string {
 }
 
 export default function ProfilePage() {
-  const activityLabel = {
-    voted: "Voted on project",
-    commented: "Commented on project",
-    donated: "Donated to project",
-  };
-  const activityColor = {
-    voted: "bg-green-600 text-white",
-    commented: "bg-yellow-100 text-yellow-800",
-    donated: "bg-green-700 text-white",
+  // Konfigurasi Label, Warna, dan Ikon untuk SETIAP tipe aktivitas
+  const activityConfig: Record<
+    ActivityType,
+    { label: string; color: string; icon: React.ElementType }
+  > = {
+    voted: {
+      label: "Voted on project",
+      color: "bg-green-600 text-white",
+      icon: ThumbsUp,
+    },
+    commented: {
+      label: "Commented on project",
+      color: "bg-yellow-100 text-yellow-800",
+      icon: MessageSquare,
+    },
+    donated: {
+      label: "Donated to project",
+      color: "bg-green-700 text-white",
+      icon: Heart,
+    },
+    project_created: {
+      label: "Created Project",
+      color: "bg-blue-600 text-white",
+      icon: FolderPlus,
+    },
+    project_updated: {
+      label: "Updated Project",
+      color: "bg-blue-100 text-blue-800",
+      icon: RefreshCw,
+    },
+    news_created: {
+      label: "Published News",
+      color: "bg-purple-600 text-white",
+      icon: FileText,
+    },
+    news_updated: {
+      label: "Updated News",
+      color: "bg-purple-100 text-purple-800",
+      icon: RefreshCw,
+    },
+    warga_verified: {
+      label: "Verified User",
+      color: "bg-emerald-100 text-emerald-800",
+      icon: UserCheck,
+    },
   };
 
   type CitizenProfile = {
@@ -117,7 +177,11 @@ export default function ProfilePage() {
 
   let userRole = "Resident";
   if (user?.role === "ADMIN") userRole = "Admin";
-  else if (user?.role === "MANAGER" || user?.agencyProfile)
+  else if (
+    user?.role === "MANAGER" ||
+    user?.role === "AGENCY" ||
+    user?.agencyProfile
+  )
     userRole = "Manager";
 
   useEffect(() => {
@@ -136,6 +200,7 @@ export default function ProfilePage() {
         setUser(data.data || data.data?.data || null);
       }
     }
+
     async function fetchActivities() {
       const token = localStorage.getItem("livon-token");
       if (!token) return;
@@ -161,6 +226,7 @@ export default function ProfilePage() {
         setActivities([]);
       }
     }
+
     fetchUser();
     fetchActivities();
   }, []);
@@ -190,20 +256,18 @@ export default function ProfilePage() {
       setUser((prev) => {
         if (!prev) return data.data || data.data?.data || null;
         const newUser = { ...prev };
-        // Gabungkan citizenProfile jika ada
         if (prev.citizenProfile && data.data) {
           newUser.citizenProfile = { ...prev.citizenProfile, ...data.data };
         } else if (prev.agencyProfile && data.data) {
           newUser.agencyProfile = { ...prev.agencyProfile, ...data.data };
         }
-        // Update field di root user jika ada
         if (data.data?.email) newUser.email = data.data.email;
         if (data.data?.role) newUser.role = data.data.role;
         return newUser;
       });
-      setFeedback("Data berhasil diperbarui!");
+      setFeedback("Data successfully updated!");
     } else {
-      setFeedback("Gagal memperbarui data.");
+      setFeedback("Failed to update data.");
     }
   }
 
@@ -213,14 +277,15 @@ export default function ProfilePage() {
     );
   }
 
-  // --- Insight Computations ---
+  // --- Insight Computations (Hanya dihitung jika Warga) ---
   const totalVotes = activities.filter((a) => a.type === "voted").length;
   const totalComments = activities.filter((a) => a.type === "commented").length;
   const totalDonations = activities.filter((a) => a.type === "donated").length;
 
   let mostInteractedProject = "";
   let maxInteractions = 0;
-  if (activities.length > 0) {
+
+  if (userRole === "Resident" && activities.length > 0) {
     const projectCounts: Record<string, number> = {};
     activities.forEach((a) => {
       projectCounts[a.targetTitle] = (projectCounts[a.targetTitle] || 0) + 1;
@@ -232,6 +297,17 @@ export default function ProfilePage() {
       }
     }
   }
+
+  // --- Insight Computations (Hanya dihitung jika Admin/Agency) ---
+  const totalProjectsMade = activities.filter(
+    (a) => a.type === "project_created",
+  ).length;
+  const totalNewsMade = activities.filter(
+    (a) => a.type === "news_created",
+  ).length;
+  const totalVerified = activities.filter(
+    (a) => a.type === "warga_verified",
+  ).length;
 
   const lastActivityTime =
     activities.length > 0 ? formatTimeAgo(activities[0].createdAt) : null;
@@ -245,8 +321,8 @@ export default function ProfilePage() {
             <User className="w-10 h-10 text-green-600 dark:text-green-400" />
           </div>
           <p className="font-bold text-gray-900 dark:text-slate-100 text-base leading-tight">
-            {userRole === "Manager"
-              ? user?.agencyProfile?.agencyName
+            {userRole === "Manager" || userRole === "Admin"
+              ? user?.agencyProfile?.agencyName || "Administrator"
               : user?.citizenProfile?.fullName || user?.name || ""}
           </p>
           <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 break-all">
@@ -303,54 +379,55 @@ export default function ProfilePage() {
                 Manage your account details and preferences.
               </p>
             </div>
+            {/* Form personal information (Tidak diubah) */}
             <form onSubmit={updateProfile} className="space-y-5">
-              {userRole === "Manager" ? (
+              {userRole === "Manager" || userRole === "Admin" ? (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                      Nama Instansi
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Agency Name
                     </label>
                     <input
                       name="agencyName"
                       defaultValue={user?.agencyProfile?.agencyName || ""}
-                      className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                      className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                       Email Address
                     </label>
                     <input
                       name="email"
                       defaultValue={user?.email ?? ""}
-                      className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                      className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                      Nomor Telepon
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Phone Number
                     </label>
                     <input
                       name="phone"
                       defaultValue={user?.agencyProfile?.phone || ""}
-                      className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                      className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                      Alamat Instansi
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Agency Address
                     </label>
                     <input
                       name="address"
                       defaultValue={user?.agencyProfile?.address || ""}
-                      className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                      className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                     />
                   </div>
                 </>
               ) : (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                       Full Name
                     </label>
                     <input
@@ -358,57 +435,57 @@ export default function ProfilePage() {
                       defaultValue={
                         user?.citizenProfile?.fullName || user?.name || ""
                       }
-                      className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                      className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                       Email Address
                     </label>
                     <input
                       name="email"
                       defaultValue={user?.email ?? ""}
-                      className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                      className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                      Nomor Telepon
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Phone Number
                     </label>
                     <input
                       name="phone"
                       defaultValue={
                         user?.citizenProfile?.phone || user?.phone || ""
                       }
-                      className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                      className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                      NIK
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      National Identity Number (NIK)
                     </label>
                     <input
                       type="text"
                       value={user?.citizenProfile?.nik || ""}
                       readOnly
-                      className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 text-sm text-gray-500 cursor-not-allowed select-none"
+                      className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-slate-100 text-sm text-gray-500 cursor-not-allowed select-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                      Nomor KK
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Family card Number (KK)
                     </label>
                     <input
                       type="text"
                       value={user?.citizenProfile?.kkNumber || ""}
                       readOnly
-                      className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 text-sm text-gray-500 cursor-not-allowed select-none"
+                      className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-slate-100 text-sm text-gray-500 cursor-not-allowed select-none"
                     />
                   </div>
                   <div className="flex gap-3">
                     <div className="flex-1">
-                      <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                        Blok Rumah
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        House Block
                       </label>
                       <input
                         name="blokRumah"
@@ -417,12 +494,12 @@ export default function ProfilePage() {
                           user?.blokRumah ||
                           ""
                         }
-                        className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                        className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                       />
                     </div>
                     <div className="w-32">
-                      <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                        No. Rumah
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        House Number
                       </label>
                       <input
                         name="noRumah"
@@ -431,19 +508,20 @@ export default function ProfilePage() {
                           user?.noRumah ||
                           ""
                         }
-                        className="w-full h-12 px-5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                        className="w-full h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                       />
                     </div>
                   </div>
                 </>
               )}
+
               <div>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  Status Akun
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Account Status
                 </label>
-                <div className="flex items-center gap-2 h-12 px-5 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
-                  <CheckCircle2 className="w-4 h-4 text-green-700 dark:text-green-400" />
-                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                <div className="flex items-center gap-2 h-12 px-5 rounded-xl border border-green-200 bg-green-50">
+                  <CheckCircle2 className="w-4 h-4 text-green-700" />
+                  <span className="text-sm font-semibold text-green-700">
                     Verified
                   </span>
                 </div>
@@ -452,12 +530,11 @@ export default function ProfilePage() {
                 type="submit"
                 className="w-full h-12 bg-green-600 text-white rounded-xl font-semibold text-sm hover:bg-green-700 transition-all mt-1 flex items-center justify-center gap-2"
               >
-                <Save className="w-4 h-4" />
-                Simpan
+                <Save className="w-4 h-4" /> Save
               </button>
               {feedback && (
                 <div
-                  className={`mt-2 text-center text-sm font-semibold ${feedback.includes("berhasil") ? "text-green-600" : "text-red-500"}`}
+                  className={`mt-2 text-center text-sm font-semibold ${feedback.includes("success") ? "text-green-600" : "text-red-500"}`}
                 >
                   {feedback}
                 </div>
@@ -473,7 +550,7 @@ export default function ProfilePage() {
                 Recent Activity
               </h1>
               <p className="text-gray-400 dark:text-slate-500 text-sm mt-1">
-                Your latest interactions with community projects.
+                Activity log and interactions on the LIVON platform.
               </p>
             </div>
 
@@ -486,72 +563,111 @@ export default function ProfilePage() {
               </div>
               <div className="relative flex justify-start">
                 <span className="bg-slate-50 dark:bg-slate-950 pr-3 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                  Ringkasan Aktivitas
+                  Activity Summary
                 </span>
               </div>
             </div>
 
-            {/* Statistik Akumulasi (Total Counter Card) */}
+            {/* Statistik Akumulasi - Berbeda berdasarkan Role */}
             <div className="mb-6 space-y-3">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-green-50 dark:bg-slate-800 border border-green-200 dark:border-slate-700 p-4 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-green-700 dark:text-green-400">
-                    {totalVotes}
+              {userRole === "Manager" || userRole === "Admin" ? (
+                // Card Statistik Khusus Admin/Manager
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center">
+                      <div className="text-2xl font-bold text-blue-700">
+                        {totalProjectsMade}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 uppercase tracking-wide font-semibold">
+                        Projects Created
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 border border-purple-200 p-4 rounded-xl text-center">
+                      <div className="text-2xl font-bold text-purple-700">
+                        {totalNewsMade}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 uppercase tracking-wide font-semibold">
+                        News Published
+                      </div>
+                    </div>
+                    <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center">
+                      <div className="text-2xl font-bold text-emerald-700">
+                        {totalVerified}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 uppercase tracking-wide font-semibold">
+                        Verified Residents
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 uppercase tracking-wide font-semibold">
-                    Total Vote
+                  <p className="text-sm text-gray-600 italic">
+                    Your agency has managed {totalProjectsMade} projects,
+                    published {totalNewsMade} news, and verified {totalVerified}{" "}
+                    resident accounts.
+                  </p>
+                </>
+              ) : (
+                // Card Statistik Khusus Warga
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-green-50 border border-green-200 p-4 rounded-xl text-center">
+                      <div className="text-2xl font-bold text-green-700">
+                        {totalVotes}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 uppercase tracking-wide font-semibold">
+                        Total Votes
+                      </div>
+                    </div>
+                    <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-center">
+                      <div className="text-2xl font-bold text-yellow-700">
+                        {totalComments}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 uppercase tracking-wide font-semibold">
+                        Total Comments
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center">
+                      <div className="text-2xl font-bold text-blue-700">
+                        {totalDonations}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 uppercase tracking-wide font-semibold">
+                        Total Donations
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="bg-yellow-50 dark:bg-slate-800 border border-yellow-200 dark:border-slate-700 p-4 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
-                    {totalComments}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 uppercase tracking-wide font-semibold">
-                    Total Komentar
-                  </div>
-                </div>
-                <div className="bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 p-4 rounded-xl text-center">
-                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-                    {totalDonations}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 uppercase tracking-wide font-semibold">
-                    Total Donasi
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-slate-400 italic">
-                Anda telah memberikan {totalVotes} suara, {totalComments}{" "}
-                komentar, dan {totalDonations} donasi untuk kemajuan lingkungan.
-              </p>
+                  <p className="text-sm text-gray-600 italic">
+                    You have given {totalVotes} votes, {totalComments} comments,
+                    and {totalDonations} donations.
+                  </p>
+                </>
+              )}
             </div>
 
-            {/* Insights */}
-            {activities.length > 0 && (
-              <div className="mb-8 space-y-3">
-                {mostInteractedProject && (
-                  <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex gap-3 items-start">
+            {/* Insights Khusus Warga */}
+            {userRole === "Resident" &&
+              activities.length > 0 &&
+              mostInteractedProject && (
+                <div className="mb-8 space-y-3">
+                  <div className="bg-white border border-gray-200 rounded-xl p-4 flex gap-3 items-start">
                     <Activity className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-gray-700 dark:text-slate-300">
-                      Anda sangat peduli pada proyek{" "}
-                      <span className="font-semibold text-gray-900 dark:text-slate-100">
+                    <p className="text-sm text-gray-700">
+                      You care a lot about the project{" "}
+                      <span className="font-semibold text-gray-900">
                         {mostInteractedProject}
                       </span>{" "}
-                      (Anda telah berinteraksi sebanyak {maxInteractions} kali
-                      di proyek ini).
+                      ({maxInteractions} interactions).
                     </p>
                   </div>
-                )}
-                {lastActivityTime && (
-                  <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex gap-3 items-start">
-                    <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-gray-700 dark:text-slate-300">
-                      Aktivitas terakhir Anda tercatat{" "}
-                      <span className="font-semibold">{lastActivityTime}</span>.
-                      Teruslah berkontribusi untuk menjaga transparansi
-                      lingkungan!
-                    </p>
-                  </div>
-                )}
+                </div>
+              )}
+
+            {/* Insights General (Waktu Aktivitas Terakhir) */}
+            {lastActivityTime && (
+              <div className="mb-8 bg-white border border-gray-200 rounded-xl p-4 flex gap-3 items-start">
+                <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-gray-700">
+                  Your last activity was recorded on{" "}
+                  <span className="font-semibold">{lastActivityTime}</span>.
+                </p>
               </div>
             )}
 
@@ -564,44 +680,45 @@ export default function ProfilePage() {
               </div>
               <div className="relative flex justify-start">
                 <span className="bg-slate-50 dark:bg-slate-950 pr-3 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                  Riwayat Kontribusi
+                  Activity History
                 </span>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 mt-4">
               {activities.length === 0 && (
                 <div className="text-gray-400 dark:text-slate-500 text-center py-8">
-                  Belum ada aktivitas.
+                  No activity yet.
                 </div>
               )}
-              {activities.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-5 py-4 hover:border-green-400 dark:hover:border-green-600 transition-all"
-                >
+              {activities.map((item) => {
+                const config = activityConfig[item.type];
+                const IconComponent = config?.icon || Activity;
+
+                return (
                   <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${activityColor[item.type as keyof typeof activityColor]}`}
+                    key={item.id}
+                    className="flex items-center gap-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-5 py-4 hover:border-gray-400 transition-all"
                   >
-                    {item.type === "voted" && <ThumbsUp className="w-4 h-4" />}
-                    {item.type === "commented" && (
-                      <MessageSquare className="w-4 h-4" />
-                    )}
-                    {item.type === "donated" && <Heart className="w-4 h-4" />}
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${config?.color || "bg-gray-100 text-gray-600"}`}
+                    >
+                      <IconComponent className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate">
+                        {config?.label || item.actionDesc}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                        {item.targetTitle}
+                      </p>
+                    </div>
+                    <span className="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
+                      {item.time}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate">
-                      {activityLabel[item.type as keyof typeof activityLabel]}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
-                      {item.project}
-                    </p>
-                  </div>
-                  <span className="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">
-                    {item.time}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
