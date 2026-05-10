@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.venv
 
 # vercel
 .vercel
@@ -41,3 +42,10 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+/ai-service/models/*.pkl
+/ai-service/models/*.txt
+/ai-service/.venv/
+/ai-service/data/*.parquet
+/ai-service/data/*.csv
+/ai-service/.env
+/ai-service/requirements.txt
