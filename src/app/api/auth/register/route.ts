@@ -178,6 +178,24 @@ export async function POST(req: NextRequest) {
         type: "NEW_REGISTRATION",
         message: `${profileData.fullName || email} mendaftar dan menunggu verifikasi.`,
       });
+
+      const agencies = await prisma.user.findMany({
+        where: { role: Role.AGENCY },
+        select: { id: true },
+      });
+
+      if (agencies.length > 0) {
+        const agencyNotifications = agencies.map((agency) => ({
+          userId: agency.id,
+          referenceId: user.id,
+          title: "Warga Baru Mendaftar",
+          type: "NEW_REGISTRATION",
+          message: `${profileData.fullName || email} mendaftar dan menunggu verifikasi.`,
+        }));
+        await prisma.notification.createMany({
+          data: agencyNotifications,
+        });
+      }
     }
 
     const transporter = nodemailer.createTransport({

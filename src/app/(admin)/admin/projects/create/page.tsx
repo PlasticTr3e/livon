@@ -31,9 +31,9 @@ export default function CreateProjectPage() {
     duration: "",
     category: "Infrastructure",
     status: "Planning",
-    // -6.9321823, 107.7754652
-    lat: -6.9321823,
-    lng: 107.7754652,
+    // Koordinat tengah perumahan
+    lat: -6.941,
+    lng: 107.7755,
   });
   const [position, setPosition] = useState({
     lat: formData.lat,
@@ -157,6 +157,39 @@ export default function CreateProjectPage() {
         }
       }
 
+      let resolvedCategoryId: number | null = null;
+      if (formData.category) {
+        try {
+          const catRes = await fetch("/api/projects/categories");
+          if (catRes.ok) {
+            const catJson = await catRes.json();
+            const categories = catJson.data || [];
+            const matched = categories.find(
+              (c: { id: number; name: string }) =>
+                c.name.toLowerCase() === formData.category.toLowerCase(),
+            );
+            if (matched) {
+              resolvedCategoryId = matched.id;
+            } else {
+              const createRes = await fetch("/api/projects/categories", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ name: formData.category }),
+              });
+              if (createRes.ok) {
+                const createJson = await createRes.json();
+                resolvedCategoryId = createJson.data.id;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to map category", err);
+        }
+      }
+
       const payload: Record<string, unknown> = {
         title: formData.name,
         description: formData.description,
@@ -164,6 +197,10 @@ export default function CreateProjectPage() {
         latitude: formData.lat,
         longitude: formData.lng,
       };
+
+      if (resolvedCategoryId) {
+        payload.categoryId = resolvedCategoryId;
+      }
 
       if (imageUrls.length > 0) {
         payload.imageUrls = imageUrls;
@@ -191,6 +228,7 @@ export default function CreateProjectPage() {
       setTimeout(() => {
         setSaved(false);
         router.push("/admin/projects");
+        router.refresh();
       }, 2000);
     } catch (err) {
       setErrorMsg(

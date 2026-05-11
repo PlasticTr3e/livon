@@ -79,7 +79,16 @@ export default function MapPicker({
   return (
     <MapContainer
       center={[position.lat, position.lng]}
-      zoom={13}
+      zoom={15.5}
+      minZoom={15.5}
+      maxZoom={19}
+      zoomSnap={0.1}
+      maxBounds={[
+        [-6.944, 107.7725],
+        [-6.9385, 107.7785],
+      ]}
+      maxBoundsViscosity={0.5}
+      zoomControl={false}
       scrollWheelZoom={!readOnly}
       dragging={!readOnly}
       doubleClickZoom={!readOnly}
