@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Badge, Button, Card, cn } from "@/components/ui/WireframePrimitives";
+import { Badge, Button, Card } from "@/components/ui/WireframePrimitives";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-client";
 import { HandCoins, Search } from "lucide-react";
@@ -198,8 +198,8 @@ export default function CrowdfundingListPage() {
               </h1>
             </div>
             <p className="text-sm text-gray-500 dark:text-slate-400 ml-[52px] max-w-md leading-relaxed">
-              Bantu wujudkan lingkungan yang lebih baik dengan berdonasi pada
-              proyek-proyek komunitas yang sedang berjalan.
+              Help create a better environment by donating to ongoing community
+              projects.
             </p>
           </div>
 
