@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, MapPin, Users, Leaf } from "lucide-react";
+import { Eye, EyeOff, Leaf } from "lucide-react";
+// import { Eye, EyeOff, MapPin, Users, Leaf } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 

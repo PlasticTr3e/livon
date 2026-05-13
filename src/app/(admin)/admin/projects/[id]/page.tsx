@@ -30,11 +30,6 @@ const MapSelectorLeaflet = dynamic<{
   ),
 });
 
-interface ProjectCategory {
-  id: number;
-  name: string;
-}
-
 function EditProjectContent() {
   const { id } = useParams();
   const router = useRouter();
@@ -45,7 +40,7 @@ function EditProjectContent() {
     description: "",
     budgetTarget: "",
     estimatedDurationDays: "",
-    categoryId: "",
+    category: "Infrastructure",
     status: "USULAN",
     latitude: -6.941,
     longitude: 107.7755,
@@ -53,7 +48,6 @@ function EditProjectContent() {
     documentUrl: [] as string[],
   });
 
-  const [categories, setCategories] = useState<ProjectCategory[]>([]);
   const [projectPhotos, setProjectPhotos] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(!isCreate);
@@ -62,14 +56,6 @@ function EditProjectContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const catRes = await fetch("/api/projects/categories");
-        if (catRes.ok) {
-          const catJson = await catRes.json();
-          if (Array.isArray(catJson.data)) {
-            setCategories(catJson.data);
-          }
-        }
-
         if (!isCreate) {
           const res = await fetch(`/api/projects/${id}`);
           if (res.ok) {
@@ -83,7 +69,7 @@ function EditProjectContent() {
                 estimatedDurationDays: d.estimatedDurationDays
                   ? String(d.estimatedDurationDays)
                   : "",
-                categoryId: d.categoryId ? String(d.categoryId) : "",
+                category: d.category?.name || "Infrastructure",
                 status: d.status || "USULAN",
                 latitude: d.latitude || -6.941,
                 longitude: d.longitude || 107.7755,
@@ -148,6 +134,40 @@ function EditProjectContent() {
     }
 
     try {
+      const token = localStorage.getItem("livon-token");
+      let resolvedCategoryId: number | null = null;
+      if (formData.category) {
+        try {
+          const catRes = await fetch("/api/projects/categories");
+          if (catRes.ok) {
+            const catJson = await catRes.json();
+            const categories = catJson.data || [];
+            const matched = categories.find(
+              (c: { id: number; name: string }) =>
+                c.name.toLowerCase() === formData.category.toLowerCase(),
+            );
+            if (matched) {
+              resolvedCategoryId = matched.id;
+            } else {
+              const createRes = await fetch("/api/projects/categories", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ name: formData.category }),
+              });
+              if (createRes.ok) {
+                const createJson = await createRes.json();
+                resolvedCategoryId = createJson.data.id;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to map category", err);
+        }
+      }
+
       const payload: Record<string, unknown> = {
         title: formData.title,
         description: formData.description,
@@ -158,14 +178,15 @@ function EditProjectContent() {
         documentUrls: formData.documentUrl || [],
       };
 
+      if (resolvedCategoryId) {
+        payload.categoryId = resolvedCategoryId;
+      }
+
       // Only add optional numeric fields if they have a value
       if (formData.estimatedDurationDays) {
         payload.estimatedDurationDays = parseInt(
           formData.estimatedDurationDays,
         );
-      }
-      if (formData.categoryId) {
-        payload.categoryId = parseInt(formData.categoryId);
       }
       if (formData.startDate) {
         payload.startDate = new Date(formData.startDate).toISOString();
@@ -180,8 +201,6 @@ function EditProjectContent() {
         payload.documentUrl = formData.documentUrl;
         delete payload.documentUrls;
       }
-
-      const token = localStorage.getItem("livon-token");
 
       console.log("Sending payload:", JSON.stringify(payload, null, 2));
 
@@ -339,15 +358,15 @@ function EditProjectContent() {
                   </label>
                   <select
                     className="w-full h-12 px-3 border border-green-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-green-400 text-sm font-bold text-gray-700"
-                    value={formData.categoryId}
-                    onChange={(e) => handleInput("categoryId", e.target.value)}
+                    value={formData.category}
+                    onChange={(e) => handleInput("category", e.target.value)}
                   >
-                    <option value="">Select Category</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
+                    <option>Infrastructure</option>
+                    <option>Recreation</option>
+                    <option>Security</option>
+                    <option>Sanitation</option>
+                    <option>Facility</option>
+                    <option>Education</option>
                   </select>
                 </div>
                 <div>

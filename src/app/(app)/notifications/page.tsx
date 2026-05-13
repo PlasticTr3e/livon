@@ -148,17 +148,19 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    } catch (error) {
-      console.error("Failed to mark all as read:", error);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     try {
+      // Update local state optimistically
       setNotifications((prev) => prev.filter((n) => n.id !== id));
+
+      // Call API to delete in database
+      const token = localStorage.getItem("livon-token");
+      await apiFetch(`/api/notifications/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
     } catch (error) {
       console.error("Failed to delete notification:", error);
     }

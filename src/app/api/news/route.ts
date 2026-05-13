@@ -3,6 +3,7 @@ import z from "zod";
 import prisma from "@/lib/prisma";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
+import { generateExcerpt } from "@/lib/ai";
 import { Role } from "@/generated/prisma/enums";
 import { broadcastNotification } from "@/lib/notifications";
 
@@ -113,6 +114,7 @@ const createNewsSchema = z.object({
  *       500:
  *         description: Internal server error
  */
+
 export async function POST(req: NextRequest) {
   try {
     const authUser = getAuthUser(req);
@@ -127,15 +129,50 @@ export async function POST(req: NextRequest) {
 
     const { title, content, thumbnailUrl } = result.data;
 
+    let excerpt = "";
+    if (content) {
+      excerpt = await generateExcerpt(content);
+    }
+
     const newsItem = await prisma.news.create({
       data: {
         title,
         content,
+        excerpt: excerpt || null,
         thumbnailUrl: thumbnailUrl || null,
         createdById: authUser.userId,
         publishedAt: new Date(),
       },
     });
+
+    await prisma.notification.create({
+      data: {
+        userId: authUser.userId,
+        referenceId: newsItem.id,
+        title: "Membuat Berita",
+        type: "ACTIVITY_LOG",
+        message: `Anda telah mempublikasikan berita baru : ${newsItem.title}`,
+      },
+    });
+
+    const wargaUsers = await prisma.user.findMany({
+      where: { role: Role.WARGA },
+      select: { id: true },
+    });
+
+    if (wargaUsers.length > 0) {
+      const wargaNotifications = wargaUsers.map((user) => ({
+        userId: user.id,
+        referenceId: newsItem.id,
+        title: "Berita Baru !",
+        type: "NEW_NEWS",
+        message: `Ada berita terbaru : ${newsItem.title}. Yuk baca selengkapnya!`,
+      }));
+
+      await prisma.notification.createMany({
+        data: wargaNotifications,
+      });
+    }
 
     await broadcastNotification({
       recipientRole: Role.WARGA,

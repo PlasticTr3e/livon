@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card, Badge, Button, cn } from "@/components/ui/WireframePrimitives";
+import { Card, Badge, cn } from "@/components/ui/WireframePrimitives";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { apiFetch } from "@/lib/api-client";
 import {
@@ -10,9 +10,6 @@ import {
   Target,
   TrendingUp,
   Shield,
-  CreditCard,
-  Smartphone,
-  Building,
   ChevronRight,
   HandCoins,
 } from "lucide-react";

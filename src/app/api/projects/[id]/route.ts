@@ -112,12 +112,27 @@ export async function PATCH(
   try {
     const authUser = getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
-      return badRequest("Forbidden: Only Agencies update project");
+      return badRequest(
+        "Unauthorized access. Cuma admin yang dapat mengubah status proyek.",
+      );
     }
 
     const { id } = await params;
     const body = await req.json();
-    const { status, notes, documentUrl } = body;
+    const {
+      status,
+      notes,
+      documentUrl,
+      title,
+      description,
+      budgetTarget,
+      latitude,
+      longitude,
+      imageUrls,
+      estimatedDurationDays,
+      categoryId,
+      startDate,
+    } = body;
 
     const validStatuses = ["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"];
     const updateData: Record<string, unknown> = {};
@@ -139,6 +154,18 @@ export async function PATCH(
       }
       updateData.documentUrl = documentUrl;
     }
+
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (budgetTarget !== undefined) updateData.budgetTarget = budgetTarget;
+    if (latitude !== undefined) updateData.latitude = latitude;
+    if (longitude !== undefined) updateData.longitude = longitude;
+    if (imageUrls !== undefined) updateData.imageUrls = imageUrls;
+    if (estimatedDurationDays !== undefined)
+      updateData.estimatedDurationDays = estimatedDurationDays;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (startDate !== undefined)
+      updateData.startDate = startDate ? new Date(startDate) : null;
 
     if (Object.keys(updateData).length === 0) {
       return badRequest("No valid fields provided for update");
@@ -164,6 +191,16 @@ export async function PATCH(
         },
       });
     }
+
+    await prisma.notification.create({
+      data: {
+        userId: authUser.userId,
+        projectId: project.id,
+        title: "Memperbarui Proyek",
+        type: "ACTIVITY_LOG",
+        message: `Anda telah memperbarui proyek: ${project.title || "Proyek"}`,
+      },
+    });
 
     return ok("Project updated successfully", { data: project });
   } catch (error: unknown) {

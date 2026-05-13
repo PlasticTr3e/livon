@@ -7,7 +7,7 @@ import {
   Clock,
   User,
   Tag,
-  ChevronRight,
+  // ChevronRight,
   Newspaper,
 } from "lucide-react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
@@ -24,8 +24,9 @@ type Category = { name: string } | null;
 type NewsArticle = {
   id: string;
   title: string;
-  content?: string;
-  thumbnailUrl?: string;
+  content?: string | null;
+  excerpt?: string | null;
+  thumbnailUrl?: string | null;
   publishedAt?: Date | string | null;
   createdById?: string;
   author?: Author | null;
@@ -96,8 +97,8 @@ export default async function NewsDetailPage({
     : [];
 
   const body = article.content ? article.content.split("\n\n") : [];
-  const image = article.thumbnailUrl || "";
-  const excerpt = article.content?.slice(0, 120) ?? "";
+  // const image = article.thumbnailUrl || "";
+  const excerpt = article.excerpt || (article.content?.slice(0, 120) ?? "");
   let date = "";
   if (article.publishedAt) {
     const pubDate =
