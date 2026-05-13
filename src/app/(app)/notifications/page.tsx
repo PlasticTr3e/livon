@@ -148,14 +148,6 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    } catch (error) {
-      console.error("Failed to mark all as read:", error);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     try {
       // Update local state optimistically
