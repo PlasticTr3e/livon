@@ -50,7 +50,7 @@ export function NewsHeadline({
             {headline.title}
           </h2>
           <p className="text-green-200 text-base mb-6 leading-relaxed line-clamp-3">
-            {headline.content?.slice(0, 120) ?? ""}
+            {headline.excerpt || headline.content?.slice(0, 120) || ""}
           </p>
           <div className="flex items-center justify-between mt-auto">
             <span className="flex items-center gap-2 px-4 py-2 border border-green-500 rounded-full text-sm font-semibold text-white group-hover:bg-yellow-400 group-hover:text-yellow-900 group-hover:border-yellow-400 transition-colors">

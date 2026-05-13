@@ -166,7 +166,7 @@ export default function NewsManagementPage() {
       if (res.ok) {
         const data = await res.json();
         setUploading(false);
-        return data.data?.publicUrl || null;
+        return data.data?.url || null;
       }
     } catch {}
     setUploading(false);
@@ -312,27 +312,17 @@ export default function NewsManagementPage() {
           </div>
         </div>
       )}
-      <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-full">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100">
-              News Management
-            </h1>
-            <p className="text-gray-500 dark:text-slate-400 text-sm mt-0.5">
-              Publish community announcements and updates.
-            </p>
-          </div>
-          <Button
-            variant="primary"
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 shadow-sm h-11 px-6 rounded-xl font-bold text-xs"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Project</span>
-          </Button>
-        </div>
-
-        {showCreate && (
-          <Card className="p-6 mb-6 border-green-200 bg-white dark:bg-slate-900">
+      {/* Create Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-8 w-full max-w-lg shadow-lg relative">
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
+              onClick={() => setShowCreate(false)}
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-lg font-bold mb-4">Buat Berita Baru</h2>
             <form onSubmit={handleCreateNews} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold mb-1">
@@ -412,8 +402,28 @@ export default function NewsManagementPage() {
                 </Button>
               </div>
             </form>
-          </Card>
-        )}
+          </div>
+        </div>
+      )}
+      <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-full">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100">
+              News Management
+            </h1>
+            <p className="text-gray-500 dark:text-slate-400 text-sm mt-0.5">
+              Publish community announcements and updates.
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 shadow-sm h-11 px-6 rounded-xl font-bold text-xs text-white"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Article</span>
+          </Button>
+        </div>
 
         <Card className="p-5 border-green-100 dark:border-slate-700 shadow-sm">
           {loading ? (

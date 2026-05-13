@@ -8,6 +8,7 @@ export interface NewsGridItem {
   id: string;
   title: string;
   content?: string | null;
+  excerpt?: string | null;
   thumbnailUrl?: string | null;
   publishedAt?: string | Date | null;
 }
@@ -62,7 +63,7 @@ export function NewsGrid({
               {news.title}
             </p>
             <p className="text-xs text-gray-400 dark:text-slate-500 line-clamp-2 mb-3 leading-relaxed flex-1">
-              {news.content?.slice(0, 80) ?? ""}
+              {news.excerpt || news.content?.slice(0, 80) || ""}
             </p>
             <div className="mt-auto flex items-center justify-between text-[11px] font-medium text-gray-400 dark:text-slate-500">
               <span className="flex items-center gap-1">

@@ -3,6 +3,7 @@ import z from "zod";
 import prisma from "@/lib/prisma";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
+import { generateExcerpt } from "@/lib/ai";
 import { Role } from "@/generated/prisma/enums";
 import { broadcastNotification } from "@/lib/notifications";
 
@@ -128,10 +129,16 @@ export async function POST(req: NextRequest) {
 
     const { title, content, thumbnailUrl } = result.data;
 
+    let excerpt = "";
+    if (content) {
+      excerpt = await generateExcerpt(content);
+    }
+
     const newsItem = await prisma.news.create({
       data: {
         title,
         content,
+        excerpt: excerpt || null,
         thumbnailUrl: thumbnailUrl || null,
         createdById: authUser.userId,
         publishedAt: new Date(),

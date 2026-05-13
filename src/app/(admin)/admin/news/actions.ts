@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { generateExcerpt } from "@/lib/ai";
 
 export async function deleteNewsAction(id: string) {
   try {
@@ -24,13 +25,24 @@ export async function updateNewsAction(
   data: { title: string; content?: string; thumbnailUrl?: string },
 ) {
   try {
+    const updateData: {
+      title: string;
+      content?: string | null;
+      thumbnailUrl?: string | null;
+      excerpt?: string | null;
+    } = {
+      title: data.title,
+      content: data.content,
+      thumbnailUrl: data.thumbnailUrl,
+    };
+
+    if (data.content) {
+      updateData.excerpt = await generateExcerpt(data.content);
+    }
+
     const updated = await prisma.news.update({
       where: { id },
-      data: {
-        title: data.title,
-        content: data.content,
-        thumbnailUrl: data.thumbnailUrl,
-      },
+      data: updateData,
     });
     revalidatePath("/admin/news");
     return { success: true, data: updated };
