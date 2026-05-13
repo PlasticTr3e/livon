@@ -15,12 +15,21 @@ interface DatabaseNotification {
   createdAt: string | Date;
 }
 
+// Tambahkan "news" dan "registration" ke dalam tipe kategori yang diizinkan
+type NotificationCategory =
+  | "funding"
+  | "project"
+  | "comment"
+  | "system"
+  | "news"
+  | "registration";
+
 type Notification = {
   id: string;
   title: string;
   desc: string;
   time: string;
-  category: "funding" | "project" | "comment" | "system";
+  category: NotificationCategory;
   read: boolean;
   dot: string;
 };
@@ -47,21 +56,26 @@ export default function NotificationsPage() {
 
         if (response.success && response.data) {
           const transformedNotifications = response.data.map((notif) => {
-            const categoryMap: Record<
-              string,
-              "funding" | "project" | "comment" | "system"
-            > = {
+            // MAPPING KATEGORI BARU
+            const categoryMap: Record<string, NotificationCategory> = {
               donation_success: "funding",
               project_status: "project",
               comment_reply: "comment",
               system: "system",
+              // Tipe baru dari backend yang dipanggil lewat broadcastNotification:
+              new_registration: "registration",
+              new_project: "project",
+              new_news: "news",
             };
 
-            const dotColorMap: Record<string, string> = {
+            // MAPPING WARNA TITIK BARU
+            const dotColorMap: Record<NotificationCategory, string> = {
               funding: "bg-yellow-400",
               project: "bg-green-500",
               comment: "bg-blue-400",
               system: "bg-purple-400",
+              news: "bg-indigo-500",
+              registration: "bg-orange-500", // Warna oranye untuk user baru
             };
 
             const notificationType = notif.type?.toLowerCase() || "system";
@@ -70,7 +84,7 @@ export default function NotificationsPage() {
 
             return {
               id: notif.id,
-              title: notif.title || "Notifikasi",
+              title: notif.title || "Notification",
               desc: notif.message || "",
               time: formatTime(new Date(notif.createdAt)),
               category,
@@ -100,11 +114,11 @@ export default function NotificationsPage() {
     const diffDays = Math.floor(diffMs / 86400000);
     const diffWeeks = Math.floor(diffMs / 604800000);
 
-    if (diffMins < 1) return "baru saja";
-    if (diffMins < 60) return `${diffMins} menit lalu`;
-    if (diffHours < 24) return `${diffHours} jam lalu`;
-    if (diffDays < 7) return `${diffDays} hari lalu`;
-    if (diffWeeks < 4) return `${diffWeeks} minggu lalu`;
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffWeeks < 4) return `${diffWeeks} weeks ago`;
     return new Date(date).toLocaleDateString("id-ID");
   };
 
@@ -134,40 +148,41 @@ export default function NotificationsPage() {
     }
   };
 
-  // const handleMarkAllAsRead = async () => {
-  //   try {
-  //     // Update local state optimistically
-  //     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-
-  //     // Call API to update all in database (if endpoint exists)
-  //     // await apiFetch("/api/notifications/mark-all-as-read", {
-  //     //   method: "POST",
-  //     // });
-  //   } catch (error) {
-  //     console.error("Failed to mark all as read:", error);
-  //   }
-  // };
+  const handleMarkAllAsRead = async () => {
+    try {
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     try {
       // Update local state optimistically
       setNotifications((prev) => prev.filter((n) => n.id !== id));
 
-      // Call API to delete from database (if endpoint exists)
-      // await apiFetch(`/api/notifications/${id}`, {
-      //   method: "DELETE",
-      // });
+      // Call API to delete in database
+      const token = localStorage.getItem("livon-token");
+      await apiFetch(`/api/notifications/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
     } catch (error) {
       console.error("Failed to delete notification:", error);
     }
   };
 
   const getCategoryLabel = (category: string) => {
+    // LABEL UNTUK BADGE NOTIFIKASI
     const labels: Record<string, string> = {
       funding: "Crowdfunding",
-      project: "Proyek",
-      comment: "Komentar",
-      system: "Sistem",
+      project: "Project",
+      comment: "Comment",
+      system: "System",
+      news: "News",
+      registration: "Registration",
     };
     return labels[category] || category;
   };
@@ -182,11 +197,11 @@ export default function NotificationsPage() {
               <Bell className="w-5 h-5 text-white" />
             </div>
             <h1 className="text-3xl font-black text-gray-900 dark:text-slate-100">
-              Notifikasi
+              Notifications
             </h1>
           </div>
           <p className="text-sm text-gray-500 dark:text-slate-400 ml-[52px]">
-            Pantau semua aktivitas dan pembaruan proyek komunitas
+            Monitor all community project activities and updates
           </p>
         </div>
 
@@ -202,7 +217,7 @@ export default function NotificationsPage() {
                   : "text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
-              Semua {notifications.length > 0 && `(${notifications.length})`}
+              All {notifications.length > 0 && `(${notifications.length})`}
             </button>
             <button
               onClick={() => setFilter("unread")}
@@ -212,7 +227,7 @@ export default function NotificationsPage() {
                   : "text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
-              Belum Dibaca {unreadCount > 0 && `(${unreadCount})`}
+              Unread {unreadCount > 0 && `(${unreadCount})`}
             </button>
           </div>
         </div>
@@ -223,7 +238,7 @@ export default function NotificationsPage() {
             <div className="flex items-center justify-center gap-2">
               <div className="w-5 h-5 border-2 border-gray-300 dark:border-slate-600 border-t-green-600 rounded-full animate-spin"></div>
               <p className="text-gray-500 dark:text-slate-400 font-medium">
-                Memuat notifikasi...
+                Loading notifications...
               </p>
             </div>
           </div>
@@ -232,8 +247,8 @@ export default function NotificationsPage() {
             <Bell className="w-16 h-16 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-slate-400 font-medium">
               {filter === "unread"
-                ? "Tidak ada notifikasi yang belum dibaca"
-                : "Tidak ada notifikasi"}
+                ? "No unread notifications"
+                : "No notifications"}
             </p>
           </div>
         ) : (
@@ -276,7 +291,7 @@ export default function NotificationsPage() {
                           <button
                             onClick={() => handleMarkAsRead(n.id)}
                             className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
-                            title="Tandai sudah dibaca"
+                            title="Mark as read"
                           >
                             <CheckCheck className="w-3.5 h-3.5" />
                           </button>
@@ -284,7 +299,7 @@ export default function NotificationsPage() {
                         <button
                           onClick={() => handleDelete(n.id)}
                           className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          title="Hapus notifikasi"
+                          title="Delete notification"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
