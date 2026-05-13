@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, MapPin, Users, Leaf, Sun, Moon } from "lucide-react";
+import { Eye, EyeOff, Leaf, Sun, Moon } from "lucide-react";
+// import { Eye, EyeOff, MapPin, Users, Leaf, Sun, Moon } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";

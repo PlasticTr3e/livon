@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
         ? "livon-media-prod"
         : "livon-media-dev";
 
+    console.log("Cek Supabase :", supabase);
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(`uploads/${fileName}`, buffer, {

@@ -89,6 +89,18 @@ export async function PATCH(
       },
     });
 
+    if (isVerified) {
+      await prisma.notification.create({
+        data: {
+          userId: authUser.userId,
+          referenceId: citizenUserId,
+          title: "Verifikasi Warga",
+          type: "ACTIVITY_LOG",
+          message: `Anda telah memverifikasi warga: ${updatedCitizen.fullName}`,
+        },
+      });
+    }
+
     return ok(`Citizen verification status updated to ${isVerified}`, {
       data: updatedCitizen,
     });

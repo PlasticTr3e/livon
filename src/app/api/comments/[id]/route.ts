@@ -7,9 +7,9 @@ import { Role } from "@/generated/prisma/enums";
 /**
  * @swagger
  * /api/comments/{id}:
- *   delete:
- *     summary: Moderate (soft-delete) a comment
- *     description: Hide a specific comment by its ID (soft delete). This action is meant for moderation and is strictly restricted to admins (AGENCY).
+ *   put:
+ *     summary: Update or flag a comment
+ *     description: Update specific fields of a comment, such as flagging it for moderation.
  *     tags:
  *       - Comments
  *     security:
@@ -20,39 +20,71 @@ import { Role } from "@/generated/prisma/enums";
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the comment to moderate/delete
+ *         description: The ID of the comment to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *     responses:
  *       200:
- *         description: Comment moderated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Comment has been successfully moderated (soft-deleted).
+ *         description: Comment updated successfully
  *       401:
- *         description: Unauthorized - missing token or user is not an AGENCY
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: Unauthorized access. Only admin can moderate comments.
+ *         description: Unauthorized access
  *       404:
- *         description: Comment not found or already deleted
+ *         description: Comment not found
  *       400:
- *         description: Failed to moderate comment
+ *         description: Failed to update comment
  */
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const authUser = getAuthUser(req);
+
+    if (!authUser) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized access.",
+        },
+        { status: 401 },
+      );
+    }
+
+    const { id } = await params;
+    const body = await req.json();
+
+    const existingComment = await prisma.comment.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
+    });
+
+    if (!existingComment) {
+      return notFound("Comment not found or already deleted.");
+    }
+
+    // Memperbarui komentar menggunakan data yang dikirimkan oleh frontend
+    const updatedComment = await prisma.comment.update({
+      where: { id },
+      data: {
+        ...body,
+      },
+    });
+
+    return ok("Comment has been successfully updated.", {
+      data: updatedComment,
+    });
+  } catch (error) {
+    console.error("[COMMENT_UPDATE_PUT]", error);
+    return badRequest("Failed to update comment", error);
+  }
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
