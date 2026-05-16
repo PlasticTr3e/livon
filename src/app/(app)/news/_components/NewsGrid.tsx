@@ -1,4 +1,5 @@
 "use client";
+import { useMemo, useSyncExternalStore } from "react";
 
 import Link from "next/link";
 import { Clock, ChevronRight, SearchX } from "lucide-react";
@@ -15,26 +16,35 @@ export interface NewsGridItem {
 export function NewsGrid({
   newsItems,
   isSearching,
+  currentSort = "latest",
 }: {
   newsItems: NewsGridItem[];
   isSearching: boolean;
+  currentSort?: string;
 }) {
-  let sortedNews = newsItems;
-  if (!isSearching && typeof window !== "undefined") {
-    const headlineId = localStorage.getItem("headline-news-id");
-    if (headlineId) {
-      const headlineNews = newsItems.find((n) => n.id === headlineId);
-      const rest = newsItems.filter((n) => n.id !== headlineId);
-      sortedNews = headlineNews ? [headlineNews, ...rest] : rest;
+  const headlineId = useSyncExternalStore(
+    () => () => undefined,
+    () => localStorage.getItem("headline-news-id"),
+    () => null,
+  );
+  const sortedNews = useMemo(() => {
+    if (isSearching || currentSort !== "latest" || !headlineId) {
+      return newsItems;
     }
-  }
+
+    const headlineNews = newsItems.find((n) => n.id === headlineId);
+    const rest = newsItems.filter((n) => n.id !== headlineId);
+    return headlineNews ? [headlineNews, ...rest] : rest;
+  }, [currentSort, headlineId, isSearching, newsItems]);
 
   if (!sortedNews || sortedNews.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-4">
         <SearchX className="w-12 h-12 opacity-20" />
         <p className="font-medium">
-          Tidak ada berita yang cocok dengan pencarian Anda.
+          {isSearching
+            ? "No news matches your search."
+            : "There are no news updates yet."}
         </p>
       </div>
     );
@@ -46,7 +56,7 @@ export function NewsGrid({
         <Link
           key={news.id}
           href={`/news/${news.id}`}
-          className="flex flex-col border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl hover:shadow-lg hover:border-green-300 dark:hover:border-green-700 transition-all group cursor-pointer overflow-hidden"
+          className="flex flex-col border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1F2937] rounded-2xl hover:shadow-lg hover:border-green-300 dark:hover:border-green-700 transition-all group cursor-pointer overflow-hidden"
         >
           <div className="h-40 overflow-hidden">
             {news.thumbnailUrl ? (
@@ -58,13 +68,13 @@ export function NewsGrid({
             ) : null}
           </div>
           <div className="p-4 flex-1 flex flex-col">
-            <p className="font-bold text-sm leading-snug mb-2 text-gray-800 dark:text-slate-200 group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors line-clamp-2">
+            <p className="font-bold text-sm leading-snug mb-2 text-gray-800 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors line-clamp-2">
               {news.title}
             </p>
-            <p className="text-xs text-gray-400 dark:text-slate-500 line-clamp-2 mb-3 leading-relaxed flex-1">
+            <p className="text-xs text-gray-400 dark:text-white line-clamp-2 mb-3 leading-relaxed flex-1">
               {news.content?.slice(0, 80) ?? ""}
             </p>
-            <div className="mt-auto flex items-center justify-between text-[11px] font-medium text-gray-400 dark:text-slate-500">
+            <div className="mt-auto flex items-center justify-between text-[11px] font-medium text-gray-400 dark:text-white">
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />{" "}
                 {news.publishedAt

@@ -1,12 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  Card,
-  Button,
-  Badge,
-  cn,
-  Input,
-} from "@/components/ui/WireframePrimitives";
+import { Card, Badge, cn, Input } from "@/components/ui/WireframePrimitives";
 import {
   DollarSign,
   Clock,
@@ -191,7 +185,7 @@ export default function CrowdfundingMonitorPage() {
       case "Failed":
         return "bg-red-100 text-red-600 border-red-300";
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-gray-100 text-gray-600 dark:text-white";
     }
   };
 
@@ -262,10 +256,12 @@ export default function CrowdfundingMonitorPage() {
 
   if (loading) {
     return (
-      <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-full flex items-center justify-center">
+      <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-[#0B1120] min-h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-gray-300 border-t-green-600 rounded-full animate-spin"></div>
-          <p className="text-gray-500 font-medium">Loading data...</p>
+          <p className="text-gray-500 dark:text-white font-medium">
+            Loading data...
+          </p>
         </div>
       </div>
     );
@@ -274,10 +270,10 @@ export default function CrowdfundingMonitorPage() {
   // --- MAIN RENDER ---
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto w-full">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto w-full">
       {/* Dynamic Header for Project Details View */}
       {selectedProject && (
-        <div className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center shadow-sm">
+        <div className="sticky top-0 z-50 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center shadow-sm">
           <button
             onClick={() => setSelectedProject(null)}
             className="flex items-center text-green-600 hover:text-green-800 dark:text-green-400 transition-colors"
@@ -292,10 +288,12 @@ export default function CrowdfundingMonitorPage() {
         {/* Page Title */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">
-              {selectedProject ? "Transaction History" : "Crowdfunding Monitor"}
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white">
+              {selectedProject
+                ? "Transaction History"
+                : "Crowdfunding Management"}
             </h1>
-            <p className="text-gray-500 text-sm mt-0.5">
+            <p className="text-gray-500 dark:text-white text-sm mt-0.5">
               {selectedProject
                 ? `Viewing transactions for "${selectedProject.name}"`
                 : "Track all donations and funding progress."}
@@ -312,10 +310,10 @@ export default function CrowdfundingMonitorPage() {
                   <DollarSign className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-white">
                     Total Collected
                   </p>
-                  <p className="text-xl font-black text-gray-900">
+                  <p className="text-xl font-black text-gray-900 dark:text-white">
                     Rp {totalCollected.toLocaleString("id-ID")}
                   </p>
                 </div>
@@ -326,10 +324,10 @@ export default function CrowdfundingMonitorPage() {
                   <BarChart2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-white">
                     Active Campaigns
                   </p>
-                  <p className="text-xl font-black text-gray-900">
+                  <p className="text-xl font-black text-gray-900 dark:text-white">
                     {activeCampaignsCount}
                   </p>
                 </div>
@@ -340,10 +338,10 @@ export default function CrowdfundingMonitorPage() {
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-white">
                     Waiting Verification
                   </p>
-                  <p className="text-xl font-black text-gray-900">
+                  <p className="text-xl font-black text-gray-900 dark:text-white">
                     {pendingVerificationCount}
                   </p>
                 </div>
@@ -351,14 +349,16 @@ export default function CrowdfundingMonitorPage() {
             </div>
 
             {/* 2. Global Recent Transactions Widget */}
-            <Card className="p-6 border-gray-200 shadow-sm">
+            <Card className="p-6 border-gray-200 dark:border-gray-800 shadow-sm">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="font-bold text-gray-900">Recent Transactions</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">
+                  Recent Transactions
+                </h3>
               </div>
 
               {transactions.length === 0 ? (
                 <div className="text-center py-6">
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-500 dark:text-white text-sm">
                     No transaction data yet
                   </p>
                 </div>
@@ -366,7 +366,7 @@ export default function CrowdfundingMonitorPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm border-collapse">
                     <thead>
-                      <tr className="border-b border-gray-200 text-xs text-gray-500 font-bold uppercase tracking-wider">
+                      <tr className="border-b border-gray-200 dark:border-gray-800 text-xs text-gray-500 dark:text-white font-bold uppercase tracking-wider">
                         <th className="py-3 px-4">Donor</th>
                         <th className="py-3 px-4">Project</th>
                         <th className="py-3 px-4">Amount</th>
@@ -374,22 +374,22 @@ export default function CrowdfundingMonitorPage() {
                         <th className="py-3 px-4">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                       {transactions.slice(0, 3).map((row) => (
                         <tr
                           key={row.id}
                           className="hover:bg-green-50 transition-colors"
                         >
-                          <td className="py-3 px-4 font-semibold text-gray-800">
+                          <td className="py-3 px-4 font-semibold text-gray-800 dark:text-white">
                             {row.user}
                           </td>
-                          <td className="py-3 px-4 text-gray-600 text-xs">
+                          <td className="py-3 px-4 text-gray-600 dark:text-white text-xs">
                             {row.project}
                           </td>
                           <td className="py-3 px-4 font-black text-green-700">
                             Rp {row.amount.toLocaleString("id-ID")}
                           </td>
-                          <td className="py-3 px-4 text-gray-500 text-xs">
+                          <td className="py-3 px-4 text-gray-500 dark:text-white text-xs">
                             {row.date}
                           </td>
                           <td className="py-3 px-4">
@@ -412,14 +412,14 @@ export default function CrowdfundingMonitorPage() {
 
             {/* 3. Projects Dashboard Section (Grid) */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-4">
-              <h2 className="text-lg font-bold text-gray-900 tracking-tight">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
                 Donation Dashboard
               </h2>
 
               {/* Project Filters & Search */}
               <div className="flex items-center gap-3 w-full md:w-auto">
                 <div className="relative flex-1 md:w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-white" />
                   <Input
                     className="pl-9 border-green-200 w-full"
                     placeholder="Search projects..."
@@ -435,7 +435,7 @@ export default function CrowdfundingMonitorPage() {
                         e.target.value as "active" | "completed",
                       )
                     }
-                    className="w-full h-10 pl-9 pr-8 bg-white dark:bg-slate-800 border border-green-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
+                    className="w-full h-10 pl-9 pr-8 bg-white dark:bg-[#1F2937] border border-green-200 dark:border-gray-800 rounded-xl text-xs font-bold text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
                   >
                     <option value="active">Active</option>
                     <option value="completed">Completed</option>
@@ -481,13 +481,15 @@ export default function CrowdfundingMonitorPage() {
                         </Badge>
                       </div>
 
-                      <h3 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-2 mb-4 flex-1">
+                      <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-green-700 transition-colors line-clamp-2 mb-4 flex-1">
                         {p.title}
                       </h3>
 
                       <div className="mt-auto space-y-2">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-gray-500">Collected:</span>
+                          <span className="text-gray-500 dark:text-white">
+                            Collected:
+                          </span>
                           <span className="text-green-700 font-bold">
                             Rp {collected.toLocaleString("id-ID")}
                           </span>
@@ -503,7 +505,7 @@ export default function CrowdfundingMonitorPage() {
                             style={{ width: `${progress}%` }}
                           />
                         </div>
-                        <div className="flex justify-between items-center text-[10px] text-gray-400 font-medium">
+                        <div className="flex justify-between items-center text-[10px] text-gray-400 dark:text-white font-medium">
                           <span>{progress}% funded</span>
                           <span>
                             Target: Rp {target.toLocaleString("id-ID")}
@@ -514,7 +516,7 @@ export default function CrowdfundingMonitorPage() {
                   );
                 })
               ) : (
-                <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-400 gap-3 bg-white border border-dashed border-gray-200 rounded-xl">
+                <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-400 dark:text-white gap-3 bg-white dark:bg-[#1F2937] border border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
                   <SearchX className="w-12 h-12 opacity-20" />
                   <p className="font-medium">No projects found.</p>
                 </div>
@@ -527,7 +529,7 @@ export default function CrowdfundingMonitorPage() {
             {/* Transaction Filters & Sorting */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-5">
               <div className="relative w-full md:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-white" />
                 <Input
                   className="pl-9 border-green-200 w-full"
                   placeholder="Search donor or TRX ID..."
@@ -549,7 +551,7 @@ export default function CrowdfundingMonitorPage() {
                           | "lowest",
                       )
                     }
-                    className="w-full h-10 pl-10 pr-8 bg-white dark:bg-slate-800 border border-green-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
+                    className="w-full h-10 pl-10 pr-8 bg-white dark:bg-[#1F2937] border border-green-200 dark:border-gray-800 rounded-xl text-sm font-bold text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
                   >
                     <option value="latest">Newest First</option>
                     <option value="oldest">Oldest First</option>
@@ -566,7 +568,7 @@ export default function CrowdfundingMonitorPage() {
             {projectTransactions.length === 0 ? (
               <div className="text-center py-16">
                 <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">
+                <p className="text-gray-500 dark:text-white font-medium">
                   No transactions found for this project.
                 </p>
               </div>
@@ -574,7 +576,7 @@ export default function CrowdfundingMonitorPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-200 text-xs text-gray-500 font-bold uppercase tracking-wider">
+                    <tr className="border-b border-gray-200 dark:border-gray-800 text-xs text-gray-500 dark:text-white font-bold uppercase tracking-wider">
                       <th className="py-3 px-4">TRX ID</th>
                       <th className="py-3 px-4">Donor</th>
                       <th className="py-3 px-4">Amount</th>
@@ -582,22 +584,22 @@ export default function CrowdfundingMonitorPage() {
                       <th className="py-3 px-4">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {projectTransactions.map((row) => (
                       <tr
                         key={row.id}
                         className="hover:bg-green-50 transition-colors"
                       >
-                        <td className="py-3.5 px-4 font-mono text-xs text-gray-500">
+                        <td className="py-3.5 px-4 font-mono text-xs text-gray-500 dark:text-white">
                           {row.id}
                         </td>
-                        <td className="py-3.5 px-4 font-semibold text-gray-800">
+                        <td className="py-3.5 px-4 font-semibold text-gray-800 dark:text-white">
                           {row.user}
                         </td>
                         <td className="py-3.5 px-4 font-black text-green-700">
                           Rp {row.amount.toLocaleString("id-ID")}
                         </td>
-                        <td className="py-3.5 px-4 text-gray-500 text-xs">
+                        <td className="py-3.5 px-4 text-gray-500 dark:text-white text-xs">
                           {row.date}
                         </td>
                         <td className="py-3.5 px-4">

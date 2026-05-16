@@ -1,320 +1,238 @@
-"use client";
+import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import Script from "next/script";
+import { Card, Badge, Input } from "@/components/ui/WireframePrimitives";
+import { Search, Ban, CheckCircle, Users, Eye } from "lucide-react";
+import { Role } from "@/generated/prisma/enums";
 
-import { useState, useEffect } from "react";
-import {
-  Card,
-  Button,
-  Badge,
-  Input,
-  cn,
-} from "@/components/ui/WireframePrimitives";
-import { Search, Shield, Ban, CheckCircle, Users, Eye, X } from "lucide-react";
-import { getUsersAction, toggleUserVerificationAction } from "./actions";
-
-interface CitizenProfile {
-  id: string;
-  fullName: string;
-  blockHouse: string | null;
-  isVerified: boolean;
-  phone?: string;
-  nik?: string;
-  kkNumber?: string;
+interface UsersPageProps {
+  searchParams?: Promise<{
+    search?: string;
+    role?: string;
+    status?: string;
+  }>;
 }
 
-interface AgencyProfile {
-  id: string;
-  agencyName: string;
-  address: string;
-  isVerified: boolean;
-  phone?: string;
-}
-
-interface UserData {
-  id: string;
-  email: string;
-  name?: string | null;
+function mapUserRole(user: {
   role: string | null;
-  citizenProfile?: CitizenProfile | null;
-  agencyProfile?: AgencyProfile | null;
+  agencyProfile?: unknown | null;
+}) {
+  return user.role?.toUpperCase() === "AGENCY" || user.agencyProfile
+    ? "Agency"
+    : "Resident";
 }
 
-export default function UserManagementPage() {
-  const [users, setUsers] = useState<UserData[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+function mapUserStatus(user: {
+  deletedAt?: Date | string | null;
+  citizenProfile?: { isVerified: boolean } | null;
+  agencyProfile?: { isVerified: boolean } | null;
+}) {
+  if (user.deletedAt) return "Blocked";
+  if (user.agencyProfile)
+    return user.agencyProfile.isVerified ? "Verified" : "Pending";
+  if (user.citizenProfile)
+    return user.citizenProfile.isVerified ? "Verified" : "Pending";
+  return "Pending";
+}
 
-  const [editUserId, setEditUserId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editAddress, setEditAddress] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editKkNumber, setEditKkNumber] = useState("");
-  const [editNik, setEditNik] = useState("");
-  const [editIsAgency, setEditIsAgency] = useState(false);
-
-  const [roleFilter, setRoleFilter] = useState("ALL");
-
-  // Map backend role/status to UI
-  function mapUserRole(
-    role: string | null,
-    agencyProfile?: AgencyProfile | null,
-  ) {
-    if (role === "WARGA") return "Resident";
-    if (role === "AGENCY" || agencyProfile) return "Manager";
-    return "Admin";
+function statusStyle(status: string) {
+  switch (status) {
+    case "Verified":
+      return "bg-green-100 text-green-700 border-green-300";
+    case "Pending":
+      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+    case "Blocked":
+      return "bg-red-100 text-red-600 border-red-300";
+    default:
+      return "bg-gray-100 text-gray-600";
   }
+}
 
-  function mapUserStatus(user: UserData) {
-    // Try to infer status from isVerified or fallback
-    if (user.citizenProfile)
-      return user.citizenProfile.isVerified ? "Verified" : "Pending";
-    if (user.agencyProfile)
-      return user.agencyProfile.isVerified ? "Verified" : "Pending";
-    return "Pending";
+function roleStyle(role: string) {
+  switch (role) {
+    case "Agency":
+      return "text-blue-700 bg-blue-50 border border-blue-300";
+    default:
+      return "text-green-700 bg-green-50 border border-green-300";
   }
+}
 
-  // Fetch users from API
-  useEffect(() => {
-    async function fetchUsers() {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await getUsersAction();
-        if (result.success) {
-          setUsers(result.data || []);
-        } else {
-          throw new Error(result.message);
-        }
-      } catch (e: unknown) {
-        setError(
-          e instanceof Error ? e.message : "Gagal mengambil data pengguna.",
-        );
-        setUsers([]);
-      }
-      setLoading(false);
-    }
-    fetchUsers();
-  }, []);
+async function verifyResident(formData: FormData) {
+  "use server";
 
-  // Action handlers
-  async function handleVerify(id: string) {
-    try {
-      const result = await toggleUserVerificationAction(id, true);
-      if (result.success) {
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === id
-              ? {
-                  ...u,
-                  citizenProfile: u.citizenProfile
-                    ? { ...u.citizenProfile, isVerified: true }
-                    : u.citizenProfile,
-                  agencyProfile: u.agencyProfile
-                    ? { ...u.agencyProfile, isVerified: true }
-                    : u.agencyProfile,
-                }
-              : u,
-          ),
-        );
-      } else {
-        alert("Gagal memverifikasi: " + result.message);
-      }
-    } catch {}
-  }
+  const userId = String(formData.get("userId") || "");
+  if (!userId) return;
 
-  async function handleSuspend(id: string) {
-    const user = users.find((u) => u.id === id);
-    const isSuspended =
-      user?.citizenProfile?.isVerified === false ||
-      user?.agencyProfile?.isVerified === false;
-    try {
-      const result = await toggleUserVerificationAction(id, !isSuspended);
-      if (result.success) {
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === id
-              ? {
-                  ...u,
-                  citizenProfile: u.citizenProfile
-                    ? { ...u.citizenProfile, isVerified: !isSuspended }
-                    : u.citizenProfile,
-                  agencyProfile: u.agencyProfile
-                    ? { ...u.agencyProfile, isVerified: !isSuspended }
-                    : u.agencyProfile,
-                }
-              : u,
-          ),
-        );
-      } else {
-        alert("Gagal mengubah status: " + result.message);
-      }
-    } catch {}
-  }
+  await prisma.$transaction([
+    prisma.citizenProfile.updateMany({
+      where: { userId },
+      data: { isVerified: true },
+    }),
+    prisma.agencyProfile.updateMany({
+      where: { userId },
+      data: { isVerified: true },
+    }),
+  ]);
 
-  const filtered = users.filter((u) => {
-    const matchesSearch =
-      u.name?.toLowerCase?.().includes(search.toLowerCase()) ||
-      u.citizenProfile?.blockHouse
-        ?.toLowerCase?.()
-        .includes(search.toLowerCase()) ||
-      u.agencyProfile?.agencyName
-        ?.toLowerCase?.()
-        .includes(search.toLowerCase());
+  revalidatePath("/admin/users");
+}
 
-    const role = mapUserRole(u.role, u.agencyProfile);
-    const matchesRole = roleFilter === "ALL" ? true : role === roleFilter;
+async function toggleResidentBlock(formData: FormData) {
+  "use server";
 
-    return matchesSearch && matchesRole;
+  const userId = String(formData.get("userId") || "");
+  const isBlocked = formData.get("isBlocked") === "true";
+  if (!userId) return;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { deletedAt: isBlocked ? null : new Date() },
   });
 
-  const statusStyle = (s: string) => {
-    switch (s) {
-      case "Verified":
-        return "bg-green-100 text-green-700 border-green-300";
-      case "Pending":
-        return "bg-yellow-100 text-yellow-700 border-yellow-300";
-      case "Suspended":
-        return "bg-red-100 text-red-600 border-red-300";
-      default:
-        return "bg-gray-100 text-gray-600";
-    }
-  };
+  revalidatePath("/admin/users");
+}
 
-  const roleStyle = (r: string) => {
-    switch (r) {
-      case "Admin":
-        return "text-yellow-700 bg-yellow-50 border border-yellow-300";
-      case "Manager":
-        return "text-blue-700 bg-blue-50 border border-blue-300";
-      default:
-        return "text-green-700 bg-green-50 border border-green-300";
-    }
-  };
+export default async function UserManagementPage({
+  searchParams,
+}: UsersPageProps) {
+  const params = await searchParams;
+  const search = params?.search?.trim() || "";
+  const roleFilter = params?.role || "ALL";
+  const statusFilter = params?.status || "ALL";
+  const normalizedSearch = search.toLowerCase();
+
+  const users = await prisma.user.findMany({
+    where: {
+      role: {
+        in: [Role.WARGA, Role.AGENCY],
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      deletedAt: true,
+      citizenProfile: {
+        select: {
+          fullName: true,
+          blockHouse: true,
+          isVerified: true,
+          phone: true,
+          nik: true,
+          kkNumber: true,
+        },
+      },
+      agencyProfile: {
+        select: {
+          agencyName: true,
+          address: true,
+          isVerified: true,
+          phone: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const filtered = users.filter((user) => {
+    const role = mapUserRole(user);
+    const status = mapUserStatus(user);
+    const matchesRole = roleFilter === "ALL" || role === roleFilter;
+    const matchesStatus = statusFilter === "ALL" || status === statusFilter;
+    const matchesSearch =
+      !normalizedSearch ||
+      user.email.toLowerCase().includes(normalizedSearch) ||
+      user.citizenProfile?.fullName?.toLowerCase().includes(normalizedSearch) ||
+      user.citizenProfile?.blockHouse
+        ?.toLowerCase()
+        .includes(normalizedSearch) ||
+      user.agencyProfile?.agencyName
+        ?.toLowerCase()
+        .includes(normalizedSearch) ||
+      user.agencyProfile?.address?.toLowerCase().includes(normalizedSearch);
+
+    return matchesRole && matchesStatus && matchesSearch;
+  });
 
   return (
-    <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-full">
-      {editUserId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-8 w-full max-w-lg shadow-lg relative">
-            <button
-              className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
-              onClick={() => setEditUserId(null)}
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h2 className="text-lg font-bold mb-4">User Details</h2>
-            <form className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Name / Agency
-                </label>
-                <Input
-                  value={editName}
-                  className="w-full bg-slate-100 dark:bg-slate-800"
-                  disabled
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  House Number /Address
-                </label>
-                <Input
-                  value={editAddress}
-                  className="w-full bg-slate-100 dark:bg-slate-800"
-                  disabled
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Phone Number
-                </label>
-                <Input
-                  value={editPhone || "-"}
-                  className="w-full bg-slate-100 dark:bg-slate-800"
-                  disabled
-                />
-              </div>
-              {!editIsAgency && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold mb-1">
-                      Nomor Induk Kependudukan (NIK)
-                    </label>
-                    <Input
-                      value={editNik || "-"}
-                      className="w-full bg-slate-100 dark:bg-slate-800"
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold mb-1">
-                      Kartu Keluarga (KK)
-                    </label>
-                    <Input
-                      value={editKkNumber || "-"}
-                      className="w-full bg-slate-100 dark:bg-slate-800"
-                      disabled
-                    />
-                  </div>
-                </div>
-              )}
-              <div className="flex gap-2 mt-6 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditUserId(null)}
-                >
-                  Tutup
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      <div className="flex justify-between items-center">
+    <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-[#0B1120] min-h-full">
+      <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100">
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white">
             User Management
           </h1>
-          <p className="text-gray-500 dark:text-slate-400 text-sm mt-0.5">
+          <p className="text-gray-500 dark:text-white text-sm mt-0.5">
             Manage citizen accounts and verification.
           </p>
         </div>
         <Badge className="bg-green-100 text-green-700 border-green-300 px-3 py-1.5 flex items-center gap-1.5">
-          <Users className="w-3.5 h-3.5" /> {users.length} Users
+          <Users className="w-3.5 h-3.5" /> {filtered.length} Users
         </Badge>
       </div>
 
-      <Card className="p-5 border-green-100 dark:border-slate-700 shadow-sm">
-        <div className="flex justify-between items-center mb-5">
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              className="pl-9 border-green-200 focus:ring-green-400"
-              placeholder="Search user..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="text-sm border border-green-300 text-green-700 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white dark:bg-slate-800 cursor-pointer"
+      <Card className="p-5 border-green-100 dark:border-gray-800 shadow-sm">
+        <div className="mb-5">
+          <form
+            id="user-filters-form"
+            className="flex justify-between items-center"
+            action="/admin/users"
           >
-            <option value="ALL">All Role</option>
-            <option value="Resident">Resident</option>
-            <option value="Manager">Manager</option>
-          </select>
+            <div className="relative w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                name="search"
+                className="pl-9 border-green-200 focus:ring-green-400"
+                placeholder="Search user..."
+                defaultValue={search}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                name="role"
+                defaultValue={roleFilter}
+                data-auto-submit="true"
+                className="text-sm border border-green-300 text-green-700 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white dark:bg-[#1F2937] cursor-pointer"
+              >
+                <option value="ALL">All Role</option>
+                <option value="Resident">Resident</option>
+                <option value="Agency">Agency</option>
+              </select>
+              <select
+                name="status"
+                defaultValue={statusFilter}
+                data-auto-submit="true"
+                className="text-sm border border-green-300 text-green-700 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white dark:bg-[#1F2937] cursor-pointer"
+              >
+                <option value="ALL">All Status</option>
+                <option value="Verified">Verified</option>
+                <option value="Pending">Pending</option>
+                <option value="Blocked">Blocked</option>
+              </select>
+              <button className="sr-only">Apply filters</button>
+            </div>
+          </form>
+          <Script id="users-filter-auto-submit" strategy="afterInteractive">
+            {`
+              if (!window.__livonUsersFilterBound) {
+                window.__livonUsersFilterBound = true;
+                document.addEventListener('change', function (event) {
+                  var target = event.target;
+                  if (!target || !target.matches || !target.matches('#user-filters-form [data-auto-submit="true"]')) return;
+                  var form = document.getElementById('user-filters-form');
+                  if (form) form.requestSubmit();
+                });
+              }
+            `}
+          </Script>
         </div>
 
-        {loading ? (
-          <div className="text-center text-gray-400 py-10">Loading data...</div>
-        ) : error ? (
-          <div className="text-center text-red-500 py-10">{error}</div>
-        ) : (
-          <table className="w-full text-left text-sm border-collapse">
+        <div className="overflow-x-auto pb-4">
+          <table className="w-full text-left text-sm border-collapse min-w-[800px] md:min-w-0">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700 text-xs text-gray-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+              <tr className="border-b border-gray-200 dark:border-gray-800 text-xs text-gray-500 dark:text-white font-bold uppercase tracking-wider">
                 <th className="py-3 px-4">Name</th>
                 <th className="py-3 px-4">House Number / Address</th>
                 <th className="py-3 px-4">Role</th>
@@ -324,8 +242,17 @@ export default function UserManagementPage() {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
               {filtered.map((user) => {
-                const role = mapUserRole(user.role, user.agencyProfile);
+                const role = mapUserRole(user);
                 const status = mapUserStatus(user);
+                const displayName =
+                  user.citizenProfile?.fullName ||
+                  user.agencyProfile?.agencyName ||
+                  user.email;
+                const address =
+                  user.citizenProfile?.blockHouse ||
+                  user.agencyProfile?.address ||
+                  "-";
+
                 return (
                   <tr
                     key={user.id}
@@ -334,98 +261,153 @@ export default function UserManagementPage() {
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
                         <div
-                          className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
-                            roleStyle(role),
-                          )}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${roleStyle(role)}`}
                         >
-                          {(
-                            user.citizenProfile?.fullName ||
-                            user.agencyProfile?.agencyName ||
-                            user.name ||
-                            user.email ||
-                            ""
-                          ).charAt(0)}
+                          {displayName.charAt(0)}
                         </div>
-                        <span className="font-semibold text-gray-900 dark:text-slate-200">
-                          {user.citizenProfile?.fullName ||
-                            user.agencyProfile?.agencyName ||
-                            user.name ||
-                            user.email}
-                        </span>
+                        <div>
+                          <span className="font-semibold text-gray-900 dark:text-white block">
+                            {displayName}
+                          </span>
+                          <span className="text-xs text-gray-400 dark:text-white">
+                            {user.email}
+                          </span>
+                        </div>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-gray-600 dark:text-slate-400">
-                      {user.citizenProfile?.blockHouse ||
-                        user.agencyProfile?.address ||
-                        "-"}
+                    <td className="py-4 px-4 text-gray-600 dark:text-white">
+                      {address}
                     </td>
                     <td className="py-4 px-4">
                       <span
-                        className={cn(
-                          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
-                          roleStyle(role),
-                        )}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${roleStyle(role)}`}
                       >
-                        {role === "Admin" && <Shield className="w-3 h-3" />}
                         {role}
                       </span>
                     </td>
                     <td className="py-4 px-4">
-                      <Badge className={cn("text-xs", statusStyle(status))}>
+                      <Badge className={`text-xs ${statusStyle(status)}`}>
                         {status}
                       </Badge>
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => {
-                            setEditUserId(user.id);
-                            setEditName(
-                              user.citizenProfile?.fullName ||
-                                user.agencyProfile?.agencyName ||
-                                user.name ||
-                                "",
-                            );
-                            setEditAddress(
-                              user.citizenProfile?.blockHouse ||
-                                user.agencyProfile?.address ||
-                                "",
-                            );
-                            setEditPhone(
-                              user.citizenProfile?.phone ||
-                                user.agencyProfile?.phone ||
-                                "",
-                            );
-                            setEditNik(user.citizenProfile?.nik || "");
-                            setEditKkNumber(
-                              user.citizenProfile?.kkNumber || "",
-                            );
-                            setEditIsAgency(!!user.agencyProfile);
-                          }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                        <details className="group">
+                          <summary className="list-none p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer group-open:fixed group-open:inset-0 group-open:z-40 group-open:bg-black/40 group-open:p-0 group-open:hover:bg-black/40">
+                            <Eye className="w-4 h-4" />
+                          </summary>
+                          <div className="pointer-events-none fixed inset-0 z-50 hidden p-6 group-open:flex group-open:items-center group-open:justify-center">
+                            <div className="pointer-events-auto w-full max-w-2xl rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1F2937] p-8 text-left shadow-2xl">
+                              <div className="mb-6 flex items-start justify-between gap-4">
+                                <div>
+                                  <p className="text-2xl font-black text-gray-900 dark:text-white">
+                                    {displayName}
+                                  </p>
+                                  <p className="mt-1 text-sm text-gray-500 dark:text-white">
+                                    {user.email}
+                                  </p>
+                                </div>
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${roleStyle(role)}`}
+                                >
+                                  {role}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+                                <div className="rounded-lg border border-gray-100 dark:border-gray-800 bg-slate-50 dark:bg-[#111827]/50 p-4">
+                                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-white">
+                                    Status
+                                  </p>
+                                  <Badge
+                                    className={`mt-2 text-xs ${statusStyle(status)}`}
+                                  >
+                                    {status}
+                                  </Badge>
+                                </div>
+                                <div className="rounded-lg border border-gray-100 dark:border-gray-800 bg-slate-50 dark:bg-[#111827]/50 p-4">
+                                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-white">
+                                    Phone
+                                  </p>
+                                  <p className="mt-2 font-semibold text-gray-800 dark:text-white">
+                                    {user.citizenProfile?.phone ||
+                                      user.agencyProfile?.phone ||
+                                      "-"}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg border border-gray-100 dark:border-gray-800 bg-slate-50 dark:bg-[#111827]/50 p-4 sm:col-span-2">
+                                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-white">
+                                    Address
+                                  </p>
+                                  <p className="mt-2 font-semibold text-gray-800 dark:text-white">
+                                    {address}
+                                  </p>
+                                </div>
+                                {role === "Resident" && (
+                                  <>
+                                    <div className="rounded-lg border border-gray-100 dark:border-gray-800 bg-slate-50 dark:bg-[#111827]/50 p-4">
+                                      <p className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-white">
+                                        NIK
+                                      </p>
+                                      <p className="mt-2 font-semibold text-gray-800 dark:text-white">
+                                        {user.citizenProfile?.nik || "-"}
+                                      </p>
+                                    </div>
+                                    <div className="rounded-lg border border-gray-100 dark:border-gray-800 bg-slate-50 dark:bg-[#111827]/50 p-4">
+                                      <p className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-white">
+                                        KK
+                                      </p>
+                                      <p className="mt-2 font-semibold text-gray-800 dark:text-white">
+                                        {user.citizenProfile?.kkNumber || "-"}
+                                      </p>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </details>
+
                         {status === "Pending" && (
-                          <button
-                            onClick={() => handleVerify(user.id)}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-green-600 hover:bg-green-50 text-xs font-semibold transition-colors"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" /> Verifikasi
-                          </button>
+                          <form action={verifyResident}>
+                            <input
+                              type="hidden"
+                              name="userId"
+                              value={user.id}
+                            />
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-green-600 hover:bg-green-50 text-xs font-semibold transition-colors">
+                              <CheckCircle className="w-3.5 h-3.5" /> Verifikasi
+                            </button>
+                          </form>
                         )}
-                        <button
-                          onClick={() => handleSuspend(user.id)}
-                          className={cn(
-                            "p-1.5 rounded-lg transition-colors",
-                            status === "Verified"
-                              ? "text-gray-400 hover:text-red-500 hover:bg-red-50"
-                              : "text-green-600 hover:bg-green-50",
-                          )}
-                        >
-                          <Ban className="w-4 h-4" />
-                        </button>
+                        {role === "Resident" && (
+                          <form action={toggleResidentBlock}>
+                            <input
+                              type="hidden"
+                              name="userId"
+                              value={user.id}
+                            />
+                            <input
+                              type="hidden"
+                              name="isBlocked"
+                              value={status === "Blocked" ? "true" : "false"}
+                            />
+                            <button
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                status === "Blocked"
+                                  ? "text-red-600 bg-red-50 dark:bg-red-900/30"
+                                  : "text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+                              }`}
+                              title={
+                                status === "Blocked"
+                                  ? "Unblock User"
+                                  : "Block User"
+                              }
+                            >
+                              <Ban className="w-4 h-4" />
+                            </button>
+                          </form>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -433,7 +415,7 @@ export default function UserManagementPage() {
               })}
             </tbody>
           </table>
-        )}
+        </div>
       </Card>
     </div>
   );

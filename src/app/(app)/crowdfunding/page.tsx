@@ -184,20 +184,20 @@ export default function CrowdfundingListPage() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto">
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 w-full space-y-8">
         {/* Header & Search */}
-        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-gray-200 dark:border-slate-800 pb-6">
+        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-gray-200 dark:border-gray-800 pb-6">
           <div>
             <div className="flex items-center gap-3 mb-2.5">
               <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-md shrink-0">
                 <HandCoins className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-3xl font-black text-gray-900 dark:text-slate-100">
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white">
                 Crowdfunding
               </h1>
             </div>
-            <p className="text-sm text-gray-500 dark:text-slate-400 ml-[52px] max-w-md leading-relaxed">
+            <p className="text-sm text-gray-500 dark:text-white ml-[52px] max-w-md leading-relaxed">
               Help create a better environment by donating to ongoing community
               projects.
             </p>
@@ -208,7 +208,7 @@ export default function CrowdfundingListPage() {
             <input
               type="text"
               placeholder="Search campaigns..."
-              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-[#111827] text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

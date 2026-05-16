@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card, Badge, Button, cn } from "@/components/ui/WireframePrimitives";
+import { Card, Badge, cn } from "@/components/ui/WireframePrimitives";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { apiFetch } from "@/lib/api-client";
 import {
@@ -10,9 +10,6 @@ import {
   Target,
   TrendingUp,
   Shield,
-  CreditCard,
-  Smartphone,
-  Building,
   ChevronRight,
   HandCoins,
 } from "lucide-react";
@@ -137,21 +134,21 @@ function DonationForm({
   return (
     <Card className="p-6 border-2 border-green-200 shadow-md relative overflow-hidden">
       {!canDonate && (
-        <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
+        <div className="absolute inset-0 bg-white/80 dark:bg-[#111827]/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
           <HandCoins className="w-12 h-12 text-gray-400 mb-3" />
-          <h3 className="font-bold text-gray-800 dark:text-slate-200 text-lg mb-1">
+          <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">
             Donation Not Available
           </h3>
-          <p className="text-sm text-gray-600 dark:text-slate-400">
+          <p className="text-sm text-gray-600 dark:text-white">
             This campaign status is {project.status || "Unknown"}. Donations can
             only be made to projects with Funding (Approved) status.
           </p>
         </div>
       )}
-      <h2 className="font-black text-gray-900 dark:text-slate-100 mb-5 flex items-center gap-2">
+      <h2 className="font-black text-gray-900 dark:text-white mb-5 flex items-center gap-2">
         <HandCoins className="w-5 h-5 text-green-600" /> Donation Amount
       </h2>
-      <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+      <label className="block text-sm font-bold text-gray-700 dark:text-white mb-2 uppercase tracking-wide">
         Quick Amount (Rp)
       </label>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -163,7 +160,7 @@ function DonationForm({
               "h-14 rounded-xl font-bold text-sm border-2 transition-all",
               selectedPreset === amount
                 ? "bg-green-600 border-green-600 text-white shadow-md ring-4 ring-green-100"
-                : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:border-green-300 hover:bg-green-50",
+                : "bg-white dark:bg-[#1F2937] border-gray-200 dark:border-slate-600 text-gray-700 dark:text-white hover:border-green-300 hover:bg-green-50",
             )}
           >
             <span>Rp {amount.toLocaleString("id-ID")}</span>
@@ -171,7 +168,7 @@ function DonationForm({
         ))}
       </div>
       <div className="mb-4">
-        <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+        <label className="block text-sm font-bold text-gray-700 dark:text-white mb-2 uppercase tracking-wide">
           Other Amount (Rp)
         </label>
         <div className="relative">
@@ -181,7 +178,7 @@ function DonationForm({
           <input
             type="number"
             placeholder="Enter amount..."
-            className="w-full pl-12 pr-4 h-14 text-lg font-bold border-2 border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 transition-all"
+            className="w-full pl-12 pr-4 h-14 text-lg font-bold border-2 border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 bg-white dark:bg-[#1F2937] text-gray-900 dark:text-white transition-all"
             value={customAmount}
             min="10000"
             onChange={(e) => {
@@ -200,7 +197,7 @@ function DonationForm({
             Amount cannot be less than Rp 10.000
           </p>
         ) : (
-          <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
+          <p className="text-xs text-gray-500 dark:text-white mt-2">
             Minimum donation is Rp 10.000
           </p>
         )}
@@ -268,10 +265,10 @@ export default function CrowdfundingPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto items-center justify-center">
+      <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-gray-300 dark:border-slate-600 border-t-green-600 rounded-full animate-spin"></div>
-          <p className="text-gray-500 dark:text-slate-400 font-medium">
+          <p className="text-gray-500 dark:text-white font-medium">
             Loading campaign...
           </p>
         </div>
@@ -281,9 +278,9 @@ export default function CrowdfundingPage() {
 
   if (!project) {
     return (
-      <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto items-center justify-center">
+      <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-500 dark:text-slate-400 font-medium">
+          <p className="text-gray-500 dark:text-white font-medium">
             Campaign not found
           </p>
           <Link
@@ -309,8 +306,8 @@ export default function CrowdfundingPage() {
       : CAMPAIGN_IMAGES[project.id] || CAMPAIGN_IMAGES.default;
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto">
-      <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between shadow-sm">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto">
+      <div className="sticky top-0 z-10 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between shadow-sm">
         <Link
           href="/crowdfunding"
           className="flex items-center text-green-600 dark:text-green-400 hover:text-green-800 transition-colors"
@@ -340,11 +337,11 @@ export default function CrowdfundingPage() {
                   ? "Active"
                   : project.status || "Active"}
               </Badge>
-              <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100 leading-tight">
+              <h1 className="text-2xl font-black text-gray-900 dark:text-white leading-tight">
                 {project.title}
               </h1>
             </div>
-            <p className="text-sm text-gray-600 dark:text-slate-300 leading-relaxed line-clamp-3">
+            <p className="text-sm text-gray-600 dark:text-white leading-relaxed line-clamp-3">
               {project.description}
             </p>
 
@@ -381,7 +378,7 @@ export default function CrowdfundingPage() {
             {/* Progress Bar */}
             <div>
               <div className="flex justify-between text-sm font-semibold mb-1.5">
-                <span className="text-gray-600 dark:text-slate-400">
+                <span className="text-gray-600 dark:text-white">
                   Funding Progress
                 </span>
                 <span className="text-green-600">{progress}%</span>
