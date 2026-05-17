@@ -178,7 +178,7 @@ function PaymentContent() {
   // 1. Loading State
   if (isLoadingProject) {
     return (
-      <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 items-center justify-center">
+      <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] items-center justify-center">
         <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-gray-500 font-medium">Loading payment...</p>
       </div>
@@ -188,7 +188,7 @@ function PaymentContent() {
   // 2. Error State (Project Not Found)
   if (!project) {
     return (
-      <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 items-center justify-center">
+      <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] items-center justify-center">
         <p className="text-gray-500 font-medium mb-2">Project not found.</p>
         <Button
           onClick={() => router.back()}
@@ -204,8 +204,8 @@ function PaymentContent() {
   // 3. Success State
   if (step === "success") {
     return (
-      <div className="flex flex-col h-full bg-gray-50 dark:bg-slate-950 overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="flex flex-col h-full bg-gray-50 dark:bg-[#0B1120] overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between shadow-sm">
           <Link
             href="/crowdfunding"
             className="flex items-center text-green-600 dark:text-green-400 hover:text-green-800 transition-colors"
@@ -218,10 +218,10 @@ function PaymentContent() {
           <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg border-4 border-green-200">
             <CheckCircle2 className="w-12 h-12 text-green-600" />
           </div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-slate-100 mb-2">
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2">
             Donation Successful!
           </h1>
-          <p className="text-gray-500 dark:text-slate-400 mb-6 leading-relaxed">
+          <p className="text-gray-500 dark:text-white mb-6 leading-relaxed">
             Thank you for supporting{" "}
             <strong className="text-green-700 dark:text-green-400">
               {project.name}
@@ -247,10 +247,10 @@ function PaymentContent() {
                   key={item.label}
                   className="flex justify-between items-center"
                 >
-                  <span className="text-sm text-gray-500 dark:text-slate-400">
+                  <span className="text-sm text-gray-500 dark:text-white">
                     {item.label}
                   </span>
-                  <span className="text-sm font-semibold text-gray-800 dark:text-slate-200">
+                  <span className="text-sm font-semibold text-gray-800 dark:text-white">
                     {item.value}
                   </span>
                 </div>
@@ -271,9 +271,9 @@ function PaymentContent() {
 
   // 4. Confirm State (Default)
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="sticky top-0 z-10 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between shadow-sm">
         <button
           onClick={() => router.back()}
           className="flex items-center text-green-600 hover:text-green-800 dark:text-green-400 transition-colors"
@@ -307,20 +307,20 @@ function PaymentContent() {
         {step === "confirm" && (
           <div className="space-y-4">
             <Card className="p-5 border-green-100">
-              <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-4">
+              <h3 className="font-bold text-gray-900 dark:text-white mb-4">
                 Payment Details
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-500 dark:text-slate-400">
+                  <span className="text-sm text-gray-500 dark:text-white">
                     Donation Amount
                   </span>
-                  <span className="text-sm font-semibold dark:text-slate-200">
+                  <span className="text-sm font-semibold dark:text-white">
                     Rp {amount.toLocaleString("id-ID")}
                   </span>
                 </div>
                 <div className="flex justify-between pt-3 border-t border-gray-200 dark:border-slate-600">
-                  <span className="font-bold text-gray-900 dark:text-slate-100">
+                  <span className="font-bold text-gray-900 dark:text-white">
                     Total Payment
                   </span>
                   <span className="font-black text-green-600 text-lg">
@@ -330,7 +330,7 @@ function PaymentContent() {
               </div>
             </Card>
 
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-slate-400 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl px-4 py-3">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-white bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl px-4 py-3">
               <Clock className="w-4 h-4 text-yellow-500" />
               <span>
                 Complete payment within{" "}

@@ -177,14 +177,14 @@ export default function ProjectManagementPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto w-full font-sans antialiased">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto w-full font-sans antialiased">
       <div className="p-6 md:p-8 space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
               Project Management
             </h1>
-            <p className="text-gray-500 text-sm mt-0.5">
+            <p className="text-gray-500 dark:text-white text-sm mt-0.5">
               Monitor and manage community development initiatives.
             </p>
           </div>
@@ -211,7 +211,7 @@ export default function ProjectManagementPage() {
               <Card
                 key={status}
                 className={cn(
-                  "p-5 border-green-100 flex items-center gap-4 bg-white shadow-sm rounded-2xl",
+                  "p-5 border-green-100 dark:border-gray-800 flex items-center gap-4 bg-white dark:bg-[#1F2937] shadow-sm rounded-2xl",
                 )}
               >
                 <div
@@ -224,10 +224,10 @@ export default function ProjectManagementPage() {
                   {getStatusIcon(status)}
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-medium text-gray-400 tracking-widest mb-0.5">
+                  <p className="text-[10px] uppercase font-medium text-gray-400 dark:text-white tracking-widest mb-0.5">
                     {config.label}
                   </p>
-                  <p className="text-2xl font-black text-gray-900 leading-none">
+                  <p className="text-2xl font-black text-gray-900 dark:text-white leading-none">
                     {isLoading ? "..." : count}
                   </p>
                 </div>
@@ -237,7 +237,7 @@ export default function ProjectManagementPage() {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-2">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100 tracking-tight">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white tracking-tight">
             Project Dashboard
           </h2>
 
@@ -255,7 +255,7 @@ export default function ProjectManagementPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full h-11 pl-9 pr-8 bg-white dark:bg-slate-800 border border-green-200 dark:border-slate-700 rounded-xl text-xs font-bold text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
+                className="w-full h-11 pl-9 pr-8 bg-white dark:bg-[#1F2937] border border-green-200 dark:border-gray-800 rounded-xl text-xs font-bold text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
               >
                 <option value="All">All Status</option>
                 <option value="USULAN">Planning</option>
@@ -274,11 +274,11 @@ export default function ProjectManagementPage() {
         </div>
 
         {/* Table Section */}
-        <Card className="p-5 border-green-100 shadow-sm bg-white overflow-hidden rounded-2xl">
+        <Card className="p-5 border-green-100 dark:border-gray-800 shadow-sm bg-white dark:bg-[#1F2937] overflow-hidden rounded-2xl">
           <div className="overflow-x-auto -mx-5">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest border-b border-gray-50">
+                <tr className="text-[10px] text-gray-400 dark:text-white font-semibold uppercase tracking-widest border-b border-gray-50 dark:border-gray-800">
                   <th className="py-4 px-8">Project Details</th>
                   <th className="py-4 px-4 text-center">Status</th>
                   <th className="py-4 px-4 text-center">Category</th>
@@ -286,7 +286,7 @@ export default function ProjectManagementPage() {
                   <th className="py-4 px-8 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
                 {isLoading ? (
                   <tr>
                     <td colSpan={5} className="py-24 text-center">
@@ -297,7 +297,7 @@ export default function ProjectManagementPage() {
                   <tr>
                     <td
                       colSpan={5}
-                      className="py-24 text-center text-gray-400 font-medium uppercase tracking-widest text-[10px]"
+                      className="py-24 text-center text-gray-400 dark:text-white font-medium uppercase tracking-widest text-[10px]"
                     >
                       No projects found.
                     </td>
@@ -306,17 +306,17 @@ export default function ProjectManagementPage() {
                   filtered.map((project) => (
                     <tr
                       key={project.id}
-                      className="hover:bg-green-50/50 transition-colors group cursor-pointer"
+                      className="hover:bg-green-50/50 dark:hover:bg-green-900/20 transition-colors group cursor-pointer"
                       onClick={() =>
                         router.push(`/project/${project.id}?from=admin`)
                       }
                     >
                       <td className="py-6 px-8">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-gray-900 text-sm group-hover:text-green-700 transition-colors">
+                          <span className="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors">
                             {project.name}
                           </span>
-                          <span className="text-[11px] text-gray-400 font-medium mt-1">
+                          <span className="text-[11px] text-gray-400 dark:text-white font-medium mt-1">
                             Created {project.date}
                           </span>
                         </div>
@@ -335,12 +335,12 @@ export default function ProjectManagementPage() {
                       </td>
                       <td className="py-6 px-4">
                         <div className="flex justify-center">
-                          <span className="bg-slate-50 text-slate-500 border border-slate-100 px-4 py-1 rounded-full text-[10px] font-semibold">
+                          <span className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-white border border-slate-100 dark:border-slate-700 px-4 py-1 rounded-full text-[10px] font-semibold">
                             {project.category}
                           </span>
                         </div>
                       </td>
-                      <td className="py-6 px-4 text-gray-700 font-semibold text-xs">
+                      <td className="py-6 px-4 text-gray-700 dark:text-white font-semibold text-xs">
                         {project.budget}
                       </td>
                       <td className="py-6 px-8">
@@ -351,13 +351,13 @@ export default function ProjectManagementPage() {
                           <Link
                             href={`/admin/projects/${project.id}?mode=edit`}
                           >
-                            <button className="p-2.5 rounded-xl bg-white border border-gray-100 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm">
+                            <button className="p-2.5 rounded-xl bg-white dark:bg-[#1F2937] border border-gray-100 dark:border-gray-800 text-green-600 dark:text-green-400 hover:bg-green-600 dark:hover:bg-green-700 hover:text-white transition-all shadow-sm">
                               <Edit2 className="w-4 h-4" />
                             </button>
                           </Link>
                           <button
                             onClick={() => handleDelete(project.id)}
-                            className="p-2.5 rounded-xl bg-white border border-gray-100 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                            className="p-2.5 rounded-xl bg-white dark:bg-[#1F2937] border border-gray-100 dark:border-gray-800 text-red-500 dark:text-red-400 hover:bg-red-500 dark:hover:bg-red-600 hover:text-white transition-all shadow-sm"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

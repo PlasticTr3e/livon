@@ -228,6 +228,10 @@ async function seedProjects() {
   }
 }
 
+void seedAgencies;
+void seedCitizens;
+void seedProjects;
+
 async function main() {
   await prisma.$transaction(async (tx) => {
     await tx.notification.deleteMany();
@@ -243,9 +247,9 @@ async function main() {
     await tx.user.deleteMany();
   });
 
-  await seedAgencies();
-  await seedCitizens();
-  await seedProjects();
+  // await seedAgencies();
+  // await seedCitizens();
+  // await seedProjects();
 
   const userCount = await prisma.user.count();
   const agencyCount = await prisma.agencyProfile.count();

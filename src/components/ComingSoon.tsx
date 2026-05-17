@@ -55,19 +55,19 @@ export function ComingSoon({
         </div>
 
         {/* Title */}
-        <h1 className="text-4xl font-black text-gray-900 dark:text-slate-100 mb-3 leading-tight">
+        <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-3 leading-tight">
           {title}
         </h1>
 
         {/* Description */}
-        <p className="text-gray-500 dark:text-slate-400 text-sm leading-relaxed mb-8">
+        <p className="text-gray-500 dark:text-white text-sm leading-relaxed mb-8">
           {description}
         </p>
 
         {/* Features list */}
         {features && features.length > 0 && (
           <div className="w-full mb-8 p-5 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm text-left space-y-3">
-            <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+            <p className="text-xs font-bold text-gray-400 dark:text-white uppercase tracking-widest mb-4">
               Yang Akan Hadir
             </p>
             {features.map((feat, idx) => (
@@ -75,7 +75,7 @@ export function ComingSoon({
                 <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700 flex items-center justify-center shrink-0">
                   <div className="w-2 h-2 rounded-full bg-green-500 dark:bg-green-400" />
                 </div>
-                <span className="text-sm text-gray-700 dark:text-slate-300">
+                <span className="text-sm text-gray-700 dark:text-white">
                   {feat}
                 </span>
               </div>

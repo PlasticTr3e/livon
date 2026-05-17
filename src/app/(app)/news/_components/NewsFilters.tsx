@@ -32,28 +32,33 @@ export function NewsFilters({
   }
 
   return (
-    <div className="flex items-center gap-3 w-full md:w-auto">
-      <div className="relative flex-1 md:w-64">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          defaultValue={initialQuery}
-          placeholder="Search news..."
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              updateFilters({ q: (e.target as HTMLInputElement).value });
-            }
-          }}
-          onBlur={(e) => updateFilters({ q: e.target.value })}
-          className="w-full h-10 pl-10 pr-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
-        />
-      </div>
+    <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          updateFilters({ q: formData.get("q") as string });
+        }}
+        className="relative flex w-full md:w-80"
+      >
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            key={initialQuery}
+            name="q"
+            type="text"
+            defaultValue={initialQuery}
+            placeholder="Search news..."
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-[#111827] text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+          />
+        </div>
+      </form>
 
-      <div className="relative">
+      <div className="relative w-full md:w-auto">
         <select
           defaultValue={initialSort}
           onChange={(e) => updateFilters({ sort: e.target.value })}
-          className="appearance-none h-10 pl-4 pr-10 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer"
+          className="appearance-none w-full md:w-32 h-10 pl-4 pr-10 bg-white dark:bg-[#1F2937] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-semibold text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer shadow-sm"
         >
           <option value="latest">Latest</option>
           <option value="oldest">Oldest</option>

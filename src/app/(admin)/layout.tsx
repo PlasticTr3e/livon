@@ -140,6 +140,8 @@ export default function AdminLayout({
     { name: "Users", href: "/admin/users", icon: Users },
   ];
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   // Management FIRST in top nav
   const navLinks = [
     {
@@ -148,7 +150,7 @@ export default function AdminLayout({
       icon: Settings,
       matchPrefix: "/admin",
     },
-    { name: "Map", href: "/map", icon: Map, matchPrefix: "/map" },
+    { name: "Map & Projects", href: "/map", icon: Map, matchPrefix: "/map" },
     {
       name: "Crowdfunding",
       href: "/crowdfunding",
@@ -159,12 +161,35 @@ export default function AdminLayout({
   ];
 
   const roleInitial = userName.charAt(0).toUpperCase();
+  const displayRole = userRole === "Resident" ? "Resident" : "Agency";
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden font-sans bg-slate-50 dark:bg-slate-950">
+    <div className="flex flex-col h-screen overflow-hidden font-sans bg-slate-50 dark:bg-[#0B1120]">
       {/* ── Top Navbar ── */}
-      <header className="flex-none bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 h-16 px-4 flex items-center justify-between z-10 shadow-sm">
-        <div className="flex items-center space-x-6">
+      <header className="flex-none bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 h-16 px-4 flex items-center justify-between z-30 shadow-sm relative">
+        <div className="flex items-center gap-2 md:gap-6">
+          {/* Mobile Sidebar Toggle */}
+          <button
+            className="md:hidden p-2 -ml-2 text-gray-600 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+
           {/* Logo */}
           <Link
             href="/admin/dashboard"
@@ -194,7 +219,7 @@ export default function AdminLayout({
                     "px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center space-x-2",
                     isActive
                       ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm shadow-green-200 dark:shadow-green-900"
-                      : "text-gray-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-green-700 dark:hover:text-green-400",
+                      : "text-gray-500 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-green-700 dark:hover:text-green-400",
                   )}
                 >
                   <link.icon className="w-4 h-4" />
@@ -210,7 +235,7 @@ export default function AdminLayout({
           {/* Dark mode toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full text-gray-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-full text-gray-500 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             title={theme === "dark" ? "Mode terang" : "Mode gelap"}
           >
             {theme === "dark" ? (
@@ -225,7 +250,7 @@ export default function AdminLayout({
             <button
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}
               onMouseEnter={() => setIsNotificationOpen(true)}
-              className="relative p-2 text-gray-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+              className="relative p-2 text-gray-500 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
@@ -234,10 +259,10 @@ export default function AdminLayout({
             </button>
             {isNotificationOpen && (
               <div
-                className="absolute right-0 mt-0 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-xl rounded-xl z-50"
+                className="absolute right-0 mt-0 w-80 bg-white dark:bg-[#1F2937] border border-gray-200 dark:border-gray-800 shadow-xl rounded-xl z-50"
                 onMouseLeave={() => setIsNotificationOpen(false)}
               >
-                <div className="p-3 border-b border-gray-100 dark:border-slate-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800 rounded-t-xl flex items-center justify-between">
+                <div className="p-3 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800 rounded-t-xl flex items-center justify-between">
                   <p className="font-bold text-sm text-green-800 dark:text-green-300">
                     Notifikasi
                   </p>
@@ -247,11 +272,11 @@ export default function AdminLayout({
                 </div>
                 <div className="max-h-64 overflow-y-auto">
                   {loading ? (
-                    <div className="p-3 text-center text-gray-500 dark:text-slate-400 text-sm">
+                    <div className="p-3 text-center text-gray-500 dark:text-white text-sm">
                       Memuat notifikasi...
                     </div>
                   ) : notifications.length === 0 ? (
-                    <div className="p-3 text-center text-gray-500 dark:text-slate-400 text-sm">
+                    <div className="p-3 text-center text-gray-500 dark:text-white text-sm">
                       Tidak ada notifikasi
                     </div>
                   ) : (
@@ -259,8 +284,8 @@ export default function AdminLayout({
                       <div
                         key={n.id}
                         className={cn(
-                          "p-3 border-b border-gray-100 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex gap-3",
-                          !n.isRead ? "bg-green-50 dark:bg-slate-800" : "",
+                          "p-3 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex gap-3",
+                          !n.isRead ? "bg-green-50 dark:bg-[#1F2937]" : "",
                         )}
                       >
                         <div
@@ -275,12 +300,12 @@ export default function AdminLayout({
                               "text-sm font-semibold",
                               !n.isRead
                                 ? "text-green-800 dark:text-green-200"
-                                : "text-gray-800 dark:text-slate-200",
+                                : "text-gray-800 dark:text-white",
                             )}
                           >
                             {n.title || "Notifikasi"}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                          <p className="text-xs text-gray-500 dark:text-white mt-0.5 leading-relaxed">
                             {n.message || ""}
                           </p>
                           <p className="text-[10px] text-green-600 dark:text-green-400 mt-1 font-medium">
@@ -299,19 +324,19 @@ export default function AdminLayout({
           <div
             onClick={() => router.push("/profile")}
             className={cn(
-              "flex items-center space-x-2 border-l border-gray-200 dark:border-slate-700 pl-3 ml-1 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors",
-              pathname === "/profile" ? "bg-slate-100 dark:bg-slate-800" : "",
+              "flex items-center space-x-2 border-l border-gray-200 dark:border-gray-800 pl-3 ml-1 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors",
+              pathname === "/profile" ? "bg-slate-100 dark:bg-[#1F2937]" : "",
             )}
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-sm font-bold shadow-sm text-yellow-900">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-bold shadow-sm text-white">
               {roleInitial}
             </div>
             <div className="hidden md:block text-sm">
-              <p className="font-semibold text-gray-800 dark:text-slate-200 leading-tight">
+              <p className="font-semibold text-gray-800 dark:text-white leading-tight">
                 {userName}
               </p>
               <p className="text-xs text-green-600 dark:text-green-400">
-                {userRole}
+                {displayRole}
               </p>
             </div>
           </div>
@@ -319,11 +344,24 @@ export default function AdminLayout({
       </header>
 
       {/* ── Body: Sidebar + Content ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Admin Sidebar */}
-        <aside className="w-56 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex-shrink-0 flex flex-col shadow-sm z-20">
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-20 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        <aside
+          className={cn(
+            "absolute md:relative z-30 w-56 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex-shrink-0 flex flex-col shadow-lg md:shadow-none transition-transform duration-300 ease-in-out",
+            sidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full md:translate-x-0",
+          )}
+        >
           {/* Sidebar header */}
-          <div className="px-4 py-4 bg-gradient-to-br from-green-600 to-green-800 flex items-center gap-2">
+          <div className="px-4 py-4 bg-gradient-to-br from-green-600 to-green-800 flex items-center gap-2 shrink-0">
             <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
               <Leaf className="w-3.5 h-3.5 text-white" />
             </div>
@@ -348,11 +386,12 @@ export default function AdminLayout({
                 <Link
                   key={link.name}
                   href={link.href}
+                  onClick={() => setSidebarOpen(false)}
                   className={cn(
                     "group flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all",
                     isActive
                       ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
-                      : "text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-green-700 dark:hover:text-green-400",
+                      : "text-gray-600 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-green-700 dark:hover:text-green-400",
                   )}
                 >
                   <div className="flex items-center space-x-2.5">
@@ -361,7 +400,7 @@ export default function AdminLayout({
                         "flex-shrink-0 h-4 w-4",
                         isActive
                           ? "text-white"
-                          : "text-gray-400 dark:text-slate-500 group-hover:text-green-600 dark:group-hover:text-green-400",
+                          : "text-gray-400 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400",
                       )}
                     />
                     <span>{link.name}</span>
@@ -373,24 +412,57 @@ export default function AdminLayout({
               );
             })}
           </nav>
-
-          <div className="p-3 border-t border-gray-200 dark:border-slate-700">
-            <div className="px-3 py-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800 rounded-lg border border-green-100 dark:border-slate-700">
-              <p className="text-xs text-green-700 dark:text-green-400 font-semibold">
-                LIVON Admin v1.0
-              </p>
-              <p className="text-[10px] text-green-500 dark:text-green-500 mt-0.5">
-                Civic Platform
-              </p>
-            </div>
-          </div>
         </aside>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto focus:outline-none bg-slate-50 dark:bg-slate-950">
+        <main className="flex-1 overflow-y-auto focus:outline-none bg-slate-50 dark:bg-[#0B1120] pb-16 md:pb-0">
           {children}
         </main>
       </div>
+
+      {/* ── Global Mobile Bottom Navigation ── */}
+      <nav className="md:hidden fixed bottom-0 w-full h-16 bg-white dark:bg-[#111827] border-t border-gray-200 dark:border-gray-800 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        {navLinks.map((link) => {
+          const isActive =
+            link.name === "Management"
+              ? pathname.startsWith("/admin")
+              : pathname.startsWith(link.matchPrefix);
+
+          return (
+            <Link
+              key={link.name}
+              href={link.href}
+              className={cn(
+                "flex flex-col items-center justify-center w-full h-full transition-all duration-200",
+                isActive
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-gray-400 dark:text-white hover:text-green-600 dark:hover:text-green-400",
+              )}
+            >
+              <div
+                className={cn(
+                  "p-1 rounded-full mb-0.5 transition-all",
+                  isActive
+                    ? "bg-green-50 dark:bg-green-900/30"
+                    : "bg-transparent",
+                )}
+              >
+                <link.icon
+                  className={cn("w-5 h-5", isActive && "stroke-[2.5px]")}
+                />
+              </div>
+              <span
+                className={cn(
+                  "text-[9px] font-semibold transition-all",
+                  isActive ? "scale-105" : "",
+                )}
+              >
+                {link.name}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

@@ -45,6 +45,8 @@ interface ProjectData {
   status?: string;
   totalVotes?: number;
   currentFunding?: number | string;
+  createdAt?: string;
+  updatedAt?: string;
   sentimentAnalytics?: SentimentAnalytics;
 }
 
@@ -58,14 +60,6 @@ interface DashboardMetrics {
 interface PieChartData {
   name: string;
   value: number;
-}
-
-interface DonationData {
-  id: string;
-  userId?: string;
-  amount?: number | string;
-  createdAt: string;
-  status: string;
 }
 
 // --- CONSTANTS ---
@@ -99,7 +93,6 @@ export default function AdminDashboardPage() {
 
   const [pieData, setPieData] = useState<PieChartData[]>([]);
   const [priorityProjects, setPriorityProjects] = useState<ProjectData[]>([]);
-
   // --- DATA FETCHING ---
 
   useEffect(() => {
@@ -184,7 +177,7 @@ export default function AdminDashboardPage() {
                 return detailRes.success && detailRes.data
                   ? { ...p, ...detailRes.data }
                   : p;
-              } catch (e) {
+              } catch {
                 return p;
               }
             }),
@@ -278,7 +271,7 @@ export default function AdminDashboardPage() {
     if (!distribution) {
       return {
         label: "None",
-        color: "bg-gray-100 text-gray-500",
+        color: "bg-gray-100 text-gray-500 dark:text-white",
         percentage: 0,
       };
     }
@@ -289,7 +282,7 @@ export default function AdminDashboardPage() {
     if (total === 0) {
       return {
         label: "None",
-        color: "bg-gray-100 text-gray-500",
+        color: "bg-gray-100 text-gray-500 dark:text-white",
         percentage: 0,
       };
     }
@@ -312,7 +305,7 @@ export default function AdminDashboardPage() {
 
     return {
       label: "Neutral",
-      color: "bg-gray-100 text-gray-700",
+      color: "bg-gray-100 text-gray-700 dark:text-white",
       percentage: Math.round((neutral / total) * 100),
     };
   };
@@ -321,21 +314,21 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-[#0B1120]">
         <Loader className="w-8 h-8 animate-spin text-green-600" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-full flex flex-col w-full">
+    <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-[#0B1120] min-h-full flex flex-col w-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-2">
         <div>
           <h1 className="text-2xl font-black text-gray-900 dark:text-white">
             Admin Dashboard
           </h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <p className="text-gray-500 dark:text-white text-sm mt-0.5">
             Summary of statistics and performance of the LIVON platform.
           </p>
         </div>
@@ -359,10 +352,10 @@ export default function AdminDashboardPage() {
             <FirstStatIcon className="w-6 h-6" />
           </div>
           <div className="flex-1 truncate">
-            <p className="text-[10px] uppercase font-bold text-gray-400 mb-0.5">
+            <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-white mb-0.5">
               {stats[0].title}
             </p>
-            <p className="text-2xl font-black text-gray-900 truncate">
+            <p className="text-2xl font-black text-gray-900 dark:text-white truncate">
               {stats[0].value}
             </p>
           </div>
@@ -389,10 +382,10 @@ export default function AdminDashboardPage() {
                   <StatIcon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 truncate">
-                  <p className="text-[9px] uppercase font-bold text-gray-400 mb-0.5 truncate">
+                  <p className="text-[9px] uppercase font-bold text-gray-400 dark:text-white mb-0.5 truncate">
                     {stat.title}
                   </p>
-                  <p className="text-lg font-black text-gray-900 truncate">
+                  <p className="text-lg font-black text-gray-900 dark:text-white truncate">
                     {stat.value}
                   </p>
                 </div>
@@ -405,12 +398,12 @@ export default function AdminDashboardPage() {
       {/* 2. Charts Section (Bar & Pie) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sentiment Bar Chart */}
-        <Card className="p-6 lg:col-span-2 shadow-sm border-gray-200 flex flex-col min-h-[350px] bg-white">
+        <Card className="p-6 lg:col-span-2 shadow-sm border-gray-200 dark:border-gray-800 flex flex-col min-h-[350px] bg-white dark:bg-[#1F2937]">
           <div className="mb-5">
-            <h3 className="font-bold text-gray-900">
+            <h3 className="font-bold text-gray-900 dark:text-white">
               Project Sentiment Distribution
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-gray-500 dark:text-white mt-0.5">
               Comparison of comment sentiment on top 5 projects
             </p>
           </div>
@@ -474,8 +467,8 @@ export default function AdminDashboardPage() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-                <p className="text-gray-400 text-sm font-medium">
+              <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-[#111827]">
+                <p className="text-gray-400 dark:text-white text-sm font-medium">
                   No sentiment data available
                 </p>
               </div>
@@ -484,10 +477,12 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Project Status Pie Chart */}
-        <Card className="p-6 shadow-sm border-gray-200 flex flex-col min-h-[350px] bg-white">
+        <Card className="p-6 shadow-sm border-gray-200 dark:border-gray-800 flex flex-col min-h-[350px] bg-white dark:bg-[#1F2937]">
           <div className="mb-5">
-            <h3 className="font-bold text-gray-900">Project Status</h3>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h3 className="font-bold text-gray-900 dark:text-white">
+              Project Status
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-white mt-0.5">
               Current project proportion distribution
             </p>
           </div>
@@ -523,17 +518,17 @@ export default function AdminDashboardPage() {
                   </ResponsiveContainer>
                   {/* Center Metric */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-2xl font-black text-gray-900 leading-none">
+                    <span className="text-2xl font-black text-gray-900 dark:text-white leading-none">
                       {metrics.totalProyek}
                     </span>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">
+                    <span className="text-[10px] font-bold text-gray-400 dark:text-white uppercase mt-0.5">
                       Projects
                     </span>
                   </div>
                 </div>
 
                 {/* Legend & Breakdown Below Pie Chart */}
-                <div className="w-full flex flex-wrap justify-center gap-x-6 gap-y-3 pt-4 border-t border-gray-100">
+                <div className="w-full flex flex-wrap justify-center gap-x-6 gap-y-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                   {pieData.map((item) => {
                     const percentage =
                       metrics.totalProyek > 0
@@ -552,15 +547,15 @@ export default function AdminDashboardPage() {
                                 PIE_COLORS[item.name] || "#94a3b8",
                             }}
                           />
-                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                          <span className="text-[10px] font-bold text-gray-500 dark:text-white uppercase tracking-wide">
                             {item.name}
                           </span>
                         </div>
                         <div className="flex items-baseline gap-1.5">
-                          <span className="text-lg font-black text-gray-900">
+                          <span className="text-lg font-black text-gray-900 dark:text-white">
                             {item.value}
                           </span>
-                          <span className="text-[9px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-md border border-gray-100">
+                          <span className="text-[9px] font-bold text-gray-400 dark:text-white bg-gray-50 dark:bg-[#111827] px-1.5 py-0.5 rounded-md border border-gray-100 dark:border-gray-800">
                             {percentage}%
                           </span>
                         </div>
@@ -570,8 +565,8 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-                <p className="text-sm font-medium text-gray-400">
+              <div className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-[#111827]">
+                <p className="text-sm font-medium text-gray-400 dark:text-white">
                   No project data available
                 </p>
               </div>
@@ -581,24 +576,24 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* 3. Priority Projects Table */}
-      <Card className="p-6 shadow-sm border-gray-200 bg-white">
+      <Card className="p-6 shadow-sm border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1F2937]">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
           <div>
-            <h3 className="font-bold text-gray-900">
-              Top 10 Priority Projects
+            <h3 className="font-bold text-gray-900 dark:text-white">
+              Priority Projects
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-gray-500 dark:text-white mt-0.5">
               Most active projects based on popularity and AI sentiment analysis
             </p>
           </div>
           {/* Table Sorters */}
-          <div className="flex gap-2 bg-gray-50 p-1 rounded-lg border border-gray-100">
+          <div className="flex gap-2 bg-gray-50 dark:bg-[#111827] p-1 rounded-lg border border-gray-100 dark:border-gray-800">
             <button
               onClick={() => setSortBy("viral")}
               className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
                 sortBy === "viral"
-                  ? "bg-white text-gray-900 shadow-sm border border-gray-200"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white dark:bg-[#1F2937] text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-800"
+                  : "text-gray-500 dark:text-white hover:text-gray-700 dark:text-white"
               }`}
             >
               Most Viral
@@ -607,8 +602,8 @@ export default function AdminDashboardPage() {
               onClick={() => setSortBy("sentiment")}
               className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
                 sortBy === "sentiment"
-                  ? "bg-white text-gray-900 shadow-sm border border-gray-200"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white dark:bg-[#1F2937] text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-800"
+                  : "text-gray-500 dark:text-white hover:text-gray-700 dark:text-white"
               }`}
             >
               Positive Sentiment
@@ -620,14 +615,14 @@ export default function AdminDashboardPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="border-b border-gray-200 text-xs text-gray-500 font-bold uppercase tracking-wider">
+              <tr className="border-b border-gray-200 dark:border-gray-800 text-xs text-gray-500 dark:text-white font-bold uppercase tracking-wider">
                 <th className="py-3 px-4">Project Name</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Total Votes</th>
                 <th className="py-3 px-4">Dominant Sentiment</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {sortedTableData.length > 0 ? (
                 sortedTableData.map((p) => {
                   const sentiment = getDominantSentiment(
@@ -636,9 +631,9 @@ export default function AdminDashboardPage() {
                   return (
                     <tr
                       key={p.id}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-gray-50 dark:bg-[#111827] transition-colors"
                     >
-                      <td className="py-3 px-4 font-semibold text-gray-800">
+                      <td className="py-3 px-4 font-semibold text-gray-800 dark:text-white">
                         {p.title}
                       </td>
                       <td className="py-3 px-4">
@@ -657,7 +652,7 @@ export default function AdminDashboardPage() {
                             "Planning"}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 text-gray-600 text-xs">
+                      <td className="py-3 px-4 text-gray-600 dark:text-white text-xs">
                         {p.totalVotes} Votes
                       </td>
                       <td className="py-3 px-4">
@@ -679,7 +674,7 @@ export default function AdminDashboardPage() {
                 <tr>
                   <td
                     colSpan={4}
-                    className="text-center py-6 text-gray-500 text-sm"
+                    className="text-center py-6 text-gray-500 dark:text-white text-sm"
                   >
                     No projects meet the criteria
                   </td>
@@ -692,7 +687,7 @@ export default function AdminDashboardPage() {
 
       {/* 4. Quick Actions */}
       <div className="pt-2">
-        <h3 className="font-bold text-gray-900 mb-4 text-sm px-1">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-4 text-sm px-1">
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -702,7 +697,7 @@ export default function AdminDashboardPage() {
               label: "New Project",
               href: "/admin/projects/create",
               color: "text-green-600",
-              hover: "hover:bg-gray-50",
+              hover: "hover:bg-gray-50 dark:bg-[#111827]",
               bgIcon: "bg-green-50",
             },
             {
@@ -710,7 +705,7 @@ export default function AdminDashboardPage() {
               label: "Comments",
               href: "/admin/comments",
               color: "text-blue-600",
-              hover: "hover:bg-gray-50",
+              hover: "hover:bg-gray-50 dark:bg-[#111827]",
               bgIcon: "bg-blue-50",
             },
             {
@@ -718,7 +713,7 @@ export default function AdminDashboardPage() {
               label: "Donations",
               href: "/admin/crowdfunding",
               color: "text-yellow-600",
-              hover: "hover:bg-gray-50",
+              hover: "hover:bg-gray-50 dark:bg-[#111827]",
               bgIcon: "bg-yellow-50",
             },
             {
@@ -726,7 +721,7 @@ export default function AdminDashboardPage() {
               label: "Residents",
               href: "/admin/users",
               color: "text-purple-600",
-              hover: "hover:bg-gray-50",
+              hover: "hover:bg-gray-50 dark:bg-[#111827]",
               bgIcon: "bg-purple-50",
             },
           ].map((action) => {
@@ -735,19 +730,19 @@ export default function AdminDashboardPage() {
               <Link
                 key={action.label}
                 href={action.href}
-                className={`flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 transition-all group ${action.hover} shadow-sm`}
+                className={`flex items-center justify-between p-4 bg-white dark:bg-[#1F2937] rounded-xl border border-gray-200 dark:border-gray-800 transition-all group ${action.hover} shadow-sm`}
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`p-2.5 rounded-lg transition-colors group-hover:bg-white ${action.bgIcon}`}
+                    className={`p-2.5 rounded-lg transition-colors group-hover:bg-white dark:bg-[#1F2937] ${action.bgIcon}`}
                   >
                     <ActionIcon className={`w-5 h-5 ${action.color}`} />
                   </div>
-                  <span className="text-sm font-semibold text-gray-800">
+                  <span className="text-sm font-semibold text-gray-800 dark:text-white">
                     {action.label}
                   </span>
                 </div>
-                <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 dark:text-white transition-colors" />
               </Link>
             );
           })}
