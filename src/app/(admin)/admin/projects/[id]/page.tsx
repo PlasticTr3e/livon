@@ -31,11 +31,6 @@ const MapSelectorLeaflet = dynamic<{
   ),
 });
 
-interface ProjectCategory {
-  id: number;
-  name: string;
-}
-
 function EditProjectContent() {
   const { id } = useParams();
   const router = useRouter();
@@ -46,6 +41,7 @@ function EditProjectContent() {
     description: "",
     budgetTarget: "",
     estimatedDurationDays: "",
+    category: "Infrastructure",
     categoryId: "",
     status: "USULAN",
     latitude: -6.941,
@@ -54,11 +50,11 @@ function EditProjectContent() {
     documentUrl: [] as string[],
   });
 
-  const [categories, setCategories] = useState<ProjectCategory[]>([]);
   const [projectPhotos, setProjectPhotos] = useState<string[]>([]);
+  const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isLoading, setIsLoading] = useState(!isCreate);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,9 +63,7 @@ function EditProjectContent() {
         const catRes = await fetch("/api/projects/categories");
         if (catRes.ok) {
           const catJson = await catRes.json();
-          if (Array.isArray(catJson.data)) {
-            setCategories(catJson.data);
-          }
+          if (catJson.data) setCategories(catJson.data);
         }
 
         if (!isCreate) {
@@ -85,6 +79,7 @@ function EditProjectContent() {
                 estimatedDurationDays: d.estimatedDurationDays
                   ? String(d.estimatedDurationDays)
                   : "",
+                category: d.category?.name || "Infrastructure",
                 categoryId: d.categoryId ? String(d.categoryId) : "",
                 status: d.status || "USULAN",
                 latitude: d.latitude || -6.941,

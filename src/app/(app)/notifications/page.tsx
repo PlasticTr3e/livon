@@ -150,7 +150,17 @@ export default function NotificationsPage() {
 
   const handleDelete = async (id: string) => {
     try {
+      // Update local state optimistically
       setNotifications((prev) => prev.filter((n) => n.id !== id));
+
+      // Call API to delete in database
+      const token = localStorage.getItem("livon-token");
+      await apiFetch(`/api/notifications/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
     } catch (error) {
       console.error("Failed to delete notification:", error);
     }

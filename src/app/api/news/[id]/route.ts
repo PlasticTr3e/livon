@@ -175,6 +175,7 @@ export async function GET(
  *       400:
  *         description: Gagal memperbarui berita
  */
+//
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -208,11 +209,19 @@ export async function PUT(
       return notFound("Berita yang ingin diubah tidak ditemukan.");
     }
 
+    let excerptUpdate = undefined;
+    if (content !== undefined) {
+      // Need to import generateExcerpt at the top or dynamically
+      const { generateExcerpt } = await import("@/lib/ai");
+      excerptUpdate = await generateExcerpt(content);
+    }
+
     const updatedNews = await prisma.news.update({
       where: { id },
       data: {
         ...(title && { title }),
         ...(content !== undefined && { content }),
+        ...(excerptUpdate !== undefined && { excerpt: excerptUpdate }),
         ...(thumbnailUrl !== undefined && { thumbnailUrl }),
         ...(publishedAt !== undefined && {
           publishedAt: new Date(publishedAt),
@@ -222,6 +231,16 @@ export async function PUT(
         author: {
           select: { id: true, agencyProfile: { select: { agencyName: true } } },
         },
+      },
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: authUser.userId,
+        referenceId: updatedNews.id,
+        title: "Memperbarui Berita",
+        type: "ACTIVITY_LOG",
+        message: `Anda telah memperbarui berita: ${updatedNews.title}`,
       },
     });
 

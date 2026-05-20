@@ -152,6 +152,7 @@ export async function GET(
  *       400:
  *         description: Failed to update citizen
  */
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -179,7 +180,7 @@ export async function PUT(
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        ...(body.role && { role: body.role }), // Allow role modification if necessary
+        ...(body.role && { role: body.role }),
         citizenProfile: {
           update: {
             ...(body.fullName && { fullName: body.fullName }),
@@ -194,6 +195,20 @@ export async function PUT(
         citizenProfile: true,
       },
     });
+
+    if (body.isVerified === true) {
+      const citizenName =
+        updatedUser.citizenProfile?.fullName || updatedUser.email;
+      await prisma.notification.create({
+        data: {
+          userId: authUser.userId,
+          referenceId: updatedUser.id,
+          title: "Verifikasi Pengguna",
+          type: "ACTIVITY_LOG",
+          message: `Anda telah memverifikasi akun warga atas nama ${citizenName}.`,
+        },
+      });
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...safeUpdatedData } = updatedUser;

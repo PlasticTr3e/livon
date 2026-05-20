@@ -217,6 +217,7 @@ model News {
   createdById  String
   title        String
   content      String?
+  excerpt      String?   @db.Text
   thumbnailUrl String?
   publishedAt  DateTime?
   createdAt    DateTime  @default(now())

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: false,
   reactCompiler: true,
   allowedDevOrigins: ["local-origin.dev", "*.local-origin.dev"],
   images: {
@@ -14,6 +15,12 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "kvxnchsezyjwjaizdvbn.supabase.co",
+        port: "",
+        pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "qvxgqbjymxdjulnijkvw.supabase.co",
         port: "",
         pathname: "/storage/v1/object/public/**",
       },

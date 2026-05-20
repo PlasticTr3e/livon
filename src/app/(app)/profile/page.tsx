@@ -322,12 +322,19 @@ export default function ProfilePage() {
     const formData = new FormData(e.currentTarget);
     const token = localStorage.getItem("livon-token");
     if (!token) return;
-    const body = {
-      fullName: formData.get("fullName") || undefined,
-      phone: formData.get("phone") || undefined,
-      blockHouse: formData.get("blokRumah") || undefined,
-      houseNumber: formData.get("noRumah") || undefined,
+    const body: Record<string, string> = {};
+    const getString = (key: string) => {
+      const val = formData.get(key);
+      return val !== null ? val.toString() : undefined;
     };
+
+    if (getString("fullName") !== undefined) body.fullName = getString("fullName")!;
+    if (getString("phone") !== undefined) body.phone = getString("phone")!;
+    if (getString("blokRumah") !== undefined) body.blockHouse = getString("blokRumah")!;
+    if (getString("noRumah") !== undefined) body.houseNumber = getString("noRumah")!;
+    if (getString("agencyName") !== undefined) body.agencyName = getString("agencyName")!;
+    if (getString("address") !== undefined) body.address = getString("address")!;
+    if (getString("email") !== undefined) body.email = getString("email")!;
     const res = await fetch("/api/users/profile", {
       method: "PUT",
       headers: {

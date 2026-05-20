@@ -9,6 +9,7 @@ export interface NewsGridItem {
   id: string;
   title: string;
   content?: string | null;
+  excerpt?: string | null;
   thumbnailUrl?: string | null;
   publishedAt?: string | Date | null;
 }

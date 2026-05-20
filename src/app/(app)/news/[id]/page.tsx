@@ -17,8 +17,9 @@ type Category = { name: string } | null;
 type NewsArticle = {
   id: string;
   title: string;
-  content?: string;
-  thumbnailUrl?: string;
+  content?: string | null;
+  excerpt?: string | null;
+  thumbnailUrl?: string | null;
   publishedAt?: Date | string | null;
   createdById?: string;
   author?: Author | null;
@@ -93,16 +94,18 @@ export default async function NewsDetailPage({
 
   // If we have multiple paragraphs, use the first one as excerpt.
   // If only one, use a truncated version as excerpt and DON'T repeat it in the body.
-  let displayExcerpt = "";
+  let displayExcerpt = article.excerpt || "";
   let displayBody = body;
 
-  if (body.length > 1) {
-    displayExcerpt = body[0];
-    displayBody = body.slice(1);
-  } else if (body.length === 1) {
-    displayExcerpt =
-      body[0].slice(0, 150) + (body[0].length > 150 ? "..." : "");
-    displayBody = body; // Show the full content in body if it's short
+  if (!displayExcerpt) {
+    if (body.length > 1) {
+      displayExcerpt = body[0];
+      displayBody = body.slice(1);
+    } else if (body.length === 1) {
+      displayExcerpt =
+        body[0].slice(0, 150) + (body[0].length > 150 ? "..." : "");
+      displayBody = body; // Show the full content in body if it's short
+    }
   }
   let date = "";
   if (article.publishedAt) {
