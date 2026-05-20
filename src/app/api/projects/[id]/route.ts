@@ -128,32 +128,34 @@ export async function PATCH(
       budgetTarget,
       latitude,
       longitude,
-      imageUrls,
       estimatedDurationDays,
       categoryId,
       startDate,
+      imageUrls,
     } = body;
 
-    const validStatuses = ["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"];
     const updateData: Record<string, unknown> = {};
 
     if (status) {
+      const validStatuses = ["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"];
       if (!validStatuses.includes(status)) {
         return badRequest("Invalid status provided");
       }
-      updateData.status = status as
-        | "USULAN"
-        | "DISETUJUI"
-        | "BERJALAN"
-        | "SELESAI";
+      updateData.status = status;
     }
 
-    if (documentUrl !== undefined) {
-      if (!Array.isArray(documentUrl)) {
-        return badRequest("documentUrl must be an array of strings");
-      }
-      updateData.documentUrl = documentUrl;
-    }
+    if (title) updateData.title = title;
+    if (description) updateData.description = description;
+    if (budgetTarget !== undefined) updateData.budgetTarget = budgetTarget;
+    if (latitude !== undefined) updateData.latitude = latitude;
+    if (longitude !== undefined) updateData.longitude = longitude;
+    if (estimatedDurationDays !== undefined)
+      updateData.estimatedDurationDays = estimatedDurationDays;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (startDate !== undefined)
+      updateData.startDate = startDate ? new Date(startDate) : null;
+    if (imageUrls !== undefined) updateData.imageUrls = imageUrls;
+    if (documentUrl !== undefined) updateData.documentUrl = documentUrl;
 
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
@@ -182,12 +184,26 @@ export async function PATCH(
       data: updateData,
     });
 
-    if (status && notes) {
+    // Update spatial location if coordinates provided
+    if (latitude !== undefined && longitude !== undefined) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE projects SET "locationGeom" = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
+        longitude,
+        latitude,
+        id,
+      );
+    }
+
+    // Record activity if status changes
+    if (status) {
       await prisma.projectUpdate.create({
         data: {
           projectId: id,
-          title: `Status updated to ${status}`,
-          description: notes,
+          title: existingProject.status
+            ? `Status changed from ${existingProject.status} to ${status}`
+            : `Status set to ${status}`,
+          description:
+            notes || `Project status updated to ${status} by administrator.`,
         },
       });
     }

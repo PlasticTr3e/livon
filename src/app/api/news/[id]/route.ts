@@ -209,11 +209,19 @@ export async function PUT(
       return notFound("Berita yang ingin diubah tidak ditemukan.");
     }
 
+    let excerptUpdate = undefined;
+    if (content !== undefined) {
+      // Need to import generateExcerpt at the top or dynamically
+      const { generateExcerpt } = await import("@/lib/ai");
+      excerptUpdate = await generateExcerpt(content);
+    }
+
     const updatedNews = await prisma.news.update({
       where: { id },
       data: {
         ...(title && { title }),
         ...(content !== undefined && { content }),
+        ...(excerptUpdate !== undefined && { excerpt: excerptUpdate }),
         ...(thumbnailUrl !== undefined && { thumbnailUrl }),
         ...(publishedAt !== undefined && {
           publishedAt: new Date(publishedAt),

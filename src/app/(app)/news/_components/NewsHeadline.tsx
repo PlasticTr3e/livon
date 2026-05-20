@@ -1,4 +1,5 @@
 "use client";
+import { useMemo, useSyncExternalStore } from "react";
 
 import Link from "next/link";
 import { Clock, ChevronRight } from "lucide-react";
@@ -13,14 +14,16 @@ export function NewsHeadline({
   newsItems: NewsGridItem[];
   isSearching: boolean;
 }) {
-  let headline: NewsGridItem | null = null;
-  if (!isSearching && typeof window !== "undefined") {
-    const headlineId = localStorage.getItem("headline-news-id");
-    if (headlineId) {
-      const found = newsItems.find((n) => n.id === headlineId);
-      headline = found || null;
-    }
-  }
+  const headlineId = useSyncExternalStore(
+    () => () => undefined,
+    () => localStorage.getItem("headline-news-id"),
+    () => null,
+  );
+  const headline = useMemo(() => {
+    if (isSearching || !headlineId) return null;
+    return newsItems.find((n) => n.id === headlineId) || null;
+  }, [headlineId, isSearching, newsItems]);
+
   if (!headline || isSearching) return null;
 
   return (

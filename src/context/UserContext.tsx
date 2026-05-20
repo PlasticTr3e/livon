@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type UserRole = "Resident" | "Manager" | "Admin";
 
@@ -19,25 +19,49 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState<string>("Resident User");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Rehydrate state from localStorage on component mount
+  useEffect(() => {
+    const storedRole = localStorage.getItem("livon-role") as UserRole | null;
+    const storedName = localStorage.getItem("livon-name");
+    const storedToken = localStorage.getItem("livon-token");
+
+    if (storedToken && storedRole) {
+      setUserRole(storedRole);
+      setUserName(storedName || "Resident User");
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   const login = (role: UserRole, name?: string) => {
     setUserRole(role);
     setIsAuthenticated(true);
-    if (name) {
-      setUserName(name);
-    } else {
+    
+    let finalName = name;
+    if (!name) {
       const defaultNames: Record<UserRole, string> = {
         Resident: "Warga Perumahan",
         Manager: "Manager RT",
         Admin: "Administrator",
       };
-      setUserName(defaultNames[role]);
+      finalName = defaultNames[role];
     }
+    
+    if (finalName) setUserName(finalName);
+
+    // Persist to localStorage
+    localStorage.setItem("livon-role", role);
+    if (finalName) localStorage.setItem("livon-name", finalName);
   };
 
   const logout = () => {
     setIsAuthenticated(false);
     setUserRole("Resident");
     setUserName("Resident User");
+    
+    // Clear from localStorage
+    localStorage.removeItem("livon-token");
+    localStorage.removeItem("livon-role");
+    localStorage.removeItem("livon-name");
   };
 
   return (

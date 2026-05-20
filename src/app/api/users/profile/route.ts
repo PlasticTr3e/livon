@@ -58,6 +58,8 @@ const updateProfileSchema = z.object({
   address: z.string().optional(), // For agency
   blockHouse: z.string().optional(), // For citizen
   houseNumber: z.string().optional(), // For citizen
+  agencyName: z.string().optional(), // For agency
+  email: z.string().email().optional(), // For user
 });
 
 /**
@@ -106,6 +108,18 @@ export async function PUT(req: NextRequest) {
     const data = result.data;
     let updatableData;
 
+    if (data.email) {
+      // Check if email is taken by someone else
+      const existing = await prisma.user.findUnique({ where: { email: data.email } });
+      if (existing && existing.id !== authUser.userId) {
+        return badRequest("Email is already in use");
+      }
+      await prisma.user.update({
+        where: { id: authUser.userId },
+        data: { email: data.email },
+      });
+    }
+
     if (authUser.role === Role.WARGA) {
       updatableData = await prisma.citizenProfile.update({
         where: { userId: authUser.userId },
@@ -120,6 +134,7 @@ export async function PUT(req: NextRequest) {
       updatableData = await prisma.agencyProfile.update({
         where: { userId: authUser.userId },
         data: {
+          agencyName: data.agencyName,
           phone: data.phone,
           address: data.address,
         },

@@ -180,7 +180,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-6">
+    <div className="flex-1 overflow-auto bg-slate-50 dark:bg-[#0B1120] p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -188,25 +188,25 @@ export default function NotificationsPage() {
             <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-md">
               <Bell className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-slate-100">
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white">
               Notifications
             </h1>
           </div>
-          <p className="text-sm text-gray-500 dark:text-slate-400 ml-[52px]">
+          <p className="text-sm text-gray-500 dark:text-white ml-[52px]">
             Monitor all community project activities and updates
           </p>
         </div>
 
         {/* Actions Bar */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mb-4 flex items-center justify-between shadow-sm">
+        <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-xl p-4 mb-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+            <Filter className="w-4 h-4 text-gray-500 dark:text-white" />
             <button
               onClick={() => setFilter("all")}
               className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                 filter === "all"
                   ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
-                  : "text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  : "text-gray-600 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               All {notifications.length > 0 && `(${notifications.length})`}
@@ -216,7 +216,7 @@ export default function NotificationsPage() {
               className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                 filter === "unread"
                   ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
-                  : "text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  : "text-gray-600 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               Unread {unreadCount > 0 && `(${unreadCount})`}
@@ -226,18 +226,18 @@ export default function NotificationsPage() {
 
         {/* Notifications List */}
         {loading ? (
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-12 text-center shadow-sm">
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-xl p-12 text-center shadow-sm">
             <div className="flex items-center justify-center gap-2">
               <div className="w-5 h-5 border-2 border-gray-300 dark:border-slate-600 border-t-green-600 rounded-full animate-spin"></div>
-              <p className="text-gray-500 dark:text-slate-400 font-medium">
+              <p className="text-gray-500 dark:text-white font-medium">
                 Loading notifications...
               </p>
             </div>
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-12 text-center shadow-sm">
-            <Bell className="w-16 h-16 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-slate-400 font-medium">
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-xl p-12 text-center shadow-sm">
+            <Bell className="w-16 h-16 text-gray-300 dark:text-white mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-white font-medium">
               {filter === "unread"
                 ? "No unread notifications"
                 : "No notifications"}
@@ -248,9 +248,9 @@ export default function NotificationsPage() {
             {filteredNotifications.map((n) => (
               <div
                 key={n.id}
-                className={`bg-white dark:bg-slate-900 border rounded-xl p-4 transition-all hover:shadow-md group ${
+                className={`bg-white dark:bg-[#111827] border rounded-xl p-4 transition-all hover:shadow-md group ${
                   n.read
-                    ? "border-gray-200 dark:border-slate-700"
+                    ? "border-gray-200 dark:border-gray-800"
                     : "border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-900/10"
                 }`}
               >
@@ -261,20 +261,20 @@ export default function NotificationsPage() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3 mb-1">
-                      <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                         {n.title}
                       </h3>
-                      <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 whitespace-nowrap shrink-0">
+                      <span className="text-[10px] font-medium text-gray-400 dark:text-white whitespace-nowrap shrink-0">
                         {n.time}
                       </span>
                     </div>
 
-                    <p className="text-xs text-gray-600 dark:text-slate-400 leading-relaxed mb-2">
+                    <p className="text-xs text-gray-600 dark:text-white leading-relaxed mb-2">
                       {n.desc}
                     </p>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 font-medium">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#1F2937] text-gray-600 dark:text-white font-medium">
                         {getCategoryLabel(n.category)}
                       </span>
 

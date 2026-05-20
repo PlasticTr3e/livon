@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { apiFetchJson } from "@/lib/api-client";
 
 // Dynamic import for Leaflet map selector
 const MapSelectorLeaflet = dynamic<{
@@ -41,6 +42,7 @@ function EditProjectContent() {
     budgetTarget: "",
     estimatedDurationDays: "",
     category: "Infrastructure",
+    categoryId: "",
     status: "USULAN",
     latitude: -6.941,
     longitude: 107.7755,
@@ -49,13 +51,21 @@ function EditProjectContent() {
   });
 
   const [projectPhotos, setProjectPhotos] = useState<string[]>([]);
+  const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(!isCreate);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const catRes = await fetch("/api/projects/categories");
+        if (catRes.ok) {
+          const catJson = await catRes.json();
+          if (catJson.data) setCategories(catJson.data);
+        }
+
         if (!isCreate) {
           const res = await fetch(`/api/projects/${id}`);
           if (res.ok) {
@@ -70,6 +80,7 @@ function EditProjectContent() {
                   ? String(d.estimatedDurationDays)
                   : "",
                 category: d.category?.name || "Infrastructure",
+                categoryId: d.categoryId ? String(d.categoryId) : "",
                 status: d.status || "USULAN",
                 latitude: d.latitude || -6.941,
                 longitude: d.longitude || 107.7755,
@@ -95,17 +106,44 @@ function EditProjectContent() {
   const handleInput = (field: string, value: string | number | string[]) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
+
     if (projectPhotos.length + files.length > 3) {
       alert("Maximum 3 photos allowed.");
       return;
     }
-    Array.from(files).forEach((file) => {
-      const url = URL.createObjectURL(file);
-      setProjectPhotos((prev) => [...prev, url]);
-    });
+
+    setIsUploading(true);
+    const token = localStorage.getItem("livon-token");
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error("Upload failed");
+        const json = await res.json();
+        return json.data.url;
+      });
+
+      const newUrls = await Promise.all(uploadPromises);
+      setProjectPhotos((prev) => [...prev, ...newUrls]);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to upload one or more photos.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const removePhoto = (index: number) => {
@@ -134,95 +172,46 @@ function EditProjectContent() {
     }
 
     try {
-      const token = localStorage.getItem("livon-token");
-      let resolvedCategoryId: number | null = null;
-      if (formData.category) {
-        try {
-          const catRes = await fetch("/api/projects/categories");
-          if (catRes.ok) {
-            const catJson = await catRes.json();
-            const categories = catJson.data || [];
-            const matched = categories.find(
-              (c: { id: number; name: string }) =>
-                c.name.toLowerCase() === formData.category.toLowerCase(),
-            );
-            if (matched) {
-              resolvedCategoryId = matched.id;
-            } else {
-              const createRes = await fetch("/api/projects/categories", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ name: formData.category }),
-              });
-              if (createRes.ok) {
-                const createJson = await createRes.json();
-                resolvedCategoryId = createJson.data.id;
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Failed to map category", err);
-        }
-      }
-
-      const payload: Record<string, unknown> = {
+      const payload = {
         title: formData.title,
         description: formData.description,
         budgetTarget: parseFloat(formData.budgetTarget),
         latitude: formData.latitude,
         longitude: formData.longitude,
         imageUrls: projectPhotos,
-        documentUrls: formData.documentUrl || [],
+        documentUrl: formData.documentUrl || [],
+        estimatedDurationDays: formData.estimatedDurationDays
+          ? parseInt(formData.estimatedDurationDays)
+          : undefined,
+        categoryId: formData.categoryId
+          ? parseInt(formData.categoryId)
+          : undefined,
+        startDate: formData.startDate
+          ? new Date(formData.startDate).toISOString()
+          : undefined,
+        status: isCreate ? "USULAN" : formData.status,
       };
 
-      if (resolvedCategoryId) {
-        payload.categoryId = resolvedCategoryId;
-      }
+      const token = localStorage.getItem("livon-token");
+      if (!token) throw new Error("User session not found");
 
-      // Only add optional numeric fields if they have a value
-      if (formData.estimatedDurationDays) {
-        payload.estimatedDurationDays = parseInt(
-          formData.estimatedDurationDays,
-        );
-      }
-      if (formData.startDate) {
-        payload.startDate = new Date(formData.startDate).toISOString();
-      }
+      const result = await apiFetchJson(
+        isCreate ? "/api/projects" : `/api/projects/${id}`,
+        isCreate ? "POST" : "PATCH",
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
 
-      const url = isCreate ? "/api/projects" : `/api/projects/${id}`;
-      const method = isCreate ? "POST" : "PATCH";
-
-      // If editing, the existing API uses singular 'documentUrl' and allows 'status'
-      if (!isCreate) {
-        payload.status = formData.status;
-        payload.documentUrl = formData.documentUrl;
-        delete payload.documentUrls;
-      }
-
-      console.log("Sending payload:", JSON.stringify(payload, null, 2));
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
+      if (result.success) {
         router.push("/admin/projects");
         router.refresh();
       } else {
-        const errorData = await res.json();
-        console.error("API Error Response:", errorData);
-        setError(errorData.message || JSON.stringify(errorData));
+        setError(result.message || "Failed to save project");
       }
-    } catch {
-      setError("An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -237,9 +226,9 @@ function EditProjectContent() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto w-full font-sans">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto w-full font-sans">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center shadow-sm">
+      <div className="sticky top-0 z-50 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center shadow-sm">
         <Link
           href="/admin/projects"
           className="flex items-center text-green-600 hover:text-green-800 dark:text-green-400 transition-colors"
@@ -358,15 +347,15 @@ function EditProjectContent() {
                   </label>
                   <select
                     className="w-full h-12 px-3 border border-green-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-green-400 text-sm font-bold text-gray-700"
-                    value={formData.category}
-                    onChange={(e) => handleInput("category", e.target.value)}
+                    value={formData.categoryId}
+                    onChange={(e) => handleInput("categoryId", e.target.value)}
                   >
-                    <option>Infrastructure</option>
-                    <option>Recreation</option>
-                    <option>Security</option>
-                    <option>Sanitation</option>
-                    <option>Facility</option>
-                    <option>Education</option>
+                    <option value="">Select Category</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -415,7 +404,16 @@ function EditProjectContent() {
                   </div>
                 ))}
 
-                {projectPhotos.length < 3 && (
+                {isUploading && (
+                  <div className="aspect-video rounded-xl border-2 border-dashed border-purple-200 bg-purple-50 flex flex-col items-center justify-center gap-2 animate-pulse">
+                    <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[9px] font-black text-purple-500 uppercase">
+                      Uploading...
+                    </span>
+                  </div>
+                )}
+
+                {projectPhotos.length < 3 && !isUploading && (
                   <button
                     onClick={() =>
                       document.getElementById("photo-upload")?.click()
@@ -499,16 +497,40 @@ function EditProjectContent() {
                   type="file"
                   multiple
                   className="hidden"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const files = e.target.files;
-                    if (!files) return;
-                    const urls = Array.from(files).map((f) =>
-                      URL.createObjectURL(f),
-                    );
-                    handleInput("documentUrl", [
-                      ...(formData.documentUrl || []),
-                      ...urls,
-                    ]);
+                    if (!files || files.length === 0) return;
+
+                    setIsUploading(true);
+                    const token = localStorage.getItem("livon-token");
+
+                    try {
+                      const uploadPromises = Array.from(files).map(
+                        async (file) => {
+                          const formData = new FormData();
+                          formData.append("file", file);
+                          const res = await fetch("/api/upload", {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${token}` },
+                            body: formData,
+                          });
+                          if (!res.ok) throw new Error("Doc upload failed");
+                          const json = await res.json();
+                          return json.data.url;
+                        },
+                      );
+
+                      const newUrls = await Promise.all(uploadPromises);
+                      handleInput("documentUrl", [
+                        ...(formData.documentUrl || []),
+                        ...newUrls,
+                      ]);
+                    } catch (err) {
+                      console.error(err);
+                      alert("Document upload failed.");
+                    } finally {
+                      setIsUploading(false);
+                    }
                   }}
                 />
               </div>
