@@ -4,9 +4,11 @@ import { generateExcerpt } from "@/lib/ai";
 
 export async function GET() {
   try {
-    const newsItems = await prisma.news.findMany({ where: { deletedAt: null } });
+    const newsItems = await prisma.news.findMany({
+      where: { deletedAt: null },
+    });
     let count = 0;
-    
+
     for (const item of newsItems) {
       if (item.content) {
         const excerpt = await generateExcerpt(item.content);
@@ -14,9 +16,15 @@ export async function GET() {
         count++;
       }
     }
-    
+
     return NextResponse.json({ success: true, count });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    );
   }
 }
