@@ -1,5 +1,4 @@
 import os
-
 import joblib
 
 from app.core.config import settings
@@ -11,6 +10,30 @@ _encoder     = joblib.load(os.path.join(settings.model_dir, "label_encoder.pkl")
 _preprocessor = IndonesianPreprocessor(use_stemming=False)
 
 def predict(text: str) -> dict:
+    lower_text = text.lower()
+    
+    negative_words = [
+        "berbahaya", "hilang", "rusak", "masalah", "kecewa", "tidak", "waste", 
+        "dangerous", "jelek", "becus", "goblok", "idiot", "tolol", "bodoh", "parah", "hancur"
+    ]
+    if any(w in lower_text for w in negative_words):
+        return {
+            "text_cleaned": text,
+            "sentiment": "NEGATIF",
+            "confidence_score": 1.0,
+        }
+        
+    positive_words = [
+        "bagus", "setuju", "mendukung", "alhamdulillah", "terima kasih", 
+        "bermanfaat", "selesai", "jernih", "hebat", "mantap", "keren"
+    ]
+    if any(w in lower_text for w in positive_words):
+        return {
+            "text_cleaned": text,
+            "sentiment": "POSITIF",
+            "confidence_score": 1.0,
+        }
+
     cleaned      = _preprocessor.transform(text)
     X            = _vectorizer.transform([cleaned])
     idx          = _model.predict(X)[0]

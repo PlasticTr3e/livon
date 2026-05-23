@@ -49,3 +49,6 @@ next-env.d.ts
 /ai-service/data/*.csv
 /ai-service/.env
 /ai-service/requirements.txt
+
+__pycache__/
+*.py[cod]

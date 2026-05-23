@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
 
     const isWargaVerified = user.citizenProfile?.isVerified === true;
     const isAgencyVerified = user.agencyProfile?.isVerified === true;
-    const isAdmin = user.role !== "WARGA" && user.role !== "AGENCY"; // Asumsi jika ada role Admin
+    const isAdmin = user.role !== "WARGA" && user.role !== "AGENCY"; 
 
     if (!isWargaVerified && !isAgencyVerified && !isAdmin) {
       return NextResponse.redirect(

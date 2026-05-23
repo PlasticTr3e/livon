@@ -161,10 +161,7 @@ def grid_search(
     encoder: LabelEncoder,
     use_stemming: bool,
 ) -> tuple[float, dict, list[str], list[str]]:
-    """
-    exhaustive search over PARAM_GRID using val accuracy as the metric.
-    returns: best_val_acc, best_params, best_train_texts, best_val_texts
-    """
+
     print("\n" + "=" * 60)
     print(f"grid search — {len(PARAM_GRID)} configs")
     print("=" * 60)
@@ -252,10 +249,6 @@ def train_model(X_train, y_train, best_params: dict) -> CalibratedClassifierCV:
     print(f"  done in {time.time() - start:.1f}s")
     return model
 
-
-# ---------------------------------------------------------------------------
-# evaluation
-# ---------------------------------------------------------------------------
 
 def evaluate(
     model: CalibratedClassifierCV,
