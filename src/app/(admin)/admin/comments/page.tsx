@@ -50,7 +50,6 @@ export default function CommentMonitorPage() {
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Format waktu ke format detail (Tanggal & Jam)
   function formatFullDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleString("en-GB", {
@@ -63,46 +62,14 @@ export default function CommentMonitorPage() {
     });
   }
 
-  // Deteksi sentiment dari text
   const analyzeSentiment = (
-    text: string,
-    score?: number,
+    label?: string,
   ): "Positive" | "Negative" | "Neutral" => {
-    // Jika ada sentimentScore dari database, gunakan itu
-    if (score !== null && score !== undefined) {
-      if (score > 0.5) return "Positive";
-      if (score < -0.5) return "Negative";
-      return "Neutral";
-    }
-
-    // Fallback ke keyword analysis
-    const positiveWords = [
-      "bagus",
-      "setuju",
-      "mendukung",
-      "alhamdulillah",
-      "terima kasih",
-      "bermanfaat",
-      "selesai",
-      "jernih",
-      "hebat",
-      "mantap",
-    ];
-    const negativeWords = [
-      "berbahaya",
-      "hilang",
-      "rusak",
-      "masalah",
-      "kecewa",
-      "tidak",
-      "waste",
-      "dangerous",
-      "jelek",
-    ];
-    const lower = text.toLowerCase();
-
-    if (positiveWords.some((w) => lower.includes(w))) return "Positive";
-    if (negativeWords.some((w) => lower.includes(w))) return "Negative";
+    if (!label) return "Neutral";
+    
+    const upperLabel = label.toUpperCase();
+    if (upperLabel === "POSITIF") return "Positive";
+    if (upperLabel === "NEGATIF") return "Negative";
     return "Neutral";
   };
 
@@ -117,7 +84,6 @@ export default function CommentMonitorPage() {
     }
   };
 
-  // Map role dari database ke display name
   const mapRole = (role: string): "Resident" | "Manager" | "Admin" => {
     const upperRole = role.toUpperCase();
     if (upperRole.includes("ADMIN")) return "Admin";
@@ -125,7 +91,6 @@ export default function CommentMonitorPage() {
     return "Resident";
   };
 
-  // Fetch comments & projects dari API
   useEffect(() => {
     async function fetchData() {
       try {
@@ -187,10 +152,7 @@ export default function CommentMonitorPage() {
             sentimentLabel?: string;
             userId: string;
           }) => {
-            const sentiment = analyzeSentiment(
-              comment.text,
-              comment.sentimentScore,
-            );
+            const sentiment = analyzeSentiment(comment.sentimentLabel);
 
             return {
               id: comment.id,
@@ -213,7 +175,7 @@ export default function CommentMonitorPage() {
 
         setAllComments(transformedComments);
       } catch (error) {
-        console.error("❌ Error fetching data:", error);
+        console.error("Error fetching data:", error);
         setAllComments([]);
         setAllProjects([]);
       } finally {
@@ -224,7 +186,6 @@ export default function CommentMonitorPage() {
     fetchData();
   }, []);
 
-  // Handle delete comment
   const handleDeleteComment = async (commentId: string) => {
     try {
       const token = localStorage.getItem("livon-token");
@@ -269,9 +230,7 @@ export default function CommentMonitorPage() {
     }
   };
 
-  // Combine projects and comments (including projects with 0 comments)
   const projectsWithComments = [
-    // Add "News" as a pseudo-project if it has comments
     ...(allComments.some((c) => !c.projectId)
       ? [
           {
@@ -283,7 +242,6 @@ export default function CommentMonitorPage() {
           },
         ]
       : []),
-    // Add all actual projects
     ...allProjects.map((p) => ({
       id: p.id,
       name: p.title,
