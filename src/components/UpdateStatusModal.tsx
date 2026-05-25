@@ -27,12 +27,7 @@ export function UpdateStatusModal({
 
   if (!isOpen) return null;
 
-  const statusOptions = [
-    "Planning",
-    "Funding",
-    "Under Construction",
-    "Completed",
-  ];
+  const statusOptions = ["Planning", "Funding", "Construction", "Completed"];
   const currentIndex = statusOptions.indexOf(currentStatus);
 
   const getNextStatuses = () => {
@@ -45,7 +40,7 @@ export function UpdateStatusModal({
       const STATUS_DB_MAP: Record<string, string> = {
         Planning: "USULAN",
         Funding: "DISETUJUI",
-        "Under Construction": "BERJALAN",
+        Construction: "BERJALAN",
         Completed: "SELESAI",
       };
 

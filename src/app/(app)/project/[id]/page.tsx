@@ -75,6 +75,7 @@ interface Project {
   contractor?: string;
   startDate: string;
   endDate: string;
+  estimatedDurationDays?: number;
   budget: number;
   fundsCollected?: number;
   progress: number;
@@ -126,6 +127,7 @@ interface ApiProjectPayload {
   longitude?: number | string;
   createdAt?: string;
   imageUrls?: string[];
+  estimatedDurationDays?: number | string;
 }
 
 type VoteChoice = "agree" | "disagree";
@@ -395,6 +397,9 @@ function ProjectDetailContent() {
               : undefined,
             startDate: formatDate(payload.startDate as string),
             endDate: formatDate(payload.endDate as string),
+            estimatedDurationDays: payload.estimatedDurationDays
+              ? Number(payload.estimatedDurationDays)
+              : undefined,
             budget: payload.budgetTarget ? Number(payload.budgetTarget) : 0,
             fundsCollected: payload.currentFunding
               ? Number(payload.currentFunding)
@@ -935,21 +940,14 @@ function ProjectDetailContent() {
               <span className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-4 duration-500">
                 <Clock className="w-4 h-4 text-green-600" />
                 <span className="font-semibold text-gray-700 dark:text-white">
-                  {project.startDate && project.endDate
+                  {project.estimatedDurationDays
                     ? (() => {
-                        const start = new Date(project.startDate);
-                        const end = new Date(project.endDate);
-                        const diffTime = Math.abs(
-                          end.getTime() - start.getTime(),
-                        );
-                        const diffDays = Math.ceil(
-                          diffTime / (1000 * 60 * 60 * 24),
-                        );
-                        if (diffDays >= 30) {
-                          const months = Math.floor(diffDays / 30);
+                        const days = project.estimatedDurationDays;
+                        if (days >= 30) {
+                          const months = Math.floor(days / 30);
                           return `${months} ${months > 1 ? "Months" : "Month"}`;
                         }
-                        return `${diffDays} ${diffDays > 1 ? "Days" : "Day"}`;
+                        return `${days} ${days > 1 ? "Days" : "Day"}`;
                       })()
                     : "Duration TBD"}
                 </span>

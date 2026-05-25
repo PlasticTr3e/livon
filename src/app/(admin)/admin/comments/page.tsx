@@ -66,7 +66,7 @@ export default function CommentMonitorPage() {
     label?: string,
   ): "Positive" | "Negative" | "Neutral" => {
     if (!label) return "Neutral";
-    
+
     const upperLabel = label.toUpperCase();
     if (upperLabel === "POSITIF") return "Positive";
     if (upperLabel === "NEGATIF") return "Negative";

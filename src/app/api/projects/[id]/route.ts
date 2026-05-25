@@ -194,6 +194,29 @@ export async function PATCH(
       });
     }
 
+    const followers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { votes: { some: { projectId: id } } },
+          { donations: { some: { projectId: id, status: "SUCCESS" } } },
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (followers.length > 0) {
+      await prisma.notification.createMany({
+        data: followers.map((u) => ({
+          userId: u.id,
+          projectId: id,
+          referenceId: project.id,
+          title: "Project Detail Updated",
+          type: "PROJECT_UPDATE",
+          message: `The project "${existingProject.title}" has been updated.`,
+        })),
+      });
+    }
+
     return ok("Project updated successfully", { data: project });
   } catch (error: unknown) {
     console.error("PATCH Project Error:", error);

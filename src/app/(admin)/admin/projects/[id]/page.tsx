@@ -73,7 +73,7 @@ function EditProjectContent() {
         }
 
         if (!isCreate) {
-          const res = await fetch(`/api/projects/${id}`);
+          const res = await fetch(`/api/projects/${id}`, { cache: "no-store" });
           if (res.ok) {
             const json = await res.json();
             const d = json.data;
