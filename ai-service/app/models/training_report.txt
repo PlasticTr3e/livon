@@ -1,0 +1,50 @@
+============================================================
+livon ai training report
+============================================================
+model        : linearsvc (calibrated, cv=5)
+dataset      : smsa-ind-classification
+best C       : 0.5
+best ngram   : (1, 2)
+stemming     : False
+
+----------------------------------------
+VALIDATION
+----------------------------------------
+accuracy : 0.8730
+roc-auc  : 0.9600
+
+              precision    recall  f1-score   support
+
+    negative       0.81      0.84      0.82       394
+     neutral       0.84      0.70      0.77       131
+    positive       0.91      0.92      0.92       735
+
+    accuracy                           0.87      1260
+   macro avg       0.86      0.82      0.84      1260
+weighted avg       0.87      0.87      0.87      1260
+
+confusion matrix:
+[[330   9  55]
+ [ 28  92  11]
+ [ 49   8 678]]
+
+----------------------------------------
+TEST
+----------------------------------------
+accuracy : 0.7960
+roc-auc  : 0.9120
+
+              precision    recall  f1-score   support
+
+    negative       0.74      0.93      0.82       204
+     neutral       0.77      0.49      0.60        88
+    positive       0.88      0.80      0.84       208
+
+    accuracy                           0.80       500
+   macro avg       0.80      0.74      0.75       500
+weighted avg       0.80      0.80      0.79       500
+
+confusion matrix:
+[[189   5  10]
+ [ 33  43  12]
+ [ 34   8 166]]

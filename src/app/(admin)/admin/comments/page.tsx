@@ -1,13 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-import {
-  Card,
-  Badge,
-  Button,
-  Input,
-  cn,
-} from "@/components/ui/WireframePrimitives";
+import { Card, Badge, Input, cn } from "@/components/ui/WireframePrimitives";
 import {
   MessageSquare,
   Search,
@@ -20,7 +14,6 @@ import {
   Calendar,
   Clock,
   Sparkles,
-  Zap,
 } from "lucide-react";
 
 type CommentItem = {
@@ -57,7 +50,6 @@ export default function CommentMonitorPage() {
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Format waktu ke format detail (Tanggal & Jam)
   function formatFullDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleString("en-GB", {
@@ -70,50 +62,28 @@ export default function CommentMonitorPage() {
     });
   }
 
-  // Deteksi sentiment dari text
   const analyzeSentiment = (
-    text: string,
-    score?: number,
+    label?: string,
   ): "Positive" | "Negative" | "Neutral" => {
-    // Jika ada sentimentScore dari database, gunakan itu
-    if (score !== null && score !== undefined) {
-      if (score > 0.5) return "Positive";
-      if (score < -0.5) return "Negative";
-      return "Neutral";
-    }
+    if (!label) return "Neutral";
 
-    // Fallback ke keyword analysis
-    const positiveWords = [
-      "bagus",
-      "setuju",
-      "mendukung",
-      "alhamdulillah",
-      "terima kasih",
-      "bermanfaat",
-      "selesai",
-      "jernih",
-      "hebat",
-      "mantap",
-    ];
-    const negativeWords = [
-      "berbahaya",
-      "hilang",
-      "rusak",
-      "masalah",
-      "kecewa",
-      "tidak",
-      "waste",
-      "dangerous",
-      "jelek",
-    ];
-    const lower = text.toLowerCase();
-
-    if (positiveWords.some((w) => lower.includes(w))) return "Positive";
-    if (negativeWords.some((w) => lower.includes(w))) return "Negative";
+    const upperLabel = label.toUpperCase();
+    if (upperLabel === "POSITIF") return "Positive";
+    if (upperLabel === "NEGATIF") return "Negative";
     return "Neutral";
   };
 
-  // Map role dari database ke display name
+  const getSentimentReason = (sentiment: string) => {
+    switch (sentiment) {
+      case "Positive":
+        return "Komentar ini mengandung apresiasi atau dukungan yang membangun atmosfer positif bagi komunitas.";
+      case "Negative":
+        return "Komentar ini terdeteksi mengandung keluhan atau sentimen negatif yang mungkin perlu ditinjau lebih lanjut.";
+      default:
+        return "Komentar ini bersifat informatif atau berisi pernyataan umum tanpa indikasi emosi yang kuat.";
+    }
+  };
+
   const mapRole = (role: string): "Resident" | "Manager" | "Admin" => {
     const upperRole = role.toUpperCase();
     if (upperRole.includes("ADMIN")) return "Admin";
@@ -121,7 +91,6 @@ export default function CommentMonitorPage() {
     return "Resident";
   };
 
-  // Fetch comments & projects dari API
   useEffect(() => {
     async function fetchData() {
       try {
@@ -183,10 +152,7 @@ export default function CommentMonitorPage() {
             sentimentLabel?: string;
             userId: string;
           }) => {
-            const sentiment = analyzeSentiment(
-              comment.text,
-              comment.sentimentScore,
-            );
+            const sentiment = analyzeSentiment(comment.sentimentLabel);
 
             return {
               id: comment.id,
@@ -197,7 +163,9 @@ export default function CommentMonitorPage() {
               projectName:
                 comment.project?.title || comment.news?.title || "News",
               projectId: comment.projectId,
-              flag: comment.sentimentLabel === "NEGATIF",
+              flag:
+                comment.sentimentLabel === "NEGATIF" ||
+                sentiment === "Negative",
               userId: comment.userId,
               createdAt: comment.createdAt,
               sentiment: sentiment,
@@ -207,7 +175,7 @@ export default function CommentMonitorPage() {
 
         setAllComments(transformedComments);
       } catch (error) {
-        console.error("❌ Error fetching data:", error);
+        console.error("Error fetching data:", error);
         setAllComments([]);
         setAllProjects([]);
       } finally {
@@ -218,7 +186,6 @@ export default function CommentMonitorPage() {
     fetchData();
   }, []);
 
-  // Handle delete comment
   const handleDeleteComment = async (commentId: string) => {
     try {
       const token = localStorage.getItem("livon-token");
@@ -263,9 +230,7 @@ export default function CommentMonitorPage() {
     }
   };
 
-  // Combine projects and comments (including projects with 0 comments)
   const projectsWithComments = [
-    // Add "News" as a pseudo-project if it has comments
     ...(allComments.some((c) => !c.projectId)
       ? [
           {
@@ -277,7 +242,6 @@ export default function CommentMonitorPage() {
           },
         ]
       : []),
-    // Add all actual projects
     ...allProjects.map((p) => ({
       id: p.id,
       name: p.title,
@@ -337,6 +301,13 @@ export default function CommentMonitorPage() {
               100,
           )
         : 0,
+    toxicityRate:
+      allComments.length > 0
+        ? Math.round(
+            (allComments.filter((c) => c.flag).length / allComments.length) *
+              100,
+          )
+        : 0,
   };
 
   const filtered = allComments.filter((c) => {
@@ -356,9 +327,9 @@ export default function CommentMonitorPage() {
   });
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto w-full">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto w-full">
       {selectedProject && (
-        <div className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center shadow-sm">
+        <div className="sticky top-0 z-50 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center shadow-sm">
           <button
             onClick={() => setSelectedProject(null)}
             className="flex items-center text-green-600 hover:text-green-800 dark:text-green-400 transition-colors"
@@ -370,12 +341,12 @@ export default function CommentMonitorPage() {
       )}
 
       <div className="p-6 md:p-8 space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white">
               Comments Management
             </h1>
-            <p className="text-gray-500 text-sm mt-0.5">
+            <p className="text-gray-500 dark:text-white text-sm mt-0.5">
               {selectedProject
                 ? `Managing comments for "${selectedProject.name}"`
                 : "Select a project to monitor and manage discussions."}
@@ -388,41 +359,41 @@ export default function CommentMonitorPage() {
             {" "}
             {/* Insights Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="p-4 border-green-100 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+              <Card className="p-4 border-green-100 dark:border-gray-800 dark:bg-[#1F2937] flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
                   <MessageSquare className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-white">
                     Total Comments
                   </p>
-                  <p className="text-xl font-black text-gray-900">
+                  <p className="text-xl font-black text-gray-900 dark:text-white">
                     {insights.total}
                   </p>
                 </div>
               </Card>
-              <Card className="p-4 border-red-100 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-600">
+              <Card className="p-4 border-red-100 dark:border-gray-800 dark:bg-[#1F2937] flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
                   <ShieldAlert className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-white">
                     Toxicity
                   </p>
-                  <p className="text-xl font-black text-gray-900">
-                    {insights.flagged}
+                  <p className="text-xl font-black text-gray-900 dark:text-white">
+                    {insights.toxicityRate}%
                   </p>
                 </div>
               </Card>
-              <Card className="p-4 border-blue-100 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+              <Card className="p-4 border-blue-100 dark:border-gray-800 dark:bg-[#1F2937] flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                   <CheckCircle className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-400">
+                  <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-white">
                     Positivity
                   </p>
-                  <p className="text-xl font-black text-gray-900">
+                  <p className="text-xl font-black text-gray-900 dark:text-white">
                     {insights.positiveRate}%
                   </p>
                 </div>
@@ -430,7 +401,7 @@ export default function CommentMonitorPage() {
             </div>
             {/* Filters Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100 tracking-tight">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white tracking-tight">
                 Project Dashboard
               </h2>
 
@@ -456,7 +427,7 @@ export default function CommentMonitorPage() {
                           | "negative",
                       )
                     }
-                    className="w-full h-10 pl-9 pr-8 bg-white dark:bg-slate-800 border border-green-200 dark:border-slate-700 rounded-xl text-xs md:text-sm font-bold text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
+                    className="w-full h-10 pl-9 pr-8 bg-white dark:bg-[#1F2937] border border-green-200 dark:border-gray-800 rounded-xl text-xs md:text-sm font-bold text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
                   >
                     <option value="latest">Newest</option>
                     <option value="oldest">Oldest</option>
@@ -496,13 +467,13 @@ export default function CommentMonitorPage() {
                 sortedProjects.map((p) => (
                   <Card
                     key={p.id || "news"}
-                    className="p-5 border-green-100 hover:border-green-400 hover:shadow-md transition-all cursor-pointer group flex flex-col h-full"
+                    className="p-5 border-green-100 dark:border-gray-800 dark:bg-[#1F2937] hover:border-green-400 dark:hover:border-green-500 hover:shadow-md transition-all cursor-pointer group flex flex-col h-full"
                     onClick={() =>
                       setSelectedProject({ id: p.id, name: p.name })
                     }
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                      <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:bg-green-600 group-hover:text-white transition-colors">
                         <MessageSquare className="w-5 h-5" />
                       </div>
                       <div className="flex flex-col items-end gap-1">
@@ -513,12 +484,12 @@ export default function CommentMonitorPage() {
                         )}
                       </div>
                     </div>
-                    <h3 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-1 mb-3">
+                    <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors line-clamp-1 mb-3">
                       {p.name}
                     </h3>
 
                     <div className="mt-auto space-y-2">
-                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-white">
                         <span>Sentiment Breakdown</span>
                       </div>
                       <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-gray-100">
@@ -563,7 +534,7 @@ export default function CommentMonitorPage() {
             </div>
           </div>
         ) : (
-          <Card className="p-5 border-green-100 shadow-sm">
+          <Card className="p-5 border-green-100 dark:border-gray-800 dark:bg-[#1F2937] shadow-sm">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-5">
               <div className="relative w-full md:w-72">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -588,7 +559,7 @@ export default function CommentMonitorPage() {
                           | "flagged",
                       )
                     }
-                    className="w-full h-10 pl-10 pr-8 bg-white dark:bg-slate-800 border border-green-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
+                    className="w-full h-10 pl-10 pr-8 bg-white dark:bg-[#1F2937] border border-green-200 dark:border-gray-800 rounded-xl text-sm font-bold text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all cursor-pointer appearance-none shadow-sm"
                   >
                     <option value="all">All Sentiments</option>
                     <option value="Positive">Positive</option>
@@ -636,10 +607,10 @@ export default function CommentMonitorPage() {
                   <div
                     key={comment.id}
                     className={cn(
-                      "p-4 border rounded-xl flex items-start gap-4 bg-white hover:bg-green-50 transition-colors",
+                      "p-4 border rounded-xl flex items-start gap-4 bg-white dark:bg-[#1F2937] hover:bg-green-50 dark:hover:bg-slate-700 transition-colors",
                       comment.flag
-                        ? "border-red-200 bg-red-50"
-                        : "border-gray-100",
+                        ? "border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10"
+                        : "border-gray-100 dark:border-gray-800",
                     )}
                   >
                     <div
@@ -653,7 +624,7 @@ export default function CommentMonitorPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <div>
-                          <span className="font-bold text-gray-900 text-sm">
+                          <span className="font-bold text-gray-900 dark:text-white text-sm">
                             {comment.author}
                           </span>
                         </div>
@@ -673,15 +644,15 @@ export default function CommentMonitorPage() {
                           </Badge>
                         </div>
                       </div>
-                      <p className="text-gray-700 text-sm leading-relaxed">
+                      <p className="text-gray-700 dark:text-white text-sm leading-relaxed">
                         {comment.text}
                       </p>
 
-                      {/* Premium AI Insight Placeholder */}
+                      {/* AI Moderation Insight */}
                       <div className="mt-4 overflow-hidden relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-xl" />
-                        <div className="relative p-4 border border-purple-100 dark:border-purple-900/30 rounded-xl bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
-                          <div className="flex items-center justify-between mb-3">
+                        <div className="relative p-4 border border-purple-100 dark:border-purple-900/30 rounded-xl bg-white/50 dark:bg-[#111827]/50 backdrop-blur-sm">
+                          <div className="flex items-center justify-between mb-3 border-b border-purple-100/50 pb-2">
                             <div className="flex items-center gap-2">
                               <div className="relative">
                                 <div className="absolute inset-0 bg-purple-400 blur-sm opacity-20 animate-pulse" />
@@ -689,54 +660,35 @@ export default function CommentMonitorPage() {
                                   <Sparkles className="w-3.5 h-3.5" />
                                 </div>
                               </div>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] font-black uppercase tracking-[0.1em] text-purple-600 dark:text-purple-400 leading-none">
-                                  AI Moderation
-                                </span>
-                                <span className="text-[8px] font-bold text-slate-400 uppercase leading-none">
-                                  Intelligent Analysis
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-[10px] font-black text-slate-900 dark:text-white text-base tracking-tight leading-none">
+                                    AI Insight
+                                  </h3>
+                                  <span className="text-[8px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-black uppercase tracking-widest border border-purple-200/50">
+                                    Beta
+                                  </span>
+                                </div>
+                                <span className="block mt-1.5 text-[9px] font-black uppercase tracking-[0.15em] text-purple-600 dark:text-purple-400 leading-none">
+                                  Livon Intelligent Moderation AI
                                 </span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="space-y-3">
-                            <div className="flex gap-3">
-                              <div className="w-0.5 rounded-full bg-gradient-to-b from-purple-400 to-transparent opacity-30" />
-                              <p className="text-xs text-slate-600 dark:text-slate-400 italic leading-relaxed">
-                                &quot;System is generating context-aware
-                                insights. Our AI will analyze emotion, intent,
-                                and community impact to provide deep moderation
-                                summaries.&quot;
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-4 pt-1">
-                              <div className="flex items-center gap-1.5">
-                                <Zap className="w-3 h-3 text-amber-500" />
-                                <span className="text-[10px] font-bold text-slate-500 uppercase">
-                                  Recommended:
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="h-1.5 w-1.5 rounded-full bg-purple-400 animate-pulse" />
-                                <span className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase">
-                                  Analyzing Data...
-                                </span>
-                              </div>
-                            </div>
+                          <div className="space-y-2">
+                            <p className="text-[11px] text-slate-700 dark:text-white font-medium leading-relaxed">
+                              <span className="font-bold text-purple-600">
+                                Alasan:
+                              </span>{" "}
+                              {getSentimentReason(comment.sentiment)}
+                            </p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50 dark:border-gray-800">
                         <div className="flex items-center gap-3">
-                          <Button
-                            variant="outline"
-                            className="h-7 text-xs py-0 px-2.5 border-green-300 text-green-700 hover:bg-green-50"
-                          >
-                            Reply
-                          </Button>
                           <button
                             onClick={() => handleDeleteComment(comment.id)}
                             className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium transition-colors"

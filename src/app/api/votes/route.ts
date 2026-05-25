@@ -76,13 +76,17 @@ export async function POST(request: NextRequest) {
     const [project, user] = await Promise.all([
       prisma.project.findUnique({
         where: { id: projectId },
-        select: { id: true },
+        select: { id: true, status: true },
       }),
       prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
     ]);
 
     if (!project) {
       return notFound("Project not found.");
+    }
+
+    if (project.status === "SELESAI") {
+      return badRequest("Cannot vote on a completed project.");
     }
 
     if (!user) {

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { cn, Badge, Button, Card } from "@/components/ui/WireframePrimitives";
@@ -12,14 +11,10 @@ import {
   ThumbsDown,
   MessageSquare,
   Clock,
-  TrendingUp,
   X,
-  Menu,
-  Newspaper,
   Search,
   Layers,
   Activity,
-  CheckCircle,
   Wallet,
   Users,
   Coins,
@@ -36,7 +31,7 @@ const MapLeaflet = dynamic(
     loading: () => (
       <div className="w-full h-full bg-gradient-to-br from-green-100 via-slate-100 to-blue-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-20 h-20 rounded-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm flex items-center justify-center mx-auto mb-4 shadow-sm border border-white/50 dark:border-slate-700 animate-pulse">
+          <div className="w-20 h-20 rounded-full bg-white/60 dark:bg-[#1F2937]/60 backdrop-blur-sm flex items-center justify-center mx-auto mb-4 shadow-sm border border-white/50 dark:border-gray-800 animate-pulse">
             <MapPin className="w-10 h-10 text-green-500 dark:text-green-400" />
           </div>
           <p className="text-green-700 dark:text-green-400 font-bold">
@@ -55,7 +50,7 @@ const mapStatusToUI = (status: string) => {
     case "DISETUJUI":
       return "Funding";
     case "BERJALAN":
-      return "Under Construction";
+      return "Construction";
     case "SELESAI":
       return "Completed";
     default:
@@ -69,12 +64,12 @@ const getStatusStyle = (status: string) => {
       return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700";
     case "Funding":
       return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700";
-    case "Under Construction":
+    case "Construction":
       return "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700";
     case "Completed":
       return "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700";
     default:
-      return "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300";
+      return "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-white";
   }
 };
 
@@ -84,7 +79,7 @@ const getProgressColor = (status: string) => {
       return "bg-gradient-to-r from-blue-400 to-blue-600";
     case "Funding":
       return "bg-gradient-to-r from-yellow-400 to-amber-500";
-    case "Under Construction":
+    case "Construction":
       return "bg-gradient-to-r from-orange-400 to-orange-600";
     case "Completed":
       return "bg-gradient-to-r from-green-400 to-green-600";
@@ -93,21 +88,20 @@ const getProgressColor = (status: string) => {
   }
 };
 
-// const getMarkerStyle = (status: string) => {
-//   switch (status) {
-//     case "Planning": return { bg: "bg-blue-100 dark:bg-blue-900/40 border-blue-500", icon: "text-blue-600 dark:text-blue-400" };
-//     case "Funding": return { bg: "bg-yellow-100 dark:bg-yellow-900/40 border-yellow-500", icon: "text-yellow-600 dark:text-yellow-400" };
-//     case "Under Construction": return { bg: "bg-orange-100 dark:bg-orange-900/40 border-orange-500", icon: "text-orange-600 dark:text-orange-400" };
-//     case "Completed": return { bg: "bg-green-100 dark:bg-green-900/40 border-green-500", icon: "text-green-600 dark:text-green-400" };
-//     default: return { bg: "bg-gray-100 border-gray-400", icon: "text-gray-500" };
-//   }
-// };
-
 interface CommentMapData {
   id: string;
   author: string;
   text: string;
   timestamp: string;
+}
+
+interface ApiMapComment {
+  id: string | number;
+  text?: string;
+  createdAt?: string;
+  user?: {
+    email?: string;
+  };
 }
 
 interface ProjectMapData {
@@ -124,6 +118,17 @@ interface ProjectMapData {
   lat: number;
   lng: number;
   imageUrl?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+type VoteChoice = "agree" | "disagree";
+type VoteAction = "CREATED" | "UPDATED" | "DELETED";
+
+interface ActivityFeedItem {
+  type?: string;
+  action?: string;
+  targetId?: string | null;
 }
 
 const formatRupiahFull = (value: number) => {
@@ -146,9 +151,15 @@ export default function MapPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("All");
-  const [userVotes, setUserVotes] = useState<
-    Record<string, "agree" | "disagree">
-  >({});
+  const [userVotes, setUserVotes] = useState<Record<string, VoteChoice>>({});
+  const [savingVotes, setSavingVotes] = useState<Record<string, boolean>>({});
+
+  // Listen to global app sidebar toggle
+  useEffect(() => {
+    const handleToggle = () => setSidebarOpen((prev) => !prev);
+    window.addEventListener("toggle-app-sidebar", handleToggle);
+    return () => window.removeEventListener("toggle-app-sidebar", handleToggle);
+  }, []);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -191,6 +202,29 @@ export default function MapPage() {
                   location = d.address;
                 }
 
+                let commentsList: CommentMapData[] = [];
+                try {
+                  const commentsRes = await fetch(
+                    `/api/comments?projectId=${d.id}`,
+                    { headers },
+                  );
+                  const commentsJson = await commentsRes.json();
+                  if (commentsJson.data && Array.isArray(commentsJson.data)) {
+                    commentsList = commentsJson.data.map(
+                      (c: ApiMapComment) => ({
+                        id: String(c.id),
+                        author: c.user?.email || "Resident",
+                        text: c.text || "",
+                        timestamp: c.createdAt
+                          ? new Date(c.createdAt).toLocaleDateString()
+                          : "-",
+                      }),
+                    );
+                  }
+                } catch (e) {
+                  console.error("Failed to fetch comments for map", e);
+                }
+
                 return {
                   id: d.id,
                   name: d.title,
@@ -201,29 +235,20 @@ export default function MapPage() {
                   budget: Number(d.budgetTarget) || 0,
                   fundsCollected: Number(d.currentFunding) || 0,
                   votes: { agree: d._count?.votes || 0, disagree: 0 },
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  comments: d.comments?.map((c: any) => ({
-                    id: c.id,
-                    author: c.user?.name || "Resident",
-                    text: c.content,
-                    timestamp: new Date(c.createdAt).toLocaleDateString(),
-                  })) || [
-                    {
-                      id: "mock-1",
-                      author: "Budi S.",
-                      text: "This project will really help the community!",
-                      timestamp: "Today",
-                    },
-                  ],
+                  comments: commentsList,
                   lat: d.latitude,
                   lng: d.longitude,
                   imageUrl:
-                    (Array.isArray(d.imageUrl) && d.imageUrl.length > 0
-                      ? d.imageUrl[0]
-                      : typeof d.imageUrl === "string" && d.imageUrl
-                        ? d.imageUrl
-                        : d.images?.[0]?.url) ||
+                    (Array.isArray(d.imageUrls) && d.imageUrls.length > 0
+                      ? d.imageUrls[0]
+                      : Array.isArray(d.imageUrl) && d.imageUrl.length > 0
+                        ? d.imageUrl[0]
+                        : typeof d.imageUrl === "string" && d.imageUrl
+                          ? d.imageUrl
+                          : d.images?.[0]?.url) ||
                     "https://images.unsplash.com/photo-1541888009623-fb944e8bc1a8?q=80&w=400&auto=format&fit=crop",
+                  startDate: d.startDate,
+                  endDate: d.endDate,
                 };
               } catch (e) {
                 console.error("Error fetching project details", e);
@@ -232,6 +257,41 @@ export default function MapPage() {
             }),
           );
           setProjects(fullProjects.filter(Boolean));
+
+          if (token && userRole === "Resident") {
+            try {
+              const activityRes = await fetch(
+                "/api/users/activity?limit=1000",
+                {
+                  headers,
+                },
+              );
+              const activityJson = await activityRes.json();
+              const activityItems: ActivityFeedItem[] = Array.isArray(
+                activityJson.data?.data,
+              )
+                ? activityJson.data.data
+                : Array.isArray(activityJson.data)
+                  ? activityJson.data
+                  : [];
+
+              const nextUserVotes = activityItems.reduce<
+                Record<string, VoteChoice>
+              >((acc, item) => {
+                if (item.type !== "VOTE" || !item.targetId) return acc;
+                if (item.action?.toLowerCase().startsWith("upvoted")) {
+                  acc[item.targetId] = "agree";
+                } else if (item.action?.toLowerCase().startsWith("downvoted")) {
+                  acc[item.targetId] = "disagree";
+                }
+                return acc;
+              }, {});
+
+              setUserVotes(nextUserVotes);
+            } catch (e) {
+              console.error("Failed to load current user votes", e);
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to fetch map projects", error);
@@ -241,7 +301,7 @@ export default function MapPage() {
     };
 
     fetchProjects();
-  }, []);
+  }, [userRole]);
 
   const filteredProjects = projects.filter((p) => {
     const matchSearch =
@@ -251,57 +311,113 @@ export default function MapPage() {
     return matchSearch && matchStatus;
   });
 
-  const handleVote = (projectId: string, voteType: "agree" | "disagree") => {
+  const getOppositeVote = (voteType: VoteChoice): VoteChoice =>
+    voteType === "agree" ? "disagree" : "agree";
+
+  const getVoteDelta = (
+    action: VoteAction,
+    voteType: VoteChoice,
+    currentVote?: VoteChoice,
+  ) => {
+    const previousVote =
+      currentVote ??
+      (action === "DELETED"
+        ? voteType
+        : action === "UPDATED"
+          ? getOppositeVote(voteType)
+          : null);
+    const nextVote = action === "DELETED" ? null : voteType;
+
+    return {
+      nextVote,
+      agreeDelta:
+        (nextVote === "agree" ? 1 : 0) - (previousVote === "agree" ? 1 : 0),
+      disagreeDelta:
+        (nextVote === "disagree" ? 1 : 0) -
+        (previousVote === "disagree" ? 1 : 0),
+    };
+  };
+
+  const handleVote = async (projectId: string, voteType: VoteChoice) => {
     if (!userRole || userRole !== "Resident") {
       alert("Hanya Resident yang bisa voting");
       return;
     }
 
-    setUserVotes((prev) => {
-      const currentVote = prev[projectId];
-      const newVotes = { ...prev };
+    if (savingVotes[projectId]) return;
 
-      if (currentVote === voteType) {
-        // Remove vote if clicking same button
-        delete newVotes[projectId];
-        setSelectedProject((prevProj: ProjectMapData | null) => {
-          if (!prevProj || prevProj.id !== projectId) return prevProj;
-          return {
-            ...prevProj,
-            votes: {
-              agree:
-                voteType === "agree"
-                  ? prevProj.votes.agree - 1
-                  : prevProj.votes.agree,
-              disagree:
-                voteType === "disagree"
-                  ? prevProj.votes.disagree - 1
-                  : prevProj.votes.disagree,
-            },
-          };
-        });
-      } else {
-        // Add or change vote
-        newVotes[projectId] = voteType;
-        setSelectedProject((prevProj: ProjectMapData | null) => {
-          if (!prevProj || prevProj.id !== projectId) return prevProj;
-          return {
-            ...prevProj,
-            votes: {
-              agree:
-                (voteType === "agree" ? 1 : 0) +
-                (currentVote === "agree" ? -1 : 0) +
-                prevProj.votes.agree,
-              disagree:
-                (voteType === "disagree" ? 1 : 0) +
-                (currentVote === "disagree" ? -1 : 0) +
-                prevProj.votes.disagree,
-            },
-          };
-        });
+    const token = localStorage.getItem("livon-token");
+    if (!token) {
+      alert("Silakan login untuk memberikan vote.");
+      return;
+    }
+
+    setSavingVotes((prev) => ({ ...prev, [projectId]: true }));
+
+    try {
+      const currentVote = userVotes[projectId];
+
+      const res = await fetch("/api/votes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          projectId,
+          type: voteType === "agree" ? "UPVOTE" : "DOWNVOTE",
+        }),
+      });
+
+      const responseData = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error("Gagal menyimpan vote");
       }
-      return newVotes;
-    });
+
+      const action = (
+        ["CREATED", "UPDATED", "DELETED"].includes(responseData?.action)
+          ? responseData.action
+          : res.status === 201
+            ? "CREATED"
+            : currentVote === voteType
+              ? "DELETED"
+              : currentVote
+                ? "UPDATED"
+                : "CREATED"
+      ) as VoteAction;
+      const { nextVote, agreeDelta, disagreeDelta } = getVoteDelta(
+        action,
+        voteType,
+        currentVote,
+      );
+
+      setUserVotes((prev) => {
+        const next = { ...prev };
+        if (nextVote) next[projectId] = nextVote;
+        else delete next[projectId];
+        return next;
+      });
+
+      const updateVotes = (proj: ProjectMapData) => ({
+        ...proj,
+        votes: {
+          agree: Math.max(0, proj.votes.agree + agreeDelta),
+          disagree: Math.max(0, proj.votes.disagree + disagreeDelta),
+        },
+      });
+
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? updateVotes(p) : p)),
+      );
+      setSelectedProject((prev) =>
+        prev && prev.id === projectId ? updateVotes(prev) : prev,
+      );
+    } catch (e) {
+      console.error(e);
+      alert("Gagal menyimpan vote, silakan coba lagi.");
+    } finally {
+      setSavingVotes((prev) => ({ ...prev, [projectId]: false }));
+    }
   };
 
   const handleDonate = (projectId: string) => {
@@ -312,30 +428,28 @@ export default function MapPage() {
     router.push(`/project/${projectId}`);
   };
 
-  return (
-    <div className="flex h-full relative overflow-hidden bg-slate-100 dark:bg-slate-950 font-sans text-gray-900 dark:text-slate-100">
-      {/* Mobile Toggle */}
-      <div className="absolute top-4 left-4 z-20 md:hidden">
-        <Button
-          variant="outline"
-          className="bg-white dark:bg-slate-800 p-2 shadow-md"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          <Menu className="w-5 h-5 text-green-700 dark:text-green-400" />
-        </Button>
-      </div>
+  const handleProjectCardClick = (project: ProjectMapData) => {
+    if (window.innerWidth < 768) {
+      router.push(`/project/${project.id}`);
+      return;
+    }
 
+    setSelectedProject(project);
+  };
+
+  return (
+    <div className="flex h-full bg-slate-50 dark:bg-[#0B1120] relative overflow-hidden">
       {/* ── Left Sidebar ── */}
       <div
         className={cn(
-          "absolute md:relative z-10 w-80 h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col transition-transform duration-300 ease-in-out shadow-lg md:shadow-none",
+          "absolute md:relative z-10 w-80 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out shadow-lg md:shadow-none",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
         {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-green-50 dark:from-slate-900 dark:to-slate-800">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-slate-50 to-green-50 dark:from-slate-900 dark:to-slate-800">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-gray-800 dark:text-slate-200">
+            <h2 className="font-bold text-gray-800 dark:text-white">
               Projects
             </h2>
             <Button
@@ -348,37 +462,33 @@ export default function MapPage() {
           </div>
           {/* Search */}
           <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-slate-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-white" />
             <input
               type="text"
               placeholder="Search here..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 dark:border-gray-800 rounded-lg bg-white dark:bg-[#1F2937] text-gray-800 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           {/* Filter pills */}
           <div className="flex gap-1 flex-wrap">
-            {[
-              "All",
-              "Planning",
-              "Funding",
-              "Under Construction",
-              "Completed",
-            ].map((s) => (
-              <button
-                key={s}
-                onClick={() => setFilterStatus(s)}
-                className={cn(
-                  "px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-all",
-                  filterStatus === s
-                    ? "bg-gradient-to-r from-green-600 to-green-700 text-white border-green-600 shadow-sm"
-                    : "bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-300 dark:border-slate-600 hover:border-green-400 dark:hover:border-green-600",
-                )}
-              >
-                {s}
-              </button>
-            ))}
+            {["All", "Planning", "Funding", "Construction", "Completed"].map(
+              (s) => (
+                <button
+                  key={s}
+                  onClick={() => setFilterStatus(s)}
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-all",
+                    filterStatus === s
+                      ? "bg-gradient-to-r from-green-600 to-green-700 text-white border-green-600 shadow-sm"
+                      : "bg-white dark:bg-[#1F2937] text-gray-600 dark:text-white border-gray-300 dark:border-slate-600 hover:border-green-400 dark:hover:border-green-600",
+                  )}
+                >
+                  {s}
+                </button>
+              ),
+            )}
           </div>
         </div>
 
@@ -402,10 +512,10 @@ export default function MapPage() {
                     ? "border-green-500 dark:border-green-600 ring-2 ring-green-200 dark:ring-green-900 bg-green-50 dark:bg-green-900/20"
                     : "hover:border-green-300 dark:hover:border-green-700 hover:shadow-md",
                 )}
-                onClick={() => setSelectedProject(project)}
+                onClick={() => handleProjectCardClick(project)}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-sm leading-tight pr-2 text-gray-800 dark:text-slate-200">
+                  <h3 className="font-semibold text-sm leading-tight pr-2 text-gray-800 dark:text-white">
                     {project.name}
                   </h3>
                   <Badge
@@ -418,15 +528,15 @@ export default function MapPage() {
                   </Badge>
                 </div>
 
-                <p className="text-xs text-gray-400 dark:text-slate-500 mb-2 line-clamp-1">
+                <p className="text-xs text-gray-400 dark:text-white mb-2 line-clamp-1">
                   {project.address}
                 </p>
 
                 {/* Progress */}
                 <div className="mb-2">
-                  <div className="flex justify-between text-[10px] text-gray-500 dark:text-slate-400 mb-1">
+                  <div className="flex justify-between text-[10px] text-gray-500 dark:text-white mb-1">
                     <span>Progress</span>
-                    <span className="font-semibold text-gray-700 dark:text-slate-300">
+                    <span className="font-semibold text-gray-700 dark:text-white">
                       {project.progress}%
                     </span>
                   </div>
@@ -441,9 +551,9 @@ export default function MapPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-slate-700">
-                  <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-slate-400">
-                    <span className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded font-medium text-gray-700 dark:text-slate-300">
+                <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-white">
+                    <span className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded font-medium text-gray-700 dark:text-white">
                       {project.category}
                     </span>
                     <span className="flex items-center gap-0.5">
@@ -482,8 +592,13 @@ export default function MapPage() {
         </div>
 
         {/* Legend / Map Controls */}
-        <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
-          <div className="bg-white/90 backdrop-blur-md dark:bg-slate-900/90 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-800 p-3">
+        <div
+          className={cn(
+            "absolute top-4 right-4 z-20 flex-col gap-2 md:flex",
+            sidebarOpen ? "hidden" : "flex",
+          )}
+        >
+          <div className="bg-white/90 backdrop-blur-md dark:bg-[#111827]/90 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-3">
             <div className="flex items-center gap-2 mb-2 px-1">
               <Layers className="w-4 h-4 text-gray-400" />
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
@@ -494,7 +609,7 @@ export default function MapPage() {
               {[
                 { status: "Planning", label: "Planning" },
                 { status: "Funding", label: "Funding" },
-                { status: "Under Construction", label: "Construction" },
+                { status: "Construction", label: "Construction" },
                 { status: "Completed", label: "Completed" },
               ].map(({ status, label }) => (
                 <div
@@ -514,9 +629,9 @@ export default function MapPage() {
 
         {/* ── Project Detail Overlay Panel ── */}
         {selectedProject && (
-          <div className="absolute top-4 left-4 md:left-auto md:right-4 z-30 w-full max-w-[280px] bg-white/95 backdrop-blur-xl dark:bg-slate-900/95 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 flex flex-col max-h-[calc(100vh-10rem)]">
+          <div className="absolute top-4 left-4 md:left-auto md:right-4 z-30 w-full max-w-[280px] bg-white/95 backdrop-blur-xl dark:bg-[#111827]/95 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col max-h-[calc(100vh-10rem)]">
             {/* Project Photo / Image Area */}
-            <div className="relative w-full h-28 bg-gray-200 dark:bg-slate-800 rounded-t-2xl overflow-hidden shrink-0">
+            <div className="relative w-full h-28 bg-gray-200 dark:bg-[#1F2937] rounded-t-2xl overflow-hidden shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={
@@ -556,14 +671,14 @@ export default function MapPage() {
             <div className="px-4 pt-3 pb-2 flex justify-between items-start">
               <div className="flex-1 pr-2">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[9px] font-medium text-gray-500 bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
+                  <span className="text-[9px] font-medium text-gray-500 bg-gray-100 dark:bg-[#1F2937] px-1.5 py-0.5 rounded-full">
                     {selectedProject.category}
                   </span>
                 </div>
-                <h3 className="font-bold text-sm leading-tight text-gray-900 dark:text-slate-100 mb-0.5">
+                <h3 className="font-bold text-sm leading-tight text-gray-900 dark:text-white mb-0.5">
                   {selectedProject.name}
                 </h3>
-                <p className="text-[10px] text-gray-500 dark:text-slate-400 flex items-center">
+                <p className="text-[10px] text-gray-500 dark:text-white flex items-center">
                   <MapPin className="w-3 h-3 mr-1 text-gray-400" />
                   {selectedProject.address}
                 </p>
@@ -573,15 +688,15 @@ export default function MapPage() {
             <div className="overflow-y-auto flex-1 px-4 pb-3 space-y-3">
               {/* Core Stats */}
               <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col p-2 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800">
+                <div className="flex flex-col p-2 bg-gray-50 dark:bg-[#1F2937]/50 rounded-lg border border-gray-100 dark:border-gray-800">
                   <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5 flex items-center gap-1">
                     <Wallet className="w-2.5 h-2.5" /> Budget
                   </span>
-                  <span className="font-bold text-xs text-gray-900 dark:text-slate-100">
+                  <span className="font-bold text-xs text-gray-900 dark:text-white">
                     {formatRupiahFull(selectedProject.budget)}
                   </span>
                 </div>
-                <div className="flex flex-col p-2 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800">
+                <div className="flex flex-col p-2 bg-gray-50 dark:bg-[#1F2937]/50 rounded-lg border border-gray-100 dark:border-gray-800">
                   <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5 flex items-center gap-1">
                     <Activity className="w-2.5 h-2.5" /> Progress
                   </span>
@@ -595,7 +710,7 @@ export default function MapPage() {
                         style={{ width: `${selectedProject.progress}%` }}
                       />
                     </div>
-                    <span className="font-bold text-[10px] text-gray-900 dark:text-slate-100">
+                    <span className="font-bold text-[10px] text-gray-900 dark:text-white">
                       {selectedProject.progress}%
                     </span>
                   </div>
@@ -604,7 +719,7 @@ export default function MapPage() {
 
               {/* Funds Collected (Only for Funding, Construction, and Completed) */}
               {(selectedProject.status === "Funding" ||
-                selectedProject.status === "Under Construction" ||
+                selectedProject.status === "Construction" ||
                 selectedProject.status === "Completed") && (
                 <div className="flex flex-col p-2 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-100 dark:border-green-900/50">
                   <div className="flex justify-between items-center mb-1">
@@ -651,11 +766,12 @@ export default function MapPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleVote(selectedProject.id, "agree")}
+                        disabled={savingVotes[selectedProject.id]}
                         className={cn(
-                          "flex-1 py-1.5 px-2 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-all border",
+                          "flex-1 py-1.5 px-2 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-all border disabled:cursor-not-allowed disabled:opacity-60",
                           userVotes[selectedProject.id] === "agree"
                             ? "bg-green-600 text-white border-green-600 shadow-sm shadow-green-500/20"
-                            : "bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-green-500 hover:text-green-600",
+                            : "bg-white dark:bg-[#1F2937] text-gray-600 dark:text-white border-gray-200 dark:border-gray-800 hover:border-green-500 hover:text-green-600",
                         )}
                       >
                         <ThumbsUp className="w-3 h-3" />{" "}
@@ -665,11 +781,12 @@ export default function MapPage() {
                         onClick={() =>
                           handleVote(selectedProject.id, "disagree")
                         }
+                        disabled={savingVotes[selectedProject.id]}
                         className={cn(
-                          "flex-1 py-1.5 px-2 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-all border",
+                          "flex-1 py-1.5 px-2 flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-all border disabled:cursor-not-allowed disabled:opacity-60",
                           userVotes[selectedProject.id] === "disagree"
                             ? "bg-red-600 text-white border-red-600 shadow-sm shadow-red-500/20"
-                            : "bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-red-500 hover:text-red-600",
+                            : "bg-white dark:bg-[#1F2937] text-gray-600 dark:text-white border-gray-200 dark:border-gray-800 hover:border-red-500 hover:text-red-600",
                         )}
                       >
                         <ThumbsDown className="w-3 h-3" />{" "}
@@ -713,24 +830,24 @@ export default function MapPage() {
                       .map((comment: CommentMapData) => (
                         <div
                           key={comment.id}
-                          className="bg-gray-50 dark:bg-slate-800/50 p-2 rounded-lg border border-gray-100 dark:border-slate-800"
+                          className="bg-gray-50 dark:bg-[#1F2937]/50 p-2 rounded-lg border border-gray-100 dark:border-gray-800"
                         >
                           <div className="flex justify-between items-center mb-0.5">
-                            <p className="text-[9px] font-bold text-gray-800 dark:text-slate-200">
+                            <p className="text-[9px] font-bold text-gray-800 dark:text-white">
                               {comment.author}
                             </p>
                             <p className="text-[8px] text-gray-400">
                               {comment.timestamp}
                             </p>
                           </div>
-                          <p className="text-[10px] text-gray-600 dark:text-slate-400 leading-tight line-clamp-1">
+                          <p className="text-[10px] text-gray-600 dark:text-white leading-tight line-clamp-1">
                             {comment.text}
                           </p>
                         </div>
                       ))}
                   </div>
                 ) : (
-                  <div className="bg-gray-50 dark:bg-slate-800/50 p-2 rounded-lg border border-gray-100 dark:border-slate-800 text-center">
+                  <div className="bg-gray-50 dark:bg-[#1F2937]/50 p-2 rounded-lg border border-gray-100 dark:border-gray-800 text-center">
                     <p className="text-[9px] text-gray-500 italic">
                       No comments yet. Be the first!
                     </p>
@@ -742,23 +859,42 @@ export default function MapPage() {
               {(userRole === "Admin" || userRole === "Manager") && (
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800">
+                    <div className="p-2 bg-gray-50 dark:bg-[#1F2937]/50 rounded-lg border border-gray-100 dark:border-gray-800">
                       <p className="text-[9px] text-gray-400 mb-0.5 flex items-center font-semibold uppercase">
                         <Users className="w-2.5 h-2.5 mr-1" /> Votes
                       </p>
-                      <p className="font-bold text-xs text-gray-900 dark:text-slate-100">
+                      <p className="font-bold text-xs text-gray-900 dark:text-white">
                         {selectedProject.votes.agree +
                           selectedProject.votes.disagree}
                       </p>
                     </div>
-                    <div className="p-2 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800">
-                      <p className="text-[9px] text-gray-400 mb-0.5 flex items-center font-semibold uppercase">
-                        <Clock className="w-2.5 h-2.5 mr-1" /> Duration
-                      </p>
-                      <p className="font-bold text-xs text-gray-900 dark:text-slate-100">
-                        3 Months
-                      </p>
-                    </div>
+                    {selectedProject.status === "Construction" && (
+                      <div className="p-2 bg-gray-50 dark:bg-[#1F2937]/50 rounded-lg border border-gray-100 dark:border-gray-800">
+                        <p className="text-[9px] text-gray-400 mb-0.5 flex items-center font-semibold uppercase">
+                          <Clock className="w-2.5 h-2.5 mr-1" /> Duration
+                        </p>
+                        <p className="font-bold text-xs text-gray-900 dark:text-white">
+                          {selectedProject.startDate && selectedProject.endDate
+                            ? (() => {
+                                const start = new Date(
+                                  selectedProject.startDate,
+                                );
+                                const end = new Date(selectedProject.endDate);
+                                const diffTime = Math.abs(
+                                  end.getTime() - start.getTime(),
+                                );
+                                const diffDays = Math.ceil(
+                                  diffTime / (1000 * 60 * 60 * 24),
+                                );
+                                if (diffDays >= 30) {
+                                  return `${Math.floor(diffDays / 30)} Months`;
+                                }
+                                return `${diffDays} Days`;
+                              })()
+                            : "Not specified"}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -768,7 +904,7 @@ export default function MapPage() {
             <div className="p-3 pt-0">
               <button
                 onClick={() => handleViewDetail(selectedProject.id)}
-                className="w-full flex items-center justify-center gap-1.5 text-xs font-bold py-2 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 text-xs font-bold py-2 border border-gray-200 dark:border-gray-800 rounded-lg text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
               >
                 <span>View Details</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -776,92 +912,6 @@ export default function MapPage() {
             </div>
           </div>
         )}
-
-        {/* ── Bottom Stats Bar ── */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 hidden md:flex scale-90 lg:scale-100 origin-bottom">
-          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-gray-100 dark:border-slate-800 shadow-xl rounded-full px-5 py-2 flex items-center gap-4">
-            {[
-              {
-                label: "Total Projects",
-                value: projects.length,
-                icon: Layers,
-                color:
-                  "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10",
-              },
-              {
-                label: "Funding",
-                value: projects.filter((p) => p.status === "Funding").length,
-                icon: Wallet,
-                color:
-                  "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10",
-              },
-              {
-                label: "Construction",
-                value: projects.filter((p) => p.status === "Under Construction")
-                  .length,
-                icon: Activity,
-                color:
-                  "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10",
-              },
-              {
-                label: "Completed",
-                value: projects.filter((p) => p.status === "Completed").length,
-                icon: CheckCircle,
-                color:
-                  "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10",
-              },
-            ].map((stat, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <div className={cn("p-1.5 rounded-full", stat.color)}>
-                  <stat.icon className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex flex-col">
-                  <p className="text-[9px] text-gray-500 dark:text-slate-400 font-bold uppercase tracking-wider leading-none mb-0.5">
-                    {stat.label}
-                  </p>
-                  <p className="font-bold text-xs text-gray-900 dark:text-slate-100 leading-none">
-                    {stat.value}
-                  </p>
-                </div>
-                {idx < 3 && (
-                  <div className="w-px h-5 bg-gray-200 dark:bg-slate-700 ml-3" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Mobile Bottom Nav */}
-        <div className="h-16 md:hidden w-full bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 absolute bottom-0 z-20 flex justify-around items-center px-4">
-          <Link
-            href="/app/map"
-            className="flex flex-col items-center text-green-600 dark:text-green-400"
-          >
-            <MapPin className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-medium">Map</span>
-          </Link>
-          <Link
-            href="/app/crowdfunding"
-            className="flex flex-col items-center text-gray-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400"
-          >
-            <TrendingUp className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-medium">Dana</span>
-          </Link>
-          <Link
-            href="/app/news"
-            className="flex flex-col items-center text-gray-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400"
-          >
-            <Newspaper className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-medium">Berita</span>
-          </Link>
-          <button
-            className="flex flex-col items-center text-gray-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-medium">Proyek</span>
-          </button>
-        </div>
       </div>
     </div>
   );

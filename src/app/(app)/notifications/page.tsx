@@ -15,12 +15,21 @@ interface DatabaseNotification {
   createdAt: string | Date;
 }
 
+// Tambahkan "news" dan "registration" ke dalam tipe kategori yang diizinkan
+type NotificationCategory =
+  | "funding"
+  | "project"
+  | "comment"
+  | "system"
+  | "news"
+  | "registration";
+
 type Notification = {
   id: string;
   title: string;
   desc: string;
   time: string;
-  category: "funding" | "project" | "comment" | "system";
+  category: NotificationCategory;
   read: boolean;
   dot: string;
 };
@@ -47,21 +56,26 @@ export default function NotificationsPage() {
 
         if (response.success && response.data) {
           const transformedNotifications = response.data.map((notif) => {
-            const categoryMap: Record<
-              string,
-              "funding" | "project" | "comment" | "system"
-            > = {
+            // MAPPING KATEGORI BARU
+            const categoryMap: Record<string, NotificationCategory> = {
               donation_success: "funding",
               project_status: "project",
               comment_reply: "comment",
               system: "system",
+              // Tipe baru dari backend yang dipanggil lewat broadcastNotification:
+              new_registration: "registration",
+              new_project: "project",
+              new_news: "news",
             };
 
-            const dotColorMap: Record<string, string> = {
+            // MAPPING WARNA TITIK BARU
+            const dotColorMap: Record<NotificationCategory, string> = {
               funding: "bg-yellow-400",
               project: "bg-green-500",
               comment: "bg-blue-400",
               system: "bg-purple-400",
+              news: "bg-indigo-500",
+              registration: "bg-orange-500", // Warna oranye untuk user baru
             };
 
             const notificationType = notif.type?.toLowerCase() || "system";
@@ -70,7 +84,7 @@ export default function NotificationsPage() {
 
             return {
               id: notif.id,
-              title: notif.title || "Notifikasi",
+              title: notif.title || "Notification",
               desc: notif.message || "",
               time: formatTime(new Date(notif.createdAt)),
               category,
@@ -100,11 +114,11 @@ export default function NotificationsPage() {
     const diffDays = Math.floor(diffMs / 86400000);
     const diffWeeks = Math.floor(diffMs / 604800000);
 
-    if (diffMins < 1) return "baru saja";
-    if (diffMins < 60) return `${diffMins} menit lalu`;
-    if (diffHours < 24) return `${diffHours} jam lalu`;
-    if (diffDays < 7) return `${diffDays} hari lalu`;
-    if (diffWeeks < 4) return `${diffWeeks} minggu lalu`;
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffWeeks < 4) return `${diffWeeks} weeks ago`;
     return new Date(date).toLocaleDateString("id-ID");
   };
 
@@ -134,46 +148,29 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      // Update local state optimistically
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-
-      // Call API to update all in database (if endpoint exists)
-      // await apiFetch("/api/notifications/mark-all-as-read", {
-      //   method: "POST",
-      // });
-    } catch (error) {
-      console.error("Failed to mark all as read:", error);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     try {
-      // Update local state optimistically
       setNotifications((prev) => prev.filter((n) => n.id !== id));
-
-      // Call API to delete from database (if endpoint exists)
-      // await apiFetch(`/api/notifications/${id}`, {
-      //   method: "DELETE",
-      // });
     } catch (error) {
       console.error("Failed to delete notification:", error);
     }
   };
 
   const getCategoryLabel = (category: string) => {
+    // LABEL UNTUK BADGE NOTIFIKASI
     const labels: Record<string, string> = {
       funding: "Crowdfunding",
-      project: "Proyek",
-      comment: "Komentar",
-      system: "Sistem",
+      project: "Project",
+      comment: "Comment",
+      system: "System",
+      news: "News",
+      registration: "Registration",
     };
     return labels[category] || category;
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-6">
+    <div className="flex-1 overflow-auto bg-slate-50 dark:bg-[#0B1120] p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -181,59 +178,59 @@ export default function NotificationsPage() {
             <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-md">
               <Bell className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-slate-100">
-              Notifikasi
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white">
+              Notifications
             </h1>
           </div>
-          <p className="text-sm text-gray-500 dark:text-slate-400 ml-[52px]">
-            Pantau semua aktivitas dan pembaruan proyek komunitas
+          <p className="text-sm text-gray-500 dark:text-white ml-[52px]">
+            Monitor all community project activities and updates
           </p>
         </div>
 
         {/* Actions Bar */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mb-4 flex items-center justify-between shadow-sm">
+        <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-xl p-4 mb-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+            <Filter className="w-4 h-4 text-gray-500 dark:text-white" />
             <button
               onClick={() => setFilter("all")}
               className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                 filter === "all"
                   ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
-                  : "text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  : "text-gray-600 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
-              Semua {notifications.length > 0 && `(${notifications.length})`}
+              All {notifications.length > 0 && `(${notifications.length})`}
             </button>
             <button
               onClick={() => setFilter("unread")}
               className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                 filter === "unread"
                   ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
-                  : "text-gray-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  : "text-gray-600 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
-              Belum Dibaca {unreadCount > 0 && `(${unreadCount})`}
+              Unread {unreadCount > 0 && `(${unreadCount})`}
             </button>
           </div>
         </div>
 
         {/* Notifications List */}
         {loading ? (
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-12 text-center shadow-sm">
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-xl p-12 text-center shadow-sm">
             <div className="flex items-center justify-center gap-2">
               <div className="w-5 h-5 border-2 border-gray-300 dark:border-slate-600 border-t-green-600 rounded-full animate-spin"></div>
-              <p className="text-gray-500 dark:text-slate-400 font-medium">
-                Memuat notifikasi...
+              <p className="text-gray-500 dark:text-white font-medium">
+                Loading notifications...
               </p>
             </div>
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-12 text-center shadow-sm">
-            <Bell className="w-16 h-16 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-slate-400 font-medium">
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-xl p-12 text-center shadow-sm">
+            <Bell className="w-16 h-16 text-gray-300 dark:text-white mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-white font-medium">
               {filter === "unread"
-                ? "Tidak ada notifikasi yang belum dibaca"
-                : "Tidak ada notifikasi"}
+                ? "No unread notifications"
+                : "No notifications"}
             </p>
           </div>
         ) : (
@@ -241,9 +238,9 @@ export default function NotificationsPage() {
             {filteredNotifications.map((n) => (
               <div
                 key={n.id}
-                className={`bg-white dark:bg-slate-900 border rounded-xl p-4 transition-all hover:shadow-md group ${
+                className={`bg-white dark:bg-[#111827] border rounded-xl p-4 transition-all hover:shadow-md group ${
                   n.read
-                    ? "border-gray-200 dark:border-slate-700"
+                    ? "border-gray-200 dark:border-gray-800"
                     : "border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-900/10"
                 }`}
               >
@@ -254,20 +251,20 @@ export default function NotificationsPage() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3 mb-1">
-                      <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                         {n.title}
                       </h3>
-                      <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 whitespace-nowrap shrink-0">
+                      <span className="text-[10px] font-medium text-gray-400 dark:text-white whitespace-nowrap shrink-0">
                         {n.time}
                       </span>
                     </div>
 
-                    <p className="text-xs text-gray-600 dark:text-slate-400 leading-relaxed mb-2">
+                    <p className="text-xs text-gray-600 dark:text-white leading-relaxed mb-2">
                       {n.desc}
                     </p>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 font-medium">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#1F2937] text-gray-600 dark:text-white font-medium">
                         {getCategoryLabel(n.category)}
                       </span>
 
@@ -276,7 +273,7 @@ export default function NotificationsPage() {
                           <button
                             onClick={() => handleMarkAsRead(n.id)}
                             className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
-                            title="Tandai sudah dibaca"
+                            title="Mark as read"
                           >
                             <CheckCheck className="w-3.5 h-3.5" />
                           </button>
@@ -284,7 +281,7 @@ export default function NotificationsPage() {
                         <button
                           onClick={() => handleDelete(n.id)}
                           className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          title="Hapus notifikasi"
+                          title="Delete notification"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

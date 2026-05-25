@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   Card,
   Button,
@@ -8,6 +7,7 @@ import {
   Input,
   cn,
 } from "@/components/ui/WireframePrimitives";
+import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import {
   Plus,
   Edit2,
@@ -17,7 +17,8 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { deleteNewsAction, updateNewsAction } from "./actions";
+import { apiFetch, apiFetchJson } from "@/lib/api-client";
+import { supabase } from "@/lib/supabase";
 
 interface NewsItem {
   id: string;
@@ -34,6 +35,21 @@ interface NewsItem {
 }
 
 type NewsWithExtras = NewsItem & { isHeadline?: boolean };
+
+function getNewsBucketName() {
+  return process.env.NODE_ENV === "production"
+    ? "livon-media-prod"
+    : "livon-media-dev";
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function NewsManagementPage() {
   const [editNewsId, setEditNewsId] = useState<string | null>(null);
@@ -76,17 +92,26 @@ export default function NewsManagementPage() {
     let thumbnailUrl =
       news.find((n) => n.id === editNewsId)?.thumbnailUrl || "";
     if (editImage) {
-      // We'll skip setting a separate uploading state for edits to resolve lint warning about unused var
       const url = await handleUploadImage(editImage);
-      if (url) thumbnailUrl = url;
+      if (!url) {
+        alert("Gagal mengunggah gambar berita");
+        return;
+      }
+      thumbnailUrl = url;
     }
     try {
       if (!editNewsId) return;
-      const result = await updateNewsAction(editNewsId, {
-        title: editTitle,
-        content: editContent,
-        thumbnailUrl,
-      });
+      const token = localStorage.getItem("livon-token");
+      const result = await apiFetchJson(
+        `/api/news/${editNewsId}`,
+        "PUT",
+        {
+          title: editTitle,
+          content: editContent,
+          thumbnailUrl,
+        },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
       if (result.success) {
         await fetchNews();
         setEditNewsId(null);
@@ -102,7 +127,11 @@ export default function NewsManagementPage() {
   async function handleDelete(id: string) {
     if (!window.confirm("Hapus berita ini?")) return;
     try {
-      const result = await deleteNewsAction(id);
+      const token = localStorage.getItem("livon-token");
+      const result = await apiFetch(`/api/news/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (result.success) {
         await fetchNews();
       } else {
@@ -155,22 +184,45 @@ export default function NewsManagementPage() {
   async function handleUploadImage(file: File): Promise<string | null> {
     setUploading(true);
     try {
-      const token = localStorage.getItem("livon-token");
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUploading(false);
-        return data.data?.publicUrl || null;
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+      const bucketName = getNewsBucketName();
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(`uploads/${fileName}`, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (!uploadError) {
+        const {
+          data: { publicUrl },
+        } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(`uploads/${fileName}`);
+
+        return publicUrl;
       }
-    } catch {}
-    setUploading(false);
-    return null;
+
+      console.warn(
+        "Supabase storage upload failed, falling back to data URL",
+        uploadError,
+      );
+      return await readFileAsDataUrl(file);
+    } catch (error) {
+      console.warn(
+        "Client-side image upload failed, falling back to data URL",
+        error,
+      );
+      try {
+        return await readFileAsDataUrl(file);
+      } catch {
+        return null;
+      }
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleCreateNews(e: React.FormEvent) {
@@ -179,7 +231,12 @@ export default function NewsManagementPage() {
     let thumbnailUrl = "";
     if (newImage) {
       const url = await handleUploadImage(newImage);
-      if (url) thumbnailUrl = url;
+      if (!url) {
+        alert("Gagal mengunggah gambar berita");
+        setCreating(false);
+        return;
+      }
+      thumbnailUrl = url;
     }
     try {
       const token = localStorage.getItem("livon-token");
@@ -204,10 +261,15 @@ export default function NewsManagementPage() {
         const data = await res.json();
         setNews((prev) => [data.data, ...prev]);
       } else {
-        alert("Gagal membuat berita");
+        const data = await res.json().catch(() => null);
+        alert(`Gagal membuat berita: ${data?.message || res.statusText}`);
       }
-    } catch {
-      alert("Gagal membuat berita");
+    } catch (error) {
+      alert(
+        `Gagal membuat berita: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
     }
     setCreating(false);
   }
@@ -228,7 +290,7 @@ export default function NewsManagementPage() {
       {/* Edit Modal */}
       {editNewsId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-8 w-full max-w-lg shadow-lg relative">
+          <div className="bg-white dark:bg-[#111827] rounded-xl p-8 w-full max-w-lg shadow-lg relative">
             <button
               className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
               onClick={() => setEditNewsId(null)}
@@ -257,7 +319,7 @@ export default function NewsManagementPage() {
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   rows={4}
-                  className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm p-3"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1F2937] text-sm p-3"
                 />
               </div>
               <div>
@@ -272,7 +334,7 @@ export default function NewsManagementPage() {
                     "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
                     isDragging
                       ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                      : "border-gray-200 dark:border-slate-700",
+                      : "border-gray-200 dark:border-gray-800",
                   )}
                   onClick={() =>
                     document.getElementById("edit-image-input")?.click()
@@ -286,7 +348,7 @@ export default function NewsManagementPage() {
                     onChange={(e) => setEditImage(e.target.files?.[0] || null)}
                   />
                   <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 dark:text-slate-400 font-semibold">
+                  <p className="text-sm text-gray-500 dark:text-white font-semibold">
                     {editImage
                       ? editImage.name
                       : "Klik atau Drag & Drop gambar di sini"}
@@ -312,110 +374,121 @@ export default function NewsManagementPage() {
           </div>
         </div>
       )}
-      <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-full">
-        <div className="flex justify-between items-center">
+      <div className="p-6 md:p-8 space-y-6 bg-slate-50 dark:bg-[#0B1120] min-h-full">
+        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100">
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white">
               News Management
             </h1>
-            <p className="text-gray-500 dark:text-slate-400 text-sm mt-0.5">
+            <p className="text-gray-500 dark:text-white text-sm mt-0.5">
               Publish community announcements and updates.
             </p>
           </div>
           <Button
             variant="primary"
+            onClick={() => setShowCreate(true)}
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 shadow-sm h-11 px-6 rounded-xl font-bold text-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>New Project</span>
+            <span>New News</span>
           </Button>
         </div>
 
         {showCreate && (
-          <Card className="p-6 mb-6 border-green-200 bg-white dark:bg-slate-900">
-            <form onSubmit={handleCreateNews} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  News Title
-                </label>
-                <Input
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  required
-                  minLength={5}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Isi Konten
-                </label>
-                <textarea
-                  value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
-                  rows={4}
-                  className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm p-3"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  Thumbnail / Gambar
-                </label>
-                <div
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, setNewImage)}
-                  className={cn(
-                    "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-                    isDragging
-                      ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                      : "border-gray-200 dark:border-slate-700",
-                  )}
-                  onClick={() =>
-                    document.getElementById("new-image-input")?.click()
-                  }
-                >
-                  <input
-                    id="new-image-input"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => setNewImage(e.target.files?.[0] || null)}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6">
+            <div className="bg-white dark:bg-[#111827] rounded-xl p-8 w-full max-w-lg shadow-lg relative max-h-[90vh] overflow-y-auto">
+              <button
+                className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
+                onClick={() => setShowCreate(false)}
+                type="button"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h2 className="text-lg font-bold mb-4">Create News</h2>
+              <form onSubmit={handleCreateNews} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">
+                    News Title
+                  </label>
+                  <Input
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    required
+                    minLength={5}
+                    className="w-full"
                   />
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 dark:text-slate-400 font-semibold">
-                    {newImage
-                      ? newImage.name
-                      : "Klik atau Drag & Drop gambar di sini"}
-                  </p>
-                  {uploading && (
-                    <p className="mt-2 text-xs text-green-500 animate-pulse">
-                      Mengunggah...
-                    </p>
-                  )}
                 </div>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  type="submit"
-                  disabled={creating || uploading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {creating ? "Menyimpan..." : "Simpan"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCreate(false)}
-                >
-                  Batal
-                </Button>
-              </div>
-            </form>
-          </Card>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">
+                    Isi Konten
+                  </label>
+                  <textarea
+                    value={newContent}
+                    onChange={(e) => setNewContent(e.target.value)}
+                    rows={4}
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1F2937] text-sm p-3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">
+                    Thumbnail / Gambar
+                  </label>
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, setNewImage)}
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                      isDragging
+                        ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                        : "border-gray-200 dark:border-gray-800",
+                    )}
+                    onClick={() =>
+                      document.getElementById("new-image-input")?.click()
+                    }
+                  >
+                    <input
+                      id="new-image-input"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => setNewImage(e.target.files?.[0] || null)}
+                    />
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500 dark:text-white font-semibold">
+                      {newImage
+                        ? newImage.name
+                        : "Klik atau Drag & Drop gambar di sini"}
+                    </p>
+                    {uploading && (
+                      <p className="mt-2 text-xs text-green-500 animate-pulse">
+                        Mengunggah...
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    type="submit"
+                    disabled={creating || uploading}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {creating ? "Menyimpan..." : "Simpan"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCreate(false)}
+                  >
+                    Batal
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
 
-        <Card className="p-5 border-green-100 dark:border-slate-700 shadow-sm">
+        <Card className="p-5 border-green-100 dark:border-gray-800 shadow-sm">
           {loading ? (
             <div className="text-center text-gray-400 py-10">
               Memuat data berita...
@@ -423,96 +496,98 @@ export default function NewsManagementPage() {
           ) : error ? (
             <div className="text-center text-red-500 py-10">{error}</div>
           ) : (
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-slate-700 text-xs text-gray-500 dark:text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">News Title</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Publication Date</th>
-                  <th className="py-3 px-4">Author</th>
-                  <th className="py-3 px-4">Headline</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-                {news.map((item: NewsWithExtras) => (
-                  <tr
-                    key={item.id}
-                    className={cn(
-                      "hover:bg-green-50 dark:hover:bg-green-900/10 transition-colors",
-                      item.isHeadline && "ring-2 ring-green-400",
-                    )}
-                  >
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        {item.thumbnailUrl ? (
-                          <Image
-                            src={item.thumbnailUrl}
-                            alt={item.title}
-                            width={40}
-                            height={40}
-                            className="w-10 h-10 rounded object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded bg-gray-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 border border-gray-200 dark:border-slate-700">
-                            <ImageIcon className="w-4 h-4 text-gray-400" />
-                          </div>
-                        )}
-                        <span className="font-semibold text-gray-900 dark:text-slate-200 line-clamp-2">
-                          {item.title}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <Badge
-                        className={cn(
-                          "text-xs",
-                          item.publishedAt
-                            ? "bg-green-100 text-green-700 border-green-300"
-                            : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 border-gray-300 dark:border-slate-600",
-                        )}
-                      >
-                        {item.publishedAt ? "✅ Dipublikasikan" : "📝 Draft"}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4 text-gray-500 dark:text-slate-400 text-xs">
-                      {item.publishedAt
-                        ? new Date(item.publishedAt).toLocaleDateString()
-                        : "-"}
-                    </td>
-                    <td className="py-4 px-4 text-xs text-gray-700 dark:text-slate-300">
-                      {item.author?.agencyProfile?.agencyName ||
-                        item.createdById}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      <input
-                        type="radio"
-                        name="headline-news"
-                        checked={!!item.isHeadline}
-                        onChange={() => handleToggleHeadline(item.id)}
-                        aria-label="Set as headline"
-                      />
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
-                          onClick={() => handleEditOpen(item)}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse min-w-[800px] md:min-w-0">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-800 text-xs text-gray-500 dark:text-white font-bold uppercase tracking-wider">
+                    <th className="py-3 px-4">News Title</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Publication Date</th>
+                    <th className="py-3 px-4">Author</th>
+                    <th className="py-3 px-4">Headline</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                  {news.map((item: NewsWithExtras) => (
+                    <tr
+                      key={item.id}
+                      className={cn(
+                        "hover:bg-green-50 dark:hover:bg-green-900/10 transition-colors",
+                        item.isHeadline && "ring-2 ring-green-400",
+                      )}
+                    >
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          {item.thumbnailUrl ? (
+                            <ImageWithFallback
+                              src={item.thumbnailUrl}
+                              alt={item.title}
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 rounded object-cover flex-shrink-0 border border-gray-200 dark:border-gray-800"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded bg-gray-100 dark:bg-[#1F2937] flex items-center justify-center flex-shrink-0 border border-gray-200 dark:border-gray-800">
+                              <ImageIcon className="w-4 h-4 text-gray-400" />
+                            </div>
+                          )}
+                          <span className="font-semibold text-gray-900 dark:text-white line-clamp-2">
+                            {item.title}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <Badge
+                          className={cn(
+                            "text-xs",
+                            item.publishedAt
+                              ? "bg-green-100 text-green-700 border-green-300"
+                              : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-white border-gray-300 dark:border-slate-600",
+                          )}
+                        >
+                          {item.publishedAt ? "✅ Dipublikasikan" : "📝 Draft"}
+                        </Badge>
+                      </td>
+                      <td className="py-4 px-4 text-gray-500 dark:text-white text-xs">
+                        {item.publishedAt
+                          ? new Date(item.publishedAt).toLocaleDateString()
+                          : "-"}
+                      </td>
+                      <td className="py-4 px-4 text-xs text-gray-700 dark:text-white">
+                        {item.author?.agencyProfile?.agencyName ||
+                          item.createdById}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <input
+                          type="radio"
+                          name="headline-news"
+                          checked={!!item.isHeadline}
+                          onChange={() => handleToggleHeadline(item.id)}
+                          aria-label="Set as headline"
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+                            onClick={() => handleEditOpen(item)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
       </div>

@@ -2,6 +2,7 @@
 import { Button } from "./ui/WireframePrimitives";
 import { X, AlertCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import { apiFetchJson } from "@/lib/api-client";
 
 interface UpdateStatusModalProps {
   isOpen: boolean;
@@ -47,19 +48,18 @@ export function UpdateStatusModal({
       if (!dbStatus) throw new Error("Invalid status");
 
       const token = localStorage.getItem("livon-token");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const result = await apiFetchJson(
+        `/api/projects/${projectId}`,
+        "PATCH",
+        {
+          status: dbStatus,
+          notes: notes,
+        },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
 
-      const res = await fetch(`/api/projects/${projectId}/status`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ status: dbStatus }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to update status");
+      if (!result.success) {
+        throw new Error(result.message || "Failed to update status");
       }
 
       onUpdateSuccess(selectedStatus);
@@ -78,7 +78,7 @@ export function UpdateStatusModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-green-100 dark:border-slate-700 bg-green-50 dark:bg-slate-800">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Update Status Proyek
             </h2>
             <p className="text-sm text-green-700 dark:text-green-400 mt-1 font-medium">
@@ -89,7 +89,7 @@ export function UpdateStatusModal({
             onClick={onClose}
             className="p-2 hover:bg-green-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500 dark:text-slate-400" />
+            <X className="w-5 h-5 text-gray-500 dark:text-white" />
           </button>
         </div>
 
@@ -98,17 +98,17 @@ export function UpdateStatusModal({
           <div className="space-y-5">
             {/* Current Status */}
             <div className="p-4 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl">
-              <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+              <p className="text-xs font-bold text-gray-500 dark:text-white uppercase tracking-wider mb-1">
                 Status Saat Ini
               </p>
-              <p className="font-bold text-gray-900 dark:text-slate-100">
+              <p className="font-bold text-gray-900 dark:text-white">
                 {currentStatus}
               </p>
             </div>
 
             {/* New Status Selection */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-3">
+              <label className="block text-sm font-bold text-gray-700 dark:text-white mb-3">
                 Pilih Status Baru
               </label>
               <div className="space-y-2">
@@ -130,7 +130,7 @@ export function UpdateStatusModal({
                         onChange={(e) => setSelectedStatus(e.target.value)}
                         className="w-4 h-4 accent-green-600 border-gray-300"
                       />
-                      <span className="ml-3 font-semibold text-gray-900 dark:text-slate-100">
+                      <span className="ml-3 font-semibold text-gray-900 dark:text-white">
                         {status}
                       </span>
                     </label>
@@ -151,11 +151,11 @@ export function UpdateStatusModal({
             {/* Notes */}
             {getNextStatuses().length > 0 && (
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-bold text-gray-700 dark:text-white mb-2">
                   Catatan / Alasan Perubahan (Opsional)
                 </label>
                 <textarea
-                  className="w-full p-3 border border-green-200 dark:border-slate-600 rounded-xl bg-green-50 dark:bg-slate-900 text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm h-[132px] resize-none"
+                  className="w-full p-3 border border-green-200 dark:border-slate-600 rounded-xl bg-green-50 dark:bg-slate-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-400 text-sm h-[132px] resize-none"
                   placeholder="Tambahkan catatan atau alasan perubahan status ini..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}

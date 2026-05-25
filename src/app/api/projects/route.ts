@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { ProjectStatus, Role } from "@/generated/prisma/enums";
+import { broadcastNotification } from "@/lib/notifications";
 
 /**
  * @swagger
@@ -179,34 +180,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await prisma.notification.create({
-      data: {
-        userId: authUser.userId,
-        projectId: project.id,
-        title: "Membuat Proyek",
-        type: "ACTIVITY_LOG",
-        message: `Anda telah membuat usulan proyek baru : ${project.title}`,
-      },
+    await broadcastNotification({
+      recipientRole: Role.WARGA,
+      title: "Proyek Baru",
+      type: "NEW_PROJECT",
+      message: `Ada proyek baru berjudul "${project.title}".`,
+      projectId: project.id,
     });
-
-    const wargaUsers = await prisma.user.findMany({
-      where: { role: Role.WARGA },
-      select: { id: true },
-    });
-
-    if (wargaUsers.length > 0) {
-      const wargaNotifications = wargaUsers.map((user) => ({
-        userId: user.id,
-        projectId: project.id,
-        title: "Proyek Baru",
-        type: "NEW_PROJECT",
-        message: `Ada usulan proyek baru di daerahmu : ${project.title}. Yuk cek detailnya!`,
-      }));
-
-      await prisma.notification.createMany({
-        data: wargaNotifications,
-      });
-    }
 
     return created("Project created successfully", { data: project });
   } catch (error) {

@@ -6,6 +6,7 @@ import { created, badRequest, internalError } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { broadcastNotification } from "@/lib/notifications";
 
 const registerSchema = z.object({
   email: z.email(),
@@ -170,6 +171,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (role === Role.WARGA) {
+      await broadcastNotification({
+        recipientRole: Role.AGENCY,
+        title: "Warga Baru Mendaftar",
+        type: "NEW_REGISTRATION",
+        message: `${profileData.fullName || email} mendaftar dan menunggu verifikasi.`,
+      });
+    }
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
@@ -196,7 +206,6 @@ export async function POST(req: NextRequest) {
       });
     } catch (mailError) {
       console.error("Failed to send verification email:", mailError);
-      // An endpoint to resend verification should be implemented on the frontend.
     }
 
     return created("User registered successfully", { data: user });
