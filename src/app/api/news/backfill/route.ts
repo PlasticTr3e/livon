@@ -12,7 +12,7 @@ export async function GET() {
     for (const item of newsItems) {
       if (item.content) {
         const excerpt = await generateExcerpt(item.content);
-        await prisma.news.update({ where: { id: item.id }, data: { excerpt } });
+        // await prisma.news.update({ where: { id: item.id }, data: { excerpt } }); // excerpt field not in schema yet
         count++;
       }
     }

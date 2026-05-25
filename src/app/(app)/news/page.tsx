@@ -48,7 +48,10 @@ export default async function NewsPage({
   const newsItems = rawNewsItems.map((item) => ({
     ...item,
     content: item.content
-      ? item.content.replace(/<[^>]*>?/gm, "").slice(0, 150)
+      ? item.content
+          .replace(/<[^>]*>?/gm, "")
+          .replace(/[<>]/g, "")
+          .slice(0, 150)
       : "",
   }));
 
