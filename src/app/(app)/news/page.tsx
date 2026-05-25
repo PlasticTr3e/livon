@@ -9,6 +9,15 @@ import prisma from "@/lib/prisma";
 import { NewsFilters } from "./_components/NewsFilters";
 import type { Prisma } from "@/generated/prisma/client";
 
+function stripHtml(input: string) {
+  let previous;
+  do {
+    previous = input;
+    input = input.replace(/<[^>]*>?/gm, "");
+  } while (input !== previous);
+  return input.replace(/[<>]/g, "");
+}
+
 export default async function NewsPage({
   searchParams,
 }: {
@@ -47,12 +56,7 @@ export default async function NewsPage({
 
   const newsItems = rawNewsItems.map((item) => ({
     ...item,
-    content: item.content
-      ? item.content
-          .replace(/<[^>]*>?/gm, "")
-          .replace(/[<>]/g, "")
-          .slice(0, 150)
-      : "",
+    content: item.content ? stripHtml(item.content).slice(0, 150) : "",
   }));
 
   const isSearching = !!query;
