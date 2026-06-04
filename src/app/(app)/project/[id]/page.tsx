@@ -1,21 +1,24 @@
 "use client";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Button, Badge, Card, cn } from "@/components/ui/WireframePrimitives";
+import { Button, Badge, Card, cn } from "@/components/ui/primitives";
 import { useUser } from "@/context/UserContext";
 import { isApiSuccess } from "@/lib/api-types";
-import { UpdateStatusModal } from "@/components/UpdateStatusModal";
+import { UpdateProjectStatusDialog } from "@/components/projects/UpdateProjectStatusDialog";
 import { Suspense, useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 
-const ProjectMiniMap = dynamic(() => import("@/components/ProjectMiniMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full bg-slate-100 animate-pulse rounded-2xl flex items-center justify-center">
-      <MapPin className="w-6 h-6 text-slate-300" />
-    </div>
-  ),
-});
+const ProjectMiniMap = dynamic(
+  () => import("@/components/maps/ProjectMiniMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full bg-slate-100 animate-pulse rounded-2xl flex items-center justify-center">
+        <MapPin className="w-6 h-6 text-slate-300" />
+      </div>
+    ),
+  },
+);
 import {
   ArrowLeft,
   MapPin,
@@ -43,7 +46,7 @@ import {
   Eye,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
-import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 
 // ── Local type definitions (no longer from mockData) ──────────────────────────
 interface Comment {
@@ -442,7 +445,7 @@ function ProjectDetailContent() {
           setVotes(normalizedProject.votes);
         }
 
-        if (token && userRole === "Resident") {
+        if (token && userRole === "resident") {
           try {
             const activityRes = await fetch("/api/users/activity?limit=1000", {
               headers,
@@ -484,7 +487,7 @@ function ProjectDetailContent() {
             (comment: ApiComment) => ({
               id: String(comment.id),
               author: String(comment.user?.email || "Anonymous"),
-              role: String(comment.user?.role || "Resident"),
+              role: String(comment.user?.role || "resident"),
               text: String(comment.text || ""),
               timestamp: formatDate(comment.createdAt as string),
               likes: 0,
@@ -714,7 +717,7 @@ function ProjectDetailContent() {
       const newCommentItem: Comment = {
         id: String(comment.id),
         author: comment.user?.email || userName || "Anonymous",
-        role: comment.user?.role || userRole || "Resident",
+        role: comment.user?.role || userRole || "resident",
         text: String(comment.text || newComment.trim()),
         timestamp: formatDate(comment.createdAt),
         likes: 0,
@@ -1087,7 +1090,7 @@ function ProjectDetailContent() {
               </div>
             </Card>
 
-            {(userRole === "Admin" || userRole === "Manager") && (
+            {userRole === "agency" && (
               <div className="space-y-6">
                 <Card className="p-8 border-slate-100 shadow-sm bg-white dark:bg-[#111827] overflow-hidden relative">
                   <h2 className="font-bold text-gray-900 dark:text-white mb-8 flex items-center gap-3 text-lg tracking-tight">
@@ -1346,7 +1349,7 @@ function ProjectDetailContent() {
               </div>
             )}
 
-            {userRole === "Resident" && (
+            {userRole === "resident" && (
               <Card className="p-6 border-green-100">
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-4">
@@ -1489,14 +1492,15 @@ function ProjectDetailContent() {
                             <span
                               className={cn(
                                 "text-[10px] px-1.5 py-0.5 rounded-full font-medium border",
-                                comment.role === "Admin"
-                                  ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                                  : comment.role === "Manager"
-                                    ? "bg-blue-100 text-blue-700 border-blue-300"
-                                    : "bg-green-100 text-green-700 border-green-300",
+                                comment.role?.toLowerCase() === "agency" ||
+                                  comment.role?.toUpperCase() === "AGENCY"
+                                  ? "bg-blue-100 text-blue-700 border-blue-300"
+                                  : "bg-green-100 text-green-700 border-green-300",
                               )}
                             >
-                              {comment.role}
+                              {comment.role?.toUpperCase() === "WARGA"
+                                ? "resident"
+                                : "agency"}
                             </span>
                             <span className="text-xs text-gray-400 dark:text-white">
                               {comment.timestamp}
@@ -1595,7 +1599,7 @@ function ProjectDetailContent() {
             </Card>
 
             {/* Quick Actions Moved to Sidebar */}
-            {(userRole === "Admin" || userRole === "Manager") && (
+            {userRole === "agency" && (
               <Card className="p-8 border-slate-100 shadow-sm bg-white dark:bg-[#111827] rounded-[2rem]">
                 <h2 className="font-black text-slate-900 dark:text-white mb-6 flex items-center gap-2.5 text-[11px] uppercase tracking-[0.2em]">
                   <TrendingUp className="w-4 h-4 text-green-600" /> Quick
@@ -1634,7 +1638,7 @@ function ProjectDetailContent() {
                     {documents.length}
                   </span>
                 </h2>
-                {(userRole === "Admin" || userRole === "Manager") && (
+                {userRole === "agency" && (
                   <Button
                     variant="outline"
                     className="h-8 text-[10px] flex items-center gap-1.5 font-black uppercase tracking-widest px-3 border-green-200"
@@ -1699,7 +1703,7 @@ function ProjectDetailContent() {
                         >
                           <Download className="w-4 h-4" />
                         </a>
-                        {(userRole === "Admin" || userRole === "Manager") && (
+                        {userRole === "agency" && (
                           <button
                             className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                             onClick={async () => {
@@ -1753,7 +1757,7 @@ function ProjectDetailContent() {
         </div>
       </div>
 
-      <UpdateStatusModal
+      <UpdateProjectStatusDialog
         isOpen={isStatusModalOpen}
         onClose={() => setIsStatusModalOpen(false)}
         currentStatus={project.status}

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import { cn } from "@/components/ui/WireframePrimitives";
+import { cn } from "@/components/ui/primitives";
 import {
   BarChart2,
   FolderKanban,
@@ -161,7 +161,7 @@ export default function AdminLayout({
   ];
 
   const roleInitial = userName.charAt(0).toUpperCase();
-  const displayRole = userRole === "Resident" ? "Resident" : "Agency";
+  const displayRole = userRole;
 
   return (
     <div className="flex flex-col h-screen overflow-hidden font-sans bg-slate-50 dark:bg-[#0B1120]">

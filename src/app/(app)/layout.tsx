@@ -13,7 +13,7 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import { cn } from "@/components/ui/WireframePrimitives";
+import { cn } from "@/components/ui/primitives";
 import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
 import AdminLayout from "../(admin)/layout";
@@ -141,7 +141,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   let navLinks;
-  if (userRole === "Admin" || userRole === "Manager") {
+  if (userRole === "agency") {
     navLinks = [
       { name: "Management", href: "/admin/dashboard", icon: Settings },
       { name: "Map & Projects", href: "/map", icon: Map },
@@ -157,13 +157,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   const roleInitial = userName.charAt(0).toUpperCase();
-  const displayRole = userRole === "Resident" ? "Resident" : "Agency";
+  const displayRole = userRole;
   const roleGradient =
-    userRole === "Admin"
-      ? "bg-gradient-to-br from-yellow-400 to-amber-500 text-yellow-900"
-      : userRole === "Manager"
-        ? "bg-gradient-to-br from-blue-400 to-blue-600 text-white"
-        : "bg-gradient-to-br from-green-500 to-green-700 text-white";
+    userRole === "agency"
+      ? "bg-gradient-to-br from-blue-400 to-blue-600 text-white"
+      : "bg-gradient-to-br from-green-500 to-green-700 text-white";
 
   return (
     <div className="flex flex-col h-screen overflow-hidden font-sans bg-slate-50 dark:bg-[#0B1120]">
@@ -196,7 +194,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
 
           <Link
-            href={userRole === "Admin" ? "/admin/dashboard" : "/map"}
+            href={userRole === "agency" ? "/admin/dashboard" : "/map"}
             className="flex items-center space-x-2 group shrink-0"
           >
             <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-green-300 dark:group-hover:shadow-green-900 transition-shadow">

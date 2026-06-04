@@ -6,7 +6,7 @@ import { Eye, EyeOff, Leaf, Sun, Moon } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { useTheme } from "@/context/ThemeContext";
 import { apiFetchJson } from "@/lib/api-client";
-import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { useState, useEffect } from "react";
 import { useQueryState, parseAsString } from "nuqs";
 
@@ -102,20 +102,14 @@ export function LoginForm() {
       // Save token
       localStorage.setItem("livon-token", result.data.token);
 
-      // Update user context with mapped role
       const apiRole = result.data.user.role;
-      const mappedRole: "Resident" | "Manager" | "Admin" =
-        apiRole === "ADMIN"
-          ? "Admin"
-          : apiRole === "AGENCY"
-            ? "Manager"
-            : "Resident";
+      const mappedRole = apiRole === "WARGA" ? "resident" : "agency";
 
       const userName = result.data.user.name || result.data.user.email;
       login(mappedRole, userName);
 
       // Redirect based on role
-      if (mappedRole === "Admin" || mappedRole === "Manager") {
+      if (mappedRole === "agency") {
         router.push("/admin/users");
       } else {
         router.push("/map");

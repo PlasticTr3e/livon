@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-import { Card, Badge, Input, cn } from "@/components/ui/WireframePrimitives";
+import { Card, Badge, Input, cn } from "@/components/ui/primitives";
 import {
   MessageSquare,
   Search,
@@ -21,7 +21,7 @@ type CommentItem = {
   author: string;
   text: string;
   timestamp: string;
-  role: "Resident" | "Manager" | "Admin";
+  role: "resident" | "agency";
   projectName: string;
   projectId: string | null;
   flag: boolean;
@@ -118,11 +118,11 @@ export default function CommentMonitorPage() {
   };
 
   // Map role dari database ke display name
-  const mapRole = (role: string): "Resident" | "Manager" | "Admin" => {
+  const mapRole = (role: string): "resident" | "agency" => {
     const upperRole = role.toUpperCase();
-    if (upperRole.includes("ADMIN")) return "Admin";
-    if (upperRole.includes("MANAGER")) return "Manager";
-    return "Resident";
+    return upperRole.includes("WARGA") || upperRole.includes("RESIDENT")
+      ? "resident"
+      : "agency";
   };
 
   // Fetch comments & projects dari API
@@ -258,11 +258,9 @@ export default function CommentMonitorPage() {
     }
   };
 
-  const getRoleStyle = (role: "Resident" | "Manager" | "Admin") => {
+  const getRoleStyle = (role: "resident" | "agency") => {
     switch (role) {
-      case "Admin":
-        return "bg-yellow-100 text-yellow-700 border-2 border-yellow-300";
-      case "Manager":
+      case "agency":
         return "bg-blue-100 text-blue-700 border-2 border-blue-300";
       default:
         return "bg-green-100 text-green-700 border-2 border-green-300";

@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  Card,
-  Button,
-  Badge,
-  Input,
-  cn,
-} from "@/components/ui/WireframePrimitives";
-import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { Card, Button, Badge, Input, cn } from "@/components/ui/primitives";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import {
   Plus,
   Edit2,

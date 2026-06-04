@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card, Badge, cn } from "@/components/ui/WireframePrimitives";
-import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { Card, Badge, cn } from "@/components/ui/primitives";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { apiFetch } from "@/lib/api-client";
 import {
   ArrowLeft,

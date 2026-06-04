@@ -14,7 +14,7 @@ import {
   FileText,
   UserCheck,
 } from "lucide-react";
-import { cn } from "@/components/ui/WireframePrimitives";
+import { cn } from "@/components/ui/primitives";
 import { supabase } from "@/lib/supabase"; // pastikan sudah ada
 import { useState, useEffect } from "react";
 import React from "react";
@@ -202,14 +202,8 @@ export default function ProfilePage() {
     window.location.href = "/auth/login";
   }
 
-  let userRole = "Resident";
-  if (user?.role === "ADMIN") userRole = "Admin";
-  else if (
-    user?.role === "MANAGER" ||
-    user?.role === "AGENCY" ||
-    user?.agencyProfile
-  )
-    userRole = "Agency";
+  const userRole =
+    user?.role === "WARGA" && !user?.agencyProfile ? "resident" : "agency";
 
   useEffect(() => {
     async function fetchUser() {
@@ -370,7 +364,7 @@ export default function ProfilePage() {
   let mostInteractedProject = "";
   let maxInteractions = 0;
 
-  if (userRole === "Resident" && activities.length > 0) {
+  if (userRole === "resident" && activities.length > 0) {
     const projectCounts: Record<string, number> = {};
     activities.forEach((a) => {
       projectCounts[a.targetTitle] = (projectCounts[a.targetTitle] || 0) + 1;
@@ -419,7 +413,7 @@ export default function ProfilePage() {
             <User className="w-10 h-10 text-green-600 dark:text-green-400" />
           </div>
           <p className="font-bold text-gray-900 dark:text-white text-base leading-tight">
-            {userRole === "Agency" || userRole === "Admin"
+            {userRole === "agency"
               ? user?.agencyProfile?.agencyName || "Administrator"
               : user?.citizenProfile?.fullName || user?.name || ""}
           </p>
@@ -482,7 +476,7 @@ export default function ProfilePage() {
             </div>
             {/* Form personal information (Tidak diubah) */}
             <form onSubmit={updateProfile} className="space-y-5">
-              {userRole === "Agency" || userRole === "Admin" ? (
+              {userRole === "agency" ? (
                 <>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -671,7 +665,7 @@ export default function ProfilePage() {
 
             {/* Statistik Akumulasi - Berbeda berdasarkan Role */}
             <div className="mb-6 space-y-3">
-              {userRole === "Agency" || userRole === "Admin" ? (
+              {userRole === "agency" ? (
                 // Card Statistik Khusus Admin/Agency
                 <>
                   <div className="grid grid-cols-3 gap-3">
@@ -735,7 +729,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Insights Khusus Warga */}
-            {userRole === "Resident" &&
+            {userRole === "resident" &&
               activities.length > 0 &&
               mostInteractedProject && (
                 <div className="mb-8 space-y-3">

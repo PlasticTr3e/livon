@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Badge, Button, Card } from "@/components/ui/WireframePrimitives";
+import { Badge, Button, Card } from "@/components/ui/primitives";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api-client";
 import { HandCoins, Search } from "lucide-react";

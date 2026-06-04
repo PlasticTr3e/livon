@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Leaf } from "lucide-react";
 import { useState, useEffect } from "react";
-import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { useQueryState, parseAsString } from "nuqs";
 
 export function RegisterForm() {

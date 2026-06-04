@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Card, Badge, cn, Input } from "@/components/ui/WireframePrimitives";
+import { Card, Badge, cn, Input } from "@/components/ui/primitives";
 import {
   DollarSign,
   Clock,

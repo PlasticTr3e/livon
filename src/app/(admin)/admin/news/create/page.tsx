@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Card, Button } from "@/components/ui/WireframePrimitives";
+import { Card, Button } from "@/components/ui/primitives";
 import { ArrowLeft, Save, Eye } from "lucide-react";
 
 export default function CreateArticlePage() {

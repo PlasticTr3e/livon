@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, Button, Input, cn } from "@/components/ui/WireframePrimitives";
+import { Card, Button, Input, cn } from "@/components/ui/primitives";
 import {
   Search,
   Plus,

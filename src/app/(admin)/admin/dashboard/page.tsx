@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Card, Badge } from "@/components/ui/WireframePrimitives";
+import { Card, Badge } from "@/components/ui/primitives";
 import Link from "next/link";
 import {
   Users,

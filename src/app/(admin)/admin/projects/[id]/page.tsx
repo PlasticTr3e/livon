@@ -1,7 +1,7 @@
 "use client";
 import { Suspense, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card, Button, Input, cn } from "@/components/ui/WireframePrimitives";
+import { Card, Button, Input, cn } from "@/components/ui/primitives";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -19,12 +19,11 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { apiFetchJson } from "@/lib/api-client";
 
-// Dynamic import for Leaflet map selector
-const MapSelectorLeaflet = dynamic<{
+const ProjectLocationPicker = dynamic<{
   lat: number;
   lng: number;
   onChange: (lat: number, lng: number) => void;
-}>(() => import("@/components/MapSelectorLeaflet"), {
+}>(() => import("@/components/maps/ProjectLocationPicker"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl" />
@@ -35,6 +34,15 @@ interface ProjectCategory {
   id: number;
   name: string;
 }
+
+interface ExistingProjectLocation {
+  id: string;
+  title: string;
+  latitude: number;
+  longitude: number;
+}
+
+const roundCoordinate = (value: number) => Number(value.toFixed(4));
 
 function EditProjectContent() {
   const { id } = useParams();
@@ -55,6 +63,9 @@ function EditProjectContent() {
   });
 
   const [categories, setCategories] = useState<ProjectCategory[]>([]);
+  const [existingProjects, setExistingProjects] = useState<
+    ExistingProjectLocation[]
+  >([]);
   const [projectPhotos, setProjectPhotos] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -70,6 +81,46 @@ function EditProjectContent() {
           if (Array.isArray(catJson.data)) {
             setCategories(catJson.data);
           }
+        }
+
+        const projectsRes = await fetch("/api/projects");
+        if (projectsRes.ok) {
+          const projectsJson = await projectsRes.json();
+          const projectList = Array.isArray(projectsJson.data)
+            ? projectsJson.data
+            : [];
+          const projectDetails = await Promise.all(
+            projectList.map(async (project: { id: string }) => {
+              try {
+                const detailRes = await fetch(`/api/projects/${project.id}`);
+                if (!detailRes.ok) return null;
+                const detailJson = await detailRes.json();
+                const detail = detailJson.data;
+                if (
+                  !detail ||
+                  typeof detail.latitude !== "number" ||
+                  typeof detail.longitude !== "number"
+                ) {
+                  return null;
+                }
+
+                return {
+                  id: detail.id,
+                  title: detail.title || "Untitled project",
+                  latitude: detail.latitude,
+                  longitude: detail.longitude,
+                } satisfies ExistingProjectLocation;
+              } catch {
+                return null;
+              }
+            }),
+          );
+
+          setExistingProjects(
+            projectDetails.filter(
+              (project): project is ExistingProjectLocation => Boolean(project),
+            ),
+          );
         }
 
         if (!isCreate) {
@@ -110,6 +161,14 @@ function EditProjectContent() {
 
   const handleInput = (field: string, value: string | number | string[]) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+  const findProjectAtLocation = (lat: number, lng: number) =>
+    existingProjects.find(
+      (project) =>
+        project.id !== String(id) &&
+        roundCoordinate(project.latitude) === roundCoordinate(lat) &&
+        roundCoordinate(project.longitude) === roundCoordinate(lng),
+    );
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -172,6 +231,18 @@ function EditProjectContent() {
     }
     if (!formData.budgetTarget || parseFloat(formData.budgetTarget) <= 0) {
       setError("Budget is required and must be a positive number");
+      setIsSaving(false);
+      return;
+    }
+
+    const projectAtLocation = findProjectAtLocation(
+      formData.latitude,
+      formData.longitude,
+    );
+    if (projectAtLocation) {
+      setError(
+        `Titik ini sudah dipakai oleh proyek "${projectAtLocation.title}". Hapus proyek lama dulu sebelum memakai titik yang sama.`,
+      );
       setIsSaving(false);
       return;
     }
@@ -647,12 +718,20 @@ function EditProjectContent() {
                 Project Location
               </h3>
               <div className="w-full h-56 bg-slate-50 rounded-xl overflow-hidden mb-4 border border-gray-100 shadow-inner">
-                <MapSelectorLeaflet
+                <ProjectLocationPicker
                   lat={formData.latitude}
                   lng={formData.longitude}
                   onChange={(lat, lng) => {
                     handleInput("latitude", lat);
                     handleInput("longitude", lng);
+                    const projectAtLocation = findProjectAtLocation(lat, lng);
+                    if (projectAtLocation) {
+                      setError(
+                        `Titik ini sudah dipakai oleh proyek "${projectAtLocation.title}". Hapus proyek lama dulu sebelum memakai titik yang sama.`,
+                      );
+                    } else if (error?.startsWith("Titik ini sudah dipakai")) {
+                      setError(null);
+                    }
                   }}
                 />
               </div>
