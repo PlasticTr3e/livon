@@ -1,79 +1,196 @@
-import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { NextRequest } from "next/server";
 import { z } from "zod";
+import prisma from "@/lib/prisma";
+import { ok, created, badRequest, internalError } from "@/lib/api-response";
+import { getAuthUser } from "@/lib/auth";
+import { ProjectStatus, Role } from "@/generated/prisma/enums";
+import { broadcastNotification } from "@/lib/notifications";
 
-const projectSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters long."),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters long."),
-  budgetTarget: z.number().nonnegative("Budget target cannot be negative."),
-  latitude: z
-    .number()
-    .refine((val) => val !== undefined, "Latitude is required."),
-  longitude: z
-    .number()
-    .refine((val) => val !== undefined, "Longitude is required."),
-  agencyId: z.uuid("Invalid Agency ID format. Must be a UUID."),
+/**
+ * @swagger
+ * /api/projects:
+ *   get:
+ *     summary: Retrieve projects for the map
+ *     description: Returns a list of projects, optionally filtered by a bounding box.
+ *     tags: [Projects]
+ *     parameters:
+ *       - in: query
+ *         name: minLat
+ *         schema:
+ *           type: number
+ *         description: Minimum latitude
+ *       - in: query
+ *         name: maxLat
+ *         schema:
+ *           type: number
+ *         description: Maximum latitude
+ *       - in: query
+ *         name: minLng
+ *         schema:
+ *           type: number
+ *         description: Minimum longitude
+ *       - in: query
+ *         name: maxLng
+ *         schema:
+ *           type: number
+ *         description: Maximum longitude
+ *     responses:
+ *       200:
+ *         description: Projects retrieved successfully
+ *       500:
+ *         description: Internal server error
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const minLat = searchParams.get("minLat");
+    const maxLat = searchParams.get("maxLat");
+    const minLng = searchParams.get("minLng");
+    const maxLng = searchParams.get("maxLng");
+
+    let projects;
+
+    if (minLat && maxLat && minLng && maxLng) {
+      projects = await prisma.$queryRaw`
+        SELECT id, title, status, latitude, longitude
+        FROM projects
+        WHERE latitude BETWEEN ${parseFloat(minLat)} AND ${parseFloat(maxLat)}
+          AND longitude BETWEEN ${parseFloat(minLng)} AND ${parseFloat(maxLng)}
+          AND "deletedAt" IS NULL
+      `;
+    } else {
+      projects = await prisma.project.findMany({
+        where: { deletedAt: null },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          latitude: true,
+          longitude: true,
+        },
+      });
+    }
+
+    return ok("Projects retrieved successfully", { data: projects });
+  } catch (error) {
+    console.error("GET Projects Error:", error);
+    return internalError("An error occurred fetching projects");
+  }
+}
+
+const createProjectSchema = z.object({
+  title: z.string().min(5),
+  description: z.string().min(10),
+  budgetTarget: z.number().positive(),
+  imageUrls: z.array(z.string()).optional(),
+  documentUrls: z.array(z.string()).optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  estimatedDurationDays: z.number().int().positive().optional(),
+  categoryId: z.number().int().optional(),
 });
 
-export async function POST(request: NextRequest) {
+/**
+ * @swagger
+ * /api/projects:
+ *   post:
+ *     summary: Create a new project (Agency only)
+ *     description: Creates a draft project with status USULAN. Requires Agency role token in Authorization header.
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - description
+ *               - budgetTarget
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               budgetTarget:
+ *                 type: number
+ *               imageUrls:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               documentUrls:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               latitude:
+ *                 type: number
+ *               longitude:
+ *                 type: number
+ *               estimatedDurationDays:
+ *                 type: number
+ *               categoryId:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Project created successfully
+ *       400:
+ *         description: Validation failed or Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
+    const authUser = getAuthUser(req);
+    if (!authUser || authUser.role !== Role.AGENCY) {
+      return badRequest("Forbidden: Only Agencies can create projects");
+    }
 
-    const validation = projectSchema.safeParse(body);
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed.",
-          error: z.treeifyError(validation.error),
-        },
-        { status: 400 },
+    const body = await req.json();
+    const result = createProjectSchema.safeParse(body);
+    if (!result.success)
+      return badRequest("Validation failed", z.treeifyError(result.error));
+
+    const data = result.data;
+
+    const project = await prisma.project.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        status: ProjectStatus.USULAN,
+        budgetTarget: data.budgetTarget,
+        currentFunding: 0,
+        imageUrls: data.imageUrls || [],
+        documentUrl: data.documentUrls || [],
+        latitude: data.latitude,
+        longitude: data.longitude,
+        estimatedDurationDays: data.estimatedDurationDays,
+        categoryId: data.categoryId,
+        agencyId: authUser.userId,
+      },
+    });
+
+    if (data.latitude && data.longitude) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE projects SET "locationGeom" = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
+        data.longitude,
+        data.latitude,
+        project.id,
       );
     }
 
-    const { title, description, budgetTarget, latitude, longitude, agencyId } =
-      validation.data;
-    const result = await prisma.$transaction(async (tx) => {
-      const newProject = await tx.project.create({
-        data: {
-          title,
-          description,
-          budgetTarget,
-          latitude,
-          longitude,
-          agencyId,
-        },
-      });
-
-      await tx.projectUpdate.create({
-        data: {
-          title: "Perencanaan Dimulai",
-          description: `Rencana untuk proyek "${title}" telah resmi masuk ke dalam sistem NangorLens.`,
-          projectId: newProject.id,
-        },
-      });
-
-      return newProject;
+    await broadcastNotification({
+      recipientRole: Role.WARGA,
+      title: "Proyek Baru",
+      type: "NEW_PROJECT",
+      message: `Ada proyek baru berjudul "${project.title}".`,
+      projectId: project.id,
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Successfully created project and initial update log.",
-        data: result,
-      },
-      { status: 201 },
-    );
-  } catch (error: unknown) {
-    console.error("Project API Error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "An internal server error occurred while processing the data.",
-      },
-      { status: 500 },
-    );
+    return created("Project created successfully", { data: project });
+  } catch (error) {
+    console.error("POST Project Error:", error);
+    return internalError("An error occurred creating the project");
   }
 }
