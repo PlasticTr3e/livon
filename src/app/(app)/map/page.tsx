@@ -592,12 +592,7 @@ export default function MapPage() {
         </div>
 
         {/* Legend / Map Controls */}
-        <div
-          className={cn(
-            "absolute top-4 right-4 z-20 flex-col gap-2 md:flex",
-            sidebarOpen ? "hidden" : "flex",
-          )}
-        >
+        <div className="absolute left-4 top-4 z-[900] flex flex-col gap-2">
           <div className="bg-white/90 backdrop-blur-md dark:bg-[#111827]/90 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-3">
             <div className="flex items-center gap-2 mb-2 px-1">
               <Layers className="w-4 h-4 text-gray-400" />

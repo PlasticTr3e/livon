@@ -24,7 +24,7 @@ export function AppNotificationMenu({
   onNavigate,
 }: AppNotificationMenuProps) {
   return (
-    <div className="relative" data-notification-dropdown>
+    <div className="relative z-[2100]" data-notification-dropdown>
       <button
         type="button"
         onClick={onNavigate}
@@ -41,7 +41,7 @@ export function AppNotificationMenu({
 
       {isOpen && (
         <div
-          className="absolute right-0 z-50 mt-0 w-80 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-[#1F2937]"
+          className="absolute right-0 z-[2200] mt-0 w-80 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-[#1F2937]"
           onMouseLeave={() => onOpenChange(false)}
         >
           <div className="flex items-center justify-between rounded-t-xl border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50 p-3 dark:border-gray-800 dark:from-slate-800 dark:to-slate-800">
