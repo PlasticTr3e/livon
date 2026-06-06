@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         code,
         client_id: process.env.GOOGLE_CLIENT_ID!,
         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirect_uri: "http://localhost:3000/api/auth/google/callback",
+        redirect_uri: "https://livon-one.vercel.app/api/auth/google/callback",
         grant_type: "authorization_code",
       }),
     });
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
 
     const isWargaVerified = user.citizenProfile?.isVerified === true;
     const isAgencyVerified = user.agencyProfile?.isVerified === true;
-    const isAdmin = user.role !== "WARGA" && user.role !== "AGENCY"; 
+    const isAdmin = user.role !== "WARGA" && user.role !== "AGENCY";
 
     if (!isWargaVerified && !isAgencyVerified && !isAdmin) {
       return NextResponse.redirect(
