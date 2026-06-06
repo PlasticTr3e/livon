@@ -135,7 +135,7 @@ export default function ProjectMap({
       const lat = project.lat ?? fallbackCoordinates[0];
       const lng = project.lng ?? fallbackCoordinates[1];
       const markerColor = getProjectMarkerColor(project.status);
-      let popupOpenTimeout: ReturnType<typeof window.setTimeout> | null = null;
+      let popupOpenTimeout: number | null = null;
       const marker = L.marker([lat, lng], {
         icon: createProjectMarkerIcon(markerColor),
       })
