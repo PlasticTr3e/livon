@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { cn, Badge, Button, Card } from "@/components/ui/primitives";
@@ -297,13 +297,19 @@ export default function MapPage() {
     fetchProjects();
   }, [userRole]);
 
-  const filteredProjects = projects.filter((p) => {
-    const matchSearch =
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchStatus = filterStatus === "All" || p.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  const filteredProjects = useMemo(() => {
+    const normalizedSearchQuery = searchQuery.toLowerCase();
+
+    return projects.filter((project) => {
+      const matchesSearch =
+        project.name.toLowerCase().includes(normalizedSearchQuery) ||
+        project.category.toLowerCase().includes(normalizedSearchQuery);
+      const matchesStatus =
+        filterStatus === "All" || project.status === filterStatus;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [filterStatus, projects, searchQuery]);
 
   const getOppositeVote = (voteType: VoteChoice): VoteChoice =>
     voteType === "agree" ? "disagree" : "agree";
@@ -623,7 +629,7 @@ export default function MapPage() {
 
         {/* ── Project Detail Overlay Panel ── */}
         {selectedProject && (
-          <div className="absolute top-4 left-4 md:left-auto md:right-4 z-30 w-full max-w-[280px] bg-white/95 backdrop-blur-xl dark:bg-[#111827]/95 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col max-h-[calc(100vh-10rem)]">
+          <div className="absolute left-4 right-4 top-4 z-[1000] flex max-h-[calc(100dvh-10rem)] w-auto max-w-[280px] flex-col rounded-2xl border border-gray-100 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-gray-800 dark:bg-[#111827]/95 md:left-auto md:right-4 md:w-full">
             {/* Project Photo / Image Area */}
             <div className="relative w-full h-28 bg-gray-200 dark:bg-[#1F2937] rounded-t-2xl overflow-hidden shrink-0">
               <ImageWithFallback

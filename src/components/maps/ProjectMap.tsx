@@ -18,6 +18,8 @@ type ProjectMapProps = {
   onProjectSelect: (project: ProjectMapMarker) => void;
 };
 
+const PROJECT_POPUP_HOVER_DELAY_MS = 650;
+
 function createProjectMarkerIcon(markerColor: string) {
   return L.divIcon({
     className: "custom-marker",
@@ -45,11 +47,24 @@ function createProjectMarkerIcon(markerColor: string) {
   });
 }
 
+function escapePopupText(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function createProjectPopup(project: ProjectMapMarker, markerColor: string) {
+  const projectName = escapePopupText(project.name);
+  const projectAddress = escapePopupText(project.address);
+  const projectStatus = escapePopupText(project.status);
+
   return `
     <div style="font-family: sans-serif;">
-      <strong style="font-size: 14px; color: #1f2937;">${project.name}</strong><br/>
-      <span style="font-size: 12px; color: #6b7280;">${project.address}</span><br/>
+      <strong style="font-size: 14px; color: #1f2937;">${projectName}</strong><br/>
+      <span style="font-size: 12px; color: #6b7280;">${projectAddress}</span><br/>
       <span style="
         display: inline-block;
         margin-top: 4px;
@@ -59,7 +74,7 @@ function createProjectPopup(project: ProjectMapMarker, markerColor: string) {
         border-radius: 12px;
         font-size: 11px;
         font-weight: 600;
-      ">${project.status}</span>
+      ">${projectStatus}</span>
     </div>
   `;
 }
@@ -120,13 +135,37 @@ export default function ProjectMap({
       const lat = project.lat ?? fallbackCoordinates[0];
       const lng = project.lng ?? fallbackCoordinates[1];
       const markerColor = getProjectMarkerColor(project.status);
+      let popupOpenTimeout: ReturnType<typeof window.setTimeout> | null = null;
       const marker = L.marker([lat, lng], {
         icon: createProjectMarkerIcon(markerColor),
       })
         .addTo(map)
-        .bindPopup(createProjectPopup(project, markerColor));
+        .bindPopup(createProjectPopup(project, markerColor), {
+          autoPan: false,
+        });
+
+      marker.off("click");
+
+      marker.on("mouseover", () => {
+        popupOpenTimeout = window.setTimeout(() => {
+          marker.openPopup();
+        }, PROJECT_POPUP_HOVER_DELAY_MS);
+      });
+
+      marker.on("mouseout", () => {
+        if (popupOpenTimeout) {
+          window.clearTimeout(popupOpenTimeout);
+          popupOpenTimeout = null;
+        }
+        marker.closePopup();
+      });
 
       marker.on("click", () => {
+        if (popupOpenTimeout) {
+          window.clearTimeout(popupOpenTimeout);
+          popupOpenTimeout = null;
+        }
+        marker.closePopup();
         markersByProjectId.forEach((item) => setMarkerScale(item, 1, 1000));
         setMarkerScale(marker, 1.3, 2000);
         onProjectSelectRef.current(project);
