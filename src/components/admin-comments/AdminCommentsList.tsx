@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/primitives";
 import { AdminCommentCard } from "@/components/admin-comments/AdminCommentCard";
 import { AdminCommentsFilters } from "@/components/admin-comments/AdminCommentsFilters";
+import { LoadingState } from "@/components/shared/LoadingState";
 import type {
   AdminCommentItem,
   AdminCommentSentimentFilter,
@@ -56,9 +57,11 @@ export function AdminCommentsList({
 
 function AdminCommentsLoadingState() {
   return (
-    <div className="py-10 text-center">
-      <p className="font-medium text-gray-400">Memuat komentar...</p>
-    </div>
+    <LoadingState
+      label="Memuat komentar..."
+      variant="panel"
+      className="bg-transparent"
+    />
   );
 }
 

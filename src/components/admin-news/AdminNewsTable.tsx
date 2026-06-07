@@ -1,6 +1,7 @@
 import { Edit2, Image as ImageIcon, Trash2 } from "lucide-react";
 import { Badge, Card, cn } from "@/components/ui/primitives";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
+import { LoadingState } from "@/components/shared/LoadingState";
 import type { AdminNewsWithExtras } from "@/lib/admin-news/admin-news-types";
 
 type AdminNewsTableProps = {
@@ -23,9 +24,11 @@ export function AdminNewsTable({
   return (
     <Card className="border-green-100 p-5 shadow-sm dark:border-gray-800">
       {isLoading ? (
-        <div className="py-10 text-center text-gray-400">
-          Memuat data berita...
-        </div>
+        <LoadingState
+          label="Memuat data berita..."
+          variant="panel"
+          className="bg-transparent"
+        />
       ) : error ? (
         <div className="py-10 text-center text-red-500">{error}</div>
       ) : (

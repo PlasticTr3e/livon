@@ -1,4 +1,5 @@
 import { Bell } from "lucide-react";
+import { LoadingState } from "@/components/shared/LoadingState";
 import { cn } from "@/components/ui/primitives";
 import {
   formatAdminNotificationTime,
@@ -49,7 +50,7 @@ export function AdminNotificationMenu({
           </div>
           <div className="max-h-64 overflow-y-auto">
             {isLoading ? (
-              <AdminNotificationEmptyState label="Memuat notifikasi..." />
+              <AdminNotificationLoadingState />
             ) : notifications.length === 0 ? (
               <AdminNotificationEmptyState label="Tidak ada notifikasi" />
             ) : (
@@ -63,6 +64,14 @@ export function AdminNotificationMenu({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function AdminNotificationLoadingState() {
+  return (
+    <div className="p-3 text-center text-sm text-gray-500 dark:text-white">
+      <LoadingState label="Memuat notifikasi..." variant="inline" />
     </div>
   );
 }

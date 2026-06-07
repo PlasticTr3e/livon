@@ -1,4 +1,5 @@
 import { Bell } from "lucide-react";
+import { LoadingState } from "@/components/shared/LoadingState";
 import type {
   NotificationFilter,
   NotificationItem,
@@ -22,14 +23,11 @@ export function NotificationsList({
 }: NotificationsListProps) {
   if (isLoading) {
     return (
-      <NotificationStateCard>
-        <div className="flex items-center justify-center gap-2">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-green-600 dark:border-slate-600" />
-          <p className="font-medium text-gray-500 dark:text-white">
-            Loading notifications...
-          </p>
-        </div>
-      </NotificationStateCard>
+      <LoadingState
+        label="Loading notifications..."
+        variant="panel"
+        className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-[#111827]"
+      />
     );
   }
 

@@ -2,6 +2,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, Button, Input, cn } from "@/components/ui/primitives";
+import { LoadingState } from "@/components/shared/LoadingState";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -31,7 +32,11 @@ const ProjectLocationPicker = dynamic<{
 }>(() => import("@/components/maps/ProjectLocationPicker"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-slate-50 animate-pulse rounded-xl" />
+    <LoadingState
+      label="Loading map..."
+      variant="panel"
+      className="h-full rounded-xl"
+    />
   ),
 });
 
@@ -289,9 +294,10 @@ function EditProjectContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <LoadingState
+        label="Loading project editor..."
+        className="min-h-[400px]"
+      />
     );
   }
 
@@ -759,9 +765,10 @@ export function AdminProjectEditorPageContent() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center h-full min-h-[600px]">
-          <div className="w-8 h-8 border-3 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <LoadingState
+          label="Loading project editor..."
+          className="h-full min-h-[600px]"
+        />
       }
     >
       <EditProjectContent />

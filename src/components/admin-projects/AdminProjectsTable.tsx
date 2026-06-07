@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Edit2, Trash2 } from "lucide-react";
 import { Card, cn } from "@/components/ui/primitives";
+import { LoadingState } from "@/components/shared/LoadingState";
 import { ADMIN_PROJECT_STATUS_CONFIG } from "@/lib/admin-projects/admin-projects-format";
 import type { AdminProjectSummary } from "@/lib/admin-projects/admin-projects-types";
 
@@ -34,7 +35,11 @@ export function AdminProjectsTable({
             {isLoading ? (
               <tr>
                 <td colSpan={5} className="py-24 text-center">
-                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
+                  <LoadingState
+                    label="Loading projects..."
+                    variant="panel"
+                    className="mx-auto min-h-32 bg-transparent"
+                  />
                 </td>
               </tr>
             ) : projects.length === 0 ? (

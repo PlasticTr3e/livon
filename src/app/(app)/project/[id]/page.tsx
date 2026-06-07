@@ -1,13 +1,12 @@
 import { Suspense } from "react";
 import { ProjectDetailPageContent } from "@/components/project-detail/ProjectDetailPageContent";
+import { LoadingState } from "@/components/shared/LoadingState";
 
 export default function ProjectDetailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen w-full items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
-        </div>
+        <LoadingState label="Loading project..." className="h-screen" />
       }
     >
       <ProjectDetailPageContent />

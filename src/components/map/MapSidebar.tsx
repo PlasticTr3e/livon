@@ -1,4 +1,5 @@
 import { Search, X } from "lucide-react";
+import { LoadingState } from "@/components/shared/LoadingState";
 import { cn, Button } from "@/components/ui/primitives";
 import { MAP_STATUS_FILTERS } from "@/lib/map/map-format";
 import type { MapProject, MapStatusFilter } from "@/lib/map/map-types";
@@ -76,9 +77,11 @@ export function MapSidebar({
 
       <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
         {isLoading ? (
-          <p className="mt-5 text-center text-sm text-gray-500">
-            Memuat proyek...
-          </p>
+          <LoadingState
+            label="Memuat proyek..."
+            variant="panel"
+            className="min-h-32 bg-transparent"
+          />
         ) : projects.length === 0 ? (
           <p className="mt-5 text-center text-sm text-gray-500">
             Tidak ada proyek yang ditemukan.

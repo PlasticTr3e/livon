@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Script from "next/script";
 import { PaymentPageContent } from "@/components/payment/PaymentPageContent";
+import { LoadingState } from "@/components/shared/LoadingState";
 
 export default function PaymentPage() {
   return (
@@ -12,9 +13,7 @@ export default function PaymentPage() {
       />
       <Suspense
         fallback={
-          <div className="flex h-full items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
-          </div>
+          <LoadingState label="Loading payment..." className="h-full" />
         }
       >
         <PaymentPageContent />

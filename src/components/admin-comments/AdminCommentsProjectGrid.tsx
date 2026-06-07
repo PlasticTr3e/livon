@@ -1,4 +1,5 @@
 import { Badge, Card } from "@/components/ui/primitives";
+import { LoadingState } from "@/components/shared/LoadingState";
 import {
   getAdminCommentNeutralCount,
   getAdminCommentSentimentWidth,
@@ -22,14 +23,11 @@ export function AdminCommentsProjectGrid({
 }: AdminCommentsProjectGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div
-            key={index}
-            className="h-32 animate-pulse rounded-2xl border border-gray-100 bg-white"
-          />
-        ))}
-      </div>
+      <LoadingState
+        label="Memuat proyek..."
+        variant="panel"
+        className="bg-transparent"
+      />
     );
   }
 

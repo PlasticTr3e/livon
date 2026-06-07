@@ -5,6 +5,7 @@ import { Button, Badge, Card, cn } from "@/components/ui/primitives";
 import { useUser } from "@/context/UserContext";
 import { isApiSuccess } from "@/lib/api-types";
 import { UpdateProjectStatusDialog } from "@/components/projects/UpdateProjectStatusDialog";
+import { LoadingState } from "@/components/shared/LoadingState";
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 
@@ -13,9 +14,11 @@ const ProjectMiniMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full bg-slate-100 animate-pulse rounded-2xl flex items-center justify-center">
-        <MapPin className="w-6 h-6 text-slate-300" />
-      </div>
+      <LoadingState
+        label="Loading map..."
+        variant="panel"
+        className="h-full rounded-2xl"
+      />
     ),
   },
 );
