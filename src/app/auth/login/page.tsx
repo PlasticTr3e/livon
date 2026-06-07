@@ -1,16 +1,15 @@
 import { Suspense } from "react";
-import { LoginForm } from "./login-form";
+import { LoginPageContent } from "@/components/login/LoginPageContent";
+import { LoadingState } from "@/components/shared/LoadingState";
 
 export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          Loading...
-        </div>
+        <LoadingState label="Loading login..." className="min-h-screen" />
       }
     >
-      <LoginForm />
+      <LoginPageContent />
     </Suspense>
   );
 }

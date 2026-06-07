@@ -1,43 +1,119 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 
-type UserRole = "Resident" | "Manager" | "Admin";
+export type UserRole = "resident" | "agency";
+
+type ApiUserProfile = {
+  email?: string | null;
+  name?: string | null;
+  role?: string | null;
+  citizenProfile?: {
+    fullName?: string | null;
+  } | null;
+  agencyProfile?: {
+    agencyName?: string | null;
+  } | null;
+};
 
 interface UserContextType {
   userRole: UserRole;
   userName: string;
   setUserRole: (role: UserRole) => void;
   isAuthenticated: boolean;
-  login: (role: UserRole, name?: string) => void;
+  isUserLoading: boolean;
+  login: (role: UserRole | string, name?: string) => void;
   logout: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export function UserProvider({ children }: { children: ReactNode }) {
-  const [userRole, setUserRole] = useState<UserRole>("Resident");
-  const [userName, setUserName] = useState<string>("Resident User");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export function normalizeUserRole(role?: string | null): UserRole {
+  const normalized = role?.toUpperCase();
+  return normalized === "WARGA" || normalized === "RESIDENT"
+    ? "resident"
+    : "agency";
+}
 
-  const login = (role: UserRole, name?: string) => {
-    setUserRole(role);
+function getDisplayName(user: ApiUserProfile) {
+  return (
+    user.name ||
+    user.citizenProfile?.fullName ||
+    user.agencyProfile?.agencyName ||
+    user.email ||
+    "User"
+  );
+}
+
+export function UserProvider({ children }: { children: ReactNode }) {
+  const [userRole, setUserRole] = useState<UserRole>("resident");
+  const [userName, setUserName] = useState<string>("User");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+
+  const login = useCallback((role: UserRole | string, name?: string) => {
+    const nextRole = normalizeUserRole(role);
+    setUserRole(nextRole);
     setIsAuthenticated(true);
     if (name) {
       setUserName(name);
     } else {
       const defaultNames: Record<UserRole, string> = {
-        Resident: "Warga Perumahan",
-        Manager: "Manager RT",
-        Admin: "Administrator",
+        resident: "Resident User",
+        agency: "Agency User",
       };
-      setUserName(defaultNames[role]);
+      setUserName(defaultNames[nextRole]);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const hydrateUser = async () => {
+      const token = localStorage.getItem("livon-token");
+      if (!token) {
+        setIsAuthenticated(false);
+        setUserRole("resident");
+        setUserName("User");
+        setIsUserLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/users/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch profile");
+
+        const json = await res.json();
+        const user = (json.data?.data || json.data) as ApiUserProfile | null;
+
+        if (!user) throw new Error("Profile not found");
+
+        login(normalizeUserRole(user.role), getDisplayName(user));
+      } catch {
+        localStorage.removeItem("livon-token");
+        setIsAuthenticated(false);
+        setUserRole("resident");
+        setUserName("User");
+      } finally {
+        setIsUserLoading(false);
+      }
+    };
+
+    hydrateUser();
+  }, [login]);
 
   const logout = () => {
+    localStorage.removeItem("livon-token");
     setIsAuthenticated(false);
-    setUserRole("Resident");
-    setUserName("Resident User");
+    setUserRole("resident");
+    setUserName("User");
   };
 
   return (
@@ -47,6 +123,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         userName,
         setUserRole,
         isAuthenticated,
+        isUserLoading,
         login,
         logout,
       }}

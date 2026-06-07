@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+.agents/
+skills-lock.json
 
 # debug
 npm-debug.log*
@@ -49,6 +51,3 @@ next-env.d.ts
 /ai-service/data/*.csv
 /ai-service/.env
 /ai-service/requirements.txt
-
-__pycache__/
-*.py[cod]

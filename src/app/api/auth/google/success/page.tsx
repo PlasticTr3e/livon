@@ -3,6 +3,7 @@
 import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
+import { LoadingState } from "@/components/shared/LoadingState";
 
 function GoogleSuccessContent() {
   const router = useRouter();
@@ -37,19 +38,16 @@ function GoogleSuccessContent() {
   }, [searchParams, router, login]);
 
   return (
-    <div className="text-center flex flex-col items-center gap-4">
-      <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-slate-600 font-medium">Masuk dengan Google...</p>
-    </div>
+    <LoadingState label="Masuk dengan Google..." className="min-h-screen" />
   );
 }
 
 export default function GoogleSuccessPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <Suspense fallback={<div>Memuat...</div>}>
-        <GoogleSuccessContent />
-      </Suspense>
-    </div>
+    <Suspense
+      fallback={<LoadingState label="Memuat..." className="min-h-screen" />}
+    >
+      <GoogleSuccessContent />
+    </Suspense>
   );
 }
