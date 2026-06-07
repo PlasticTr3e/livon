@@ -39,7 +39,7 @@ export function AdminCrowdfundingDashboardView({
       <AdminCrowdfundingRecentTransactions transactions={transactions} />
 
       <div className="flex flex-col items-start justify-between gap-4 pt-4 md:flex-row md:items-center">
-        <h2 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
+        <h2 className="text-lg font-medium tracking-tight text-gray-900 dark:text-white">
           Donation Dashboard
         </h2>
         <AdminCrowdfundingProjectFilters

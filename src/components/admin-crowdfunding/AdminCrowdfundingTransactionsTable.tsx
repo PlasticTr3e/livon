@@ -25,19 +25,19 @@ export function AdminCrowdfundingTransactionsTable({
     : transactions;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-left text-sm">
+    <div className="-mx-5 overflow-x-auto">
+      <table className="w-full min-w-[720px] border-collapse text-left">
         <thead>
-          <tr className="border-b border-gray-200 text-xs font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:text-white">
-            {showTransactionId && <th className="px-4 py-3">TRX ID</th>}
-            <th className="px-4 py-3">Donor</th>
-            {showProject && <th className="px-4 py-3">Project</th>}
-            <th className="px-4 py-3">Amount</th>
-            <th className="px-4 py-3">Time</th>
-            <th className="px-4 py-3">Status</th>
+          <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
+            {showTransactionId && <th className="px-8 py-4">TRX ID</th>}
+            <th className="px-8 py-4">Donor</th>
+            {showProject && <th className="px-4 py-4">Project</th>}
+            <th className="px-4 py-4">Amount</th>
+            <th className="px-4 py-4">Time</th>
+            <th className="px-8 py-4 text-center">Status</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+        <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
           {visibleTransactions.length > 0 ? (
             visibleTransactions.map((transaction) => (
               <TransactionRow
@@ -51,7 +51,7 @@ export function AdminCrowdfundingTransactionsTable({
             <tr>
               <td
                 colSpan={getColumnCount(showProject, showTransactionId)}
-                className="py-6 text-center text-sm text-gray-500 dark:text-white"
+                className="py-24 text-center text-[10px] font-medium uppercase tracking-widest text-gray-400 dark:text-white"
               >
                 {emptyMessage}
               </td>
@@ -69,9 +69,9 @@ export function AdminCrowdfundingRecentTransactions({
   transactions: AdminCrowdfundingTransaction[];
 }) {
   return (
-    <Card className="border-gray-200 p-6 shadow-sm dark:border-gray-800">
+    <Card className="overflow-hidden rounded-2xl border-green-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#1F2937]">
       <div className="mb-5 flex items-center justify-between">
-        <h3 className="font-bold text-gray-900 dark:text-white">
+        <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
           Recent Transactions
         </h3>
       </div>
@@ -96,35 +96,46 @@ function TransactionRow({
   showTransactionId: boolean;
 }) {
   return (
-    <tr className="transition-colors hover:bg-green-50">
+    <tr className="group transition-colors hover:bg-green-50/50 dark:hover:bg-green-900/20">
       {showTransactionId && (
-        <td className="px-4 py-3.5 font-mono text-xs text-gray-500 dark:text-white">
+        <td className="px-8 py-6 font-mono text-[11px] font-semibold text-gray-500 dark:text-white">
           {transaction.id}
         </td>
       )}
-      <td className="px-4 py-3 font-semibold text-gray-800 dark:text-white">
-        {transaction.user}
+      <td className="px-8 py-6">
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold text-gray-900 transition-colors group-hover:text-green-700 dark:text-white dark:group-hover:text-green-400">
+            {transaction.user}
+          </span>
+          {!showTransactionId && (
+            <span className="mt-1 font-mono text-[11px] font-medium text-gray-400 dark:text-white">
+              {transaction.id}
+            </span>
+          )}
+        </div>
       </td>
       {showProject && (
-        <td className="px-4 py-3 text-xs text-gray-600 dark:text-white">
+        <td className="px-4 py-6 text-xs font-semibold text-gray-600 dark:text-white">
           {transaction.project}
         </td>
       )}
-      <td className="px-4 py-3 font-black text-green-700">
+      <td className="px-4 py-6 text-xs font-black text-green-700 dark:text-green-400">
         Rp {formatAdminCrowdfundingAmount(transaction.amount)}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-500 dark:text-white">
+      <td className="px-4 py-6 text-xs font-semibold text-gray-500 dark:text-white">
         {transaction.date}
       </td>
-      <td className="px-4 py-3">
-        <Badge
-          className={cn(
-            "text-[10px]",
-            getAdminDonationStatusClass(transaction.status),
-          )}
-        >
-          {transaction.status}
-        </Badge>
+      <td className="px-8 py-6">
+        <div className="flex justify-center">
+          <Badge
+            className={cn(
+              "rounded-full px-4 py-1 text-[10px] font-semibold",
+              getAdminDonationStatusClass(transaction.status),
+            )}
+          >
+            {transaction.status}
+          </Badge>
+        </div>
       </td>
     </tr>
   );
