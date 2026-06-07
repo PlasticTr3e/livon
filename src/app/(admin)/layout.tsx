@@ -348,7 +348,7 @@ export default function AdminLayout({
         {/* Admin Sidebar */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-[2147483645] bg-black/50 md:hidden"
+            className="absolute inset-0 z-[2147483645] bg-black/50 md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
