@@ -13,6 +13,10 @@ export function getAdminUserRole(
     : "resident";
 }
 
+export function getAdminUserRoleLabel(role: AdminUserRole) {
+  return role === "agency" ? "Agency" : "Resident";
+}
+
 export function getAdminUserStatus(
   user: Pick<AdminUser, "deletedAt" | "agencyProfile" | "citizenProfile">,
 ): AdminUserStatus {

@@ -3,6 +3,7 @@ import {
   getAdminUserAddress,
   getAdminUserDisplayName,
   getAdminUserPhone,
+  getAdminUserRoleLabel,
   getAdminUserRoleStyle,
   getAdminUserStatus,
   getAdminUserStatusStyle,
@@ -39,7 +40,7 @@ export function AdminUserDetailsDialog({
         <span
           className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${getAdminUserRoleStyle(role)}`}
         >
-          {role}
+          {getAdminUserRoleLabel(role)}
         </span>
       </div>
 

@@ -12,6 +12,7 @@ import {
 import {
   getAdminUserDisplayName,
   getAdminUserRole,
+  getAdminUserRoleLabel,
   getAdminUserRoleStyle,
   getAdminUserStatus,
   getAdminUserStatusStyle,
@@ -109,7 +110,7 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
           <span
             className={`inline-flex items-center justify-center rounded-full px-4 py-1 text-[10px] font-semibold ${getAdminUserRoleStyle(role)}`}
           >
-            {role}
+            {getAdminUserRoleLabel(role)}
           </span>
         </div>
       </td>

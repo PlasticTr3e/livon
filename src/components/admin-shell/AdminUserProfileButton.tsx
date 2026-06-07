@@ -1,4 +1,5 @@
 import { cn } from "@/components/ui/primitives";
+import { getUserRoleLabel } from "@/lib/app-shell/user";
 
 type AdminUserProfileButtonProps = {
   isActive: boolean;
@@ -31,7 +32,9 @@ export function AdminUserProfileButton({
         <p className="font-semibold leading-tight text-gray-800 dark:text-white">
           {userName}
         </p>
-        <p className="text-xs text-green-600 dark:text-green-400">{role}</p>
+        <p className="text-xs text-green-600 dark:text-green-400">
+          {getUserRoleLabel(role)}
+        </p>
       </div>
     </button>
   );

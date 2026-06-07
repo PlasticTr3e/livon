@@ -33,8 +33,8 @@ export function AdminUsersFilters({ filters }: AdminUsersFiltersProps) {
             className="cursor-pointer rounded-md border border-green-300 bg-white px-3 py-1.5 text-sm text-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-[#1F2937]"
           >
             <option value="ALL">All Role</option>
-            <option value="resident">resident</option>
-            <option value="agency">agency</option>
+            <option value="resident">Resident</option>
+            <option value="agency">Agency</option>
           </select>
           <select
             name="status"

@@ -1,6 +1,9 @@
 import { Activity, ChevronRight, LogOut, User } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
-import { getProfileDisplayName } from "@/lib/profile/profile-user";
+import {
+  getProfileDisplayName,
+  getProfileRoleLabel,
+} from "@/lib/profile/profile-user";
 import type {
   ProfileRole,
   ProfileTab,
@@ -55,7 +58,7 @@ export function ProfileSidebar({
           {user.email}
         </p>
         <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:border-green-700 dark:bg-green-900/30 dark:text-green-400">
-          {userRole}
+          {getProfileRoleLabel(userRole)}
         </span>
       </div>
 

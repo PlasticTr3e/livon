@@ -4,6 +4,10 @@ export function getProfileRole(user: UserWithProfile): ProfileRole {
   return user.role === "WARGA" && !user.agencyProfile ? "resident" : "agency";
 }
 
+export function getProfileRoleLabel(profileRole: ProfileRole) {
+  return profileRole === "agency" ? "Agency" : "Resident";
+}
+
 export function getProfileDisplayName(
   user: UserWithProfile,
   profileRole: ProfileRole,

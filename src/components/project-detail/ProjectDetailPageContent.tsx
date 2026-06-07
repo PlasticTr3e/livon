@@ -1403,8 +1403,8 @@ export function ProjectDetailPageContent() {
                               )}
                             >
                               {comment.role?.toUpperCase() === "WARGA"
-                                ? "resident"
-                                : "agency"}
+                                ? "Resident"
+                                : "Agency"}
                             </span>
                             <span className="text-xs text-gray-400 dark:text-white">
                               {comment.timestamp}
