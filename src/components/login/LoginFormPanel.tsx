@@ -2,7 +2,6 @@ import Link from "next/link";
 import { GoogleLoginButton } from "./GoogleLoginButton";
 import { LoginBrandMark } from "./LoginBrandMark";
 import { LoginDivider } from "./LoginDivider";
-import { LoginSuccessAlert } from "./LoginSuccessAlert";
 import { LoginThemeToggle } from "./LoginThemeToggle";
 import { PasswordInput } from "./PasswordInput";
 
@@ -13,8 +12,6 @@ export type LoginCredentials = {
 
 type LoginFormPanelProps = {
   credentials: LoginCredentials;
-  error: string;
-  successMessage: string;
   isLoading: boolean;
   isPasswordVisible: boolean;
   theme: string;
@@ -26,8 +23,6 @@ type LoginFormPanelProps = {
 
 export function LoginFormPanel({
   credentials,
-  error,
-  successMessage,
   isLoading,
   isPasswordVisible,
   theme,
@@ -51,8 +46,6 @@ export function LoginFormPanel({
           <br />
           even better!
         </p>
-
-        <LoginSuccessAlert message={successMessage} />
 
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <input
@@ -95,10 +88,6 @@ export function LoginFormPanel({
               "Log In"
             )}
           </button>
-
-          {error && (
-            <p className="mt-2 text-center text-sm text-red-500">{error}</p>
-          )}
 
           <LoginDivider label="or continue with" />
           <GoogleLoginButton />

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
+import { useToast } from "@/components/shared/AppToaster";
 import {
   createRegisterFormData,
   createRegisterPayload,
@@ -20,6 +21,7 @@ import { RegisterHeroPanel } from "./RegisterHeroPanel";
 
 export function RegisterPageContent() {
   const router = useRouter();
+  const toast = useToast();
   const [emailQuery] = useQueryState("email", parseAsString);
   const [nameQuery] = useQueryState("name", parseAsString);
 
@@ -69,16 +71,21 @@ export function RegisterPageContent() {
       const result = await response.json();
 
       if (!response.ok) {
+        const errorMessage =
+          result.message || result.error || "Registration failed";
         setErrors({
-          general: result.message || result.error || "Registration failed",
+          general: errorMessage,
         });
+        toast.error("Registration failed", errorMessage);
         return;
       }
 
       router.push("/auth/login?registered=true");
     } catch (error) {
       console.error("REGISTER ERROR", error);
-      setErrors({ general: "Network error" });
+      const errorMessage = "Network error. Please try again.";
+      setErrors({ general: errorMessage });
+      toast.error("Registration failed", errorMessage);
     }
   }
 

@@ -125,12 +125,6 @@ export function RegisterFormPanel({
             Register
           </button>
 
-          {errors.general && (
-            <p className="mt-2 text-center text-sm text-red-500">
-              {errors.general}
-            </p>
-          )}
-
           <RegisterDivider />
           <RegisterGoogleButton />
 

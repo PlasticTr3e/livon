@@ -5,6 +5,8 @@ import { Button, Badge, Card, cn } from "@/components/ui/primitives";
 import { useUser } from "@/context/UserContext";
 import { isApiSuccess } from "@/lib/api-types";
 import { UpdateProjectStatusDialog } from "@/components/projects/UpdateProjectStatusDialog";
+import { LoadingState } from "@/components/shared/LoadingState";
+import { useToast } from "@/components/shared/AppToaster";
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 
@@ -13,9 +15,11 @@ const ProjectMiniMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full bg-slate-100 animate-pulse rounded-2xl flex items-center justify-center">
-        <MapPin className="w-6 h-6 text-slate-300" />
-      </div>
+      <LoadingState
+        label="Loading map..."
+        variant="panel"
+        className="h-full rounded-2xl"
+      />
     ),
   },
 );
@@ -330,6 +334,7 @@ export function ProjectDetailPageContent() {
   const searchParams = useSearchParams();
   const fromAdmin = searchParams.get("from") === "admin";
   const { userRole, userName } = useUser();
+  const toast = useToast();
   const [project, setProject] = useState<Project>({
     ...EMPTY_PROJECT,
     id: id as string,
@@ -762,7 +767,7 @@ export function ProjectDetailPageContent() {
 
     const token = localStorage.getItem("livon-token");
     if (!token) {
-      alert("Silakan login untuk memberikan vote.");
+      toast.error("Login required", "Please log in to vote.");
       return;
     }
 
@@ -783,7 +788,7 @@ export function ProjectDetailPageContent() {
 
       const responseData = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error("Gagal menyimpan vote");
+        throw new Error("Failed to save vote");
       }
 
       const action = (
@@ -808,9 +813,10 @@ export function ProjectDetailPageContent() {
         disagree: Math.max(0, prev.disagree + disagreeDelta),
       }));
       setUserVote(nextVote);
+      toast.success("Success", "Vote saved.");
     } catch (e) {
       console.error(e);
-      alert("Gagal menyimpan vote, silakan coba lagi.");
+      toast.error("Vote failed", "Failed to save vote. Please try again.");
     } finally {
       setIsSavingVote(false);
     }
@@ -823,7 +829,7 @@ export function ProjectDetailPageContent() {
     setLoading(true);
     const token = localStorage.getItem("livon-token");
     if (!token) {
-      alert("Silakan login untuk mengunggah dokumen.");
+      toast.error("Login required", "Please log in to upload documents.");
       setLoading(false);
       return;
     }
@@ -861,7 +867,7 @@ export function ProjectDetailPageContent() {
         body: JSON.stringify({ documentUrl: updatedUrls }),
       });
 
-      if (!patchRes.ok) throw new Error("Gagal menyimpan dokumen ke database");
+      if (!patchRes.ok) throw new Error("Failed to save document.");
 
       // 4. Update UI state
       const newDocs: ProjectDocument[] = newUrls.map((url, i) => {
@@ -880,9 +886,13 @@ export function ProjectDetailPageContent() {
       });
 
       setDocuments((prev) => [...prev, ...newDocs]);
+      toast.success("Success", "Document uploaded.");
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat mengunggah dokumen.");
+      toast.error(
+        "Upload failed",
+        "An error occurred while uploading the document.",
+      );
     } finally {
       setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -1393,8 +1403,8 @@ export function ProjectDetailPageContent() {
                               )}
                             >
                               {comment.role?.toUpperCase() === "WARGA"
-                                ? "resident"
-                                : "agency"}
+                                ? "Resident"
+                                : "Agency"}
                             </span>
                             <span className="text-xs text-gray-400 dark:text-white">
                               {comment.timestamp}
@@ -1626,14 +1636,14 @@ export function ProjectDetailPageContent() {
                                 );
 
                                 if (!patchRes.ok)
-                                  throw new Error(
-                                    "Gagal menghapus dokumen dari database",
-                                  );
+                                  throw new Error("Failed to delete document.");
                                 setDocuments(newDocs);
+                                toast.success("Success", "Document deleted.");
                               } catch (err) {
                                 console.error(err);
-                                alert(
-                                  "Terjadi kesalahan saat menghapus dokumen.",
+                                toast.error(
+                                  "Delete failed",
+                                  "An error occurred while deleting the document.",
                                 );
                               }
                             }}

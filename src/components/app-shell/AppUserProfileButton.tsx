@@ -1,5 +1,9 @@
 import { cn } from "@/components/ui/primitives";
-import { getUserAvatarClassName, getUserInitial } from "@/lib/app-shell/user";
+import {
+  getUserAvatarClassName,
+  getUserInitial,
+  getUserRoleLabel,
+} from "@/lib/app-shell/user";
 
 type AppUserProfileButtonProps = {
   pathname: string;
@@ -35,7 +39,9 @@ export function AppUserProfileButton({
         <p className="font-semibold leading-tight text-gray-800 dark:text-white">
           {userName}
         </p>
-        <p className="text-xs text-green-600 dark:text-green-400">{userRole}</p>
+        <p className="text-xs text-green-600 dark:text-green-400">
+          {getUserRoleLabel(userRole)}
+        </p>
       </div>
     </button>
   );

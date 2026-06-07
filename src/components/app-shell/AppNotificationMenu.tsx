@@ -1,4 +1,5 @@
 import { Bell } from "lucide-react";
+import { LoadingState } from "@/components/shared/LoadingState";
 import { cn } from "@/components/ui/primitives";
 import {
   formatNotificationTime,
@@ -85,7 +86,7 @@ function NotificationMenuContent({
   if (isLoading) {
     return (
       <div className="p-3 text-center text-sm text-gray-500 dark:text-white">
-        Memuat notifikasi...
+        <LoadingState label="Memuat notifikasi..." variant="inline" />
       </div>
     );
   }
