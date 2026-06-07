@@ -1,16 +1,15 @@
 "use client";
 
-import { Ban, CheckCircle, Eye } from "lucide-react";
-import { useActionState, useEffect } from "react";
+import { Ban, CheckCircle, Eye, Loader2 } from "lucide-react";
+import { useActionState, useEffect, useState } from "react";
 import { useToast } from "@/components/shared/AppToaster";
-import { Badge } from "@/components/ui/primitives";
+import { Badge, cn } from "@/components/ui/primitives";
 import {
   toggleAdminUserBlock,
   verifyAdminUser,
   type AdminUserActionState,
 } from "@/lib/admin-users/admin-users-actions";
 import {
-  getAdminUserAddress,
   getAdminUserDisplayName,
   getAdminUserRole,
   getAdminUserRoleStyle,
@@ -31,18 +30,17 @@ const initialAdminUserActionState: AdminUserActionState = {
 
 export function AdminUsersTable({ users }: AdminUsersTableProps) {
   return (
-    <div className="overflow-x-auto pb-4">
-      <table className="w-full min-w-[800px] border-collapse text-left text-sm md:min-w-0">
+    <div className="-mx-5 overflow-x-auto">
+      <table className="w-full min-w-[640px] border-collapse text-left">
         <thead>
-          <tr className="border-b border-gray-200 text-xs font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:text-white">
-            <th className="px-4 py-3">Name</th>
-            <th className="px-4 py-3">House Number / Address</th>
-            <th className="px-4 py-3">Role</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3 text-right">Actions</th>
+          <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
+            <th className="px-8 py-4">User Details</th>
+            <th className="px-4 py-4 text-center">Role</th>
+            <th className="px-4 py-4 text-center">Status</th>
+            <th className="px-8 py-4 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+        <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
           {users.map((user) => (
             <AdminUsersTableRow key={user.id} user={user} />
           ))}
@@ -54,6 +52,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
 
 function AdminUsersTableRow({ user }: { user: AdminUser }) {
   const toast = useToast();
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [verifyState, verifyAction, isVerifying] = useActionState(
     verifyAdminUser,
     initialAdminUserActionState,
@@ -65,7 +64,6 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
   const role = getAdminUserRole(user);
   const status = getAdminUserStatus(user);
   const displayName = getAdminUserDisplayName(user);
-  const address = getAdminUserAddress(user);
 
   useEffect(() => {
     if (verifyState.status === "success") {
@@ -88,58 +86,81 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
   }, [blockState, toast]);
 
   return (
-    <tr className="transition-colors hover:bg-green-50 dark:hover:bg-green-900/10">
-      <td className="px-4 py-4">
-        <div className="flex items-center gap-2">
+    <tr className="group transition-colors hover:bg-green-50/50 dark:hover:bg-green-900/20">
+      <td className="px-8 py-6">
+        <div className="flex items-center gap-3">
           <div
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${getAdminUserRoleStyle(role)}`}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${getAdminUserRoleStyle(role)}`}
           >
             {displayName.charAt(0)}
           </div>
           <div>
-            <span className="block font-semibold text-gray-900 dark:text-white">
+            <span className="block text-sm font-semibold text-gray-900 transition-colors group-hover:text-green-700 dark:text-white dark:group-hover:text-green-400">
               {displayName}
             </span>
-            <span className="text-xs text-gray-400 dark:text-white">
+            <span className="mt-1 block text-[11px] font-medium text-gray-400 dark:text-white">
               {user.email}
             </span>
           </div>
         </div>
       </td>
-      <td className="px-4 py-4 text-gray-600 dark:text-white">{address}</td>
-      <td className="px-4 py-4">
-        <span
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${getAdminUserRoleStyle(role)}`}
-        >
-          {role}
-        </span>
+      <td className="px-4 py-6">
+        <div className="flex justify-center">
+          <span
+            className={`inline-flex items-center justify-center rounded-full px-4 py-1 text-[10px] font-semibold ${getAdminUserRoleStyle(role)}`}
+          >
+            {role}
+          </span>
+        </div>
       </td>
-      <td className="px-4 py-4">
-        <Badge className={`text-xs ${getAdminUserStatusStyle(status)}`}>
-          {status}
-        </Badge>
+      <td className="px-4 py-6">
+        <div className="flex justify-center">
+          <Badge
+            className={`rounded-full px-4 py-1 text-[10px] font-semibold ${getAdminUserStatusStyle(status)}`}
+          >
+            {status}
+          </Badge>
+        </div>
       </td>
-      <td className="px-4 py-4 text-right">
-        <div className="flex items-center justify-end gap-1">
-          <details className="group">
-            <summary className="cursor-pointer list-none rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600 group-open:fixed group-open:inset-0 group-open:z-40 group-open:bg-black/40 group-open:p-0 group-open:hover:bg-black/40">
-              <Eye className="h-4 w-4" />
-            </summary>
-            <div className="pointer-events-none fixed inset-0 z-50 hidden p-6 group-open:flex group-open:items-center group-open:justify-center">
-              <AdminUserDetailsDialog role={role} user={user} />
+      <td className="px-8 py-6">
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setIsDetailsOpen(true)}
+            className="rounded-xl border border-gray-100 bg-white p-2.5 text-blue-600 shadow-sm transition-all hover:bg-blue-600 hover:text-white dark:border-gray-800 dark:bg-[#1F2937] dark:text-blue-400 dark:hover:bg-blue-700"
+            title="View user"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+
+          {isDetailsOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+              <button
+                type="button"
+                aria-label="Close user details"
+                className="absolute inset-0 bg-black/40"
+                onClick={() => setIsDetailsOpen(false)}
+              />
+              <div className="relative z-10">
+                <AdminUserDetailsDialog role={role} user={user} />
+              </div>
             </div>
-          </details>
+          )}
 
           {status === "Pending" && (
             <form action={verifyAction}>
               <input type="hidden" name="userId" value={user.id} />
-              <button
+              <ActionIconButton
                 disabled={isVerifying}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-green-600 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+                title="Verify user"
+                className="text-green-600 hover:bg-green-600 dark:text-green-400 dark:hover:bg-green-700"
               >
-                <CheckCircle className="h-3.5 w-3.5" />
-                {isVerifying ? "Verifying..." : "Verify"}
-              </button>
+                {isVerifying ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4" />
+                )}
+              </ActionIconButton>
             </form>
           )}
           {role === "resident" && (
@@ -150,21 +171,46 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
                 name="isBlocked"
                 value={status === "Blocked" ? "true" : "false"}
               />
-              <button
+              <ActionIconButton
                 disabled={isTogglingBlock}
-                className={`rounded-lg p-1.5 transition-colors ${
-                  status === "Blocked"
-                    ? "bg-red-50 text-red-600 dark:bg-red-900/30"
-                    : "text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/30"
-                } disabled:cursor-not-allowed disabled:opacity-60`}
                 title={status === "Blocked" ? "Unblock User" : "Block User"}
+                className={cn(
+                  "text-red-500 hover:bg-red-500 dark:text-red-400 dark:hover:bg-red-600",
+                  status === "Blocked" && "bg-red-50 dark:bg-red-900/30",
+                )}
               >
                 <Ban className="h-4 w-4" />
-              </button>
+              </ActionIconButton>
             </form>
           )}
         </div>
       </td>
     </tr>
+  );
+}
+
+function ActionIconButton({
+  children,
+  className,
+  disabled,
+  title,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+  title: string;
+}) {
+  return (
+    <button
+      type="submit"
+      disabled={disabled}
+      title={title}
+      className={cn(
+        "rounded-xl border border-gray-100 bg-white p-2.5 shadow-sm transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-800 dark:bg-[#1F2937]",
+        className,
+      )}
+    >
+      {children}
+    </button>
   );
 }
