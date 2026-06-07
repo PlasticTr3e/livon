@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
+import { useToast } from "@/components/shared/AppToaster";
 import {
   fetchCurrentUserVotes,
   fetchMapProjects,
@@ -22,6 +23,7 @@ import { MapSidebar } from "./MapSidebar";
 export function MapPageContent() {
   const router = useRouter();
   const { userRole } = useUser();
+  const toast = useToast();
   const [projects, setProjects] = useState<MapProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<MapProject | null>(
@@ -52,13 +54,14 @@ export function MapPageContent() {
         }
       } catch (error) {
         console.error("Failed to fetch map projects", error);
+        toast.error("Map failed to load", "Please refresh and try again.");
       } finally {
         setIsLoading(false);
       }
     }
 
     loadProjects();
-  }, [userRole]);
+  }, [toast, userRole]);
 
   const filteredProjects = useMemo(
     () =>
@@ -72,7 +75,7 @@ export function MapPageContent() {
 
   async function handleVote(projectId: string, voteType: MapVoteChoice) {
     if (!userRole || userRole !== "resident") {
-      alert("Hanya resident yang bisa voting");
+      toast.error("Voting unavailable", "Only residents can vote.");
       return;
     }
 
@@ -80,7 +83,7 @@ export function MapPageContent() {
 
     const token = getStoredMapToken();
     if (!token) {
-      alert("Silakan login untuk memberikan vote.");
+      toast.error("Login required", "Please log in to vote.");
       return;
     }
 
@@ -115,9 +118,10 @@ export function MapPageContent() {
           ? updateMapProjectVotes(prev, agreeDelta, disagreeDelta)
           : prev,
       );
+      toast.success("Success", "Vote saved.");
     } catch (error) {
       console.error(error);
-      alert("Gagal menyimpan vote, silakan coba lagi.");
+      toast.error("Vote failed", "Failed to save vote. Please try again.");
     } finally {
       setSavingVotes((prev) => ({ ...prev, [projectId]: false }));
     }

@@ -1,8 +1,13 @@
+"use client";
+
 import { Ban, CheckCircle, Eye } from "lucide-react";
+import { useActionState, useEffect } from "react";
+import { useToast } from "@/components/shared/AppToaster";
 import { Badge } from "@/components/ui/primitives";
 import {
   toggleAdminUserBlock,
   verifyAdminUser,
+  type AdminUserActionState,
 } from "@/lib/admin-users/admin-users-actions";
 import {
   getAdminUserAddress,
@@ -17,6 +22,11 @@ import { AdminUserDetailsDialog } from "./AdminUserDetailsDialog";
 
 type AdminUsersTableProps = {
   users: AdminUser[];
+};
+
+const initialAdminUserActionState: AdminUserActionState = {
+  message: "",
+  status: "idle",
 };
 
 export function AdminUsersTable({ users }: AdminUsersTableProps) {
@@ -43,10 +53,39 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
 }
 
 function AdminUsersTableRow({ user }: { user: AdminUser }) {
+  const toast = useToast();
+  const [verifyState, verifyAction, isVerifying] = useActionState(
+    verifyAdminUser,
+    initialAdminUserActionState,
+  );
+  const [blockState, blockAction, isTogglingBlock] = useActionState(
+    toggleAdminUserBlock,
+    initialAdminUserActionState,
+  );
   const role = getAdminUserRole(user);
   const status = getAdminUserStatus(user);
   const displayName = getAdminUserDisplayName(user);
   const address = getAdminUserAddress(user);
+
+  useEffect(() => {
+    if (verifyState.status === "success") {
+      toast.success("Success", verifyState.message);
+    }
+
+    if (verifyState.status === "error") {
+      toast.error("Verification failed", verifyState.message);
+    }
+  }, [toast, verifyState]);
+
+  useEffect(() => {
+    if (blockState.status === "success") {
+      toast.success("Success", blockState.message);
+    }
+
+    if (blockState.status === "error") {
+      toast.error("Action failed", blockState.message);
+    }
+  }, [blockState, toast]);
 
   return (
     <tr className="transition-colors hover:bg-green-50 dark:hover:bg-green-900/10">
@@ -92,15 +131,19 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
           </details>
 
           {status === "Pending" && (
-            <form action={verifyAdminUser}>
+            <form action={verifyAction}>
               <input type="hidden" name="userId" value={user.id} />
-              <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-green-600 transition-colors hover:bg-green-50">
-                <CheckCircle className="h-3.5 w-3.5" /> Verifikasi
+              <button
+                disabled={isVerifying}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-green-600 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <CheckCircle className="h-3.5 w-3.5" />
+                {isVerifying ? "Verifying..." : "Verify"}
               </button>
             </form>
           )}
           {role === "resident" && (
-            <form action={toggleAdminUserBlock}>
+            <form action={blockAction}>
               <input type="hidden" name="userId" value={user.id} />
               <input
                 type="hidden"
@@ -108,11 +151,12 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
                 value={status === "Blocked" ? "true" : "false"}
               />
               <button
+                disabled={isTogglingBlock}
                 className={`rounded-lg p-1.5 transition-colors ${
                   status === "Blocked"
                     ? "bg-red-50 text-red-600 dark:bg-red-900/30"
                     : "text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/30"
-                }`}
+                } disabled:cursor-not-allowed disabled:opacity-60`}
                 title={status === "Blocked" ? "Unblock User" : "Block User"}
               >
                 <Ban className="h-4 w-4" />

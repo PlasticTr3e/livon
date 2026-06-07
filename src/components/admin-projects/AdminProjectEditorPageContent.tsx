@@ -3,6 +3,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, Button, Input, cn } from "@/components/ui/primitives";
 import { LoadingState } from "@/components/shared/LoadingState";
+import { useToast } from "@/components/shared/AppToaster";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -43,6 +44,7 @@ const ProjectLocationPicker = dynamic<{
 function EditProjectContent() {
   const { id } = useParams();
   const router = useRouter();
+  const toast = useToast();
   const isCreate = id === "create";
 
   const [formData, setFormData] = useState({
@@ -147,14 +149,16 @@ function EditProjectContent() {
           }
         }
       } catch {
-        setError("Failed to load project details");
+        const errorMessage = "Failed to load project details";
+        setError(errorMessage);
+        toast.error("Project failed to load", errorMessage);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [id, isCreate]);
+  }, [id, isCreate, toast]);
 
   const handleInput = (field: string, value: string | number | string[]) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -174,7 +178,7 @@ function EditProjectContent() {
     if (!files || files.length === 0) return;
 
     if (projectPhotos.length + files.length > 3) {
-      alert("Maximum 3 photos allowed.");
+      toast.error("Upload limit reached", "Maximum 3 photos allowed.");
       return;
     }
 
@@ -203,7 +207,7 @@ function EditProjectContent() {
       setProjectPhotos((prev) => [...prev, ...newUrls]);
     } catch (err) {
       console.error(err);
-      alert("Failed to upload one or more photos.");
+      toast.error("Upload failed", "Failed to upload one or more photos.");
     } finally {
       setIsUploading(false);
     }
@@ -219,17 +223,20 @@ function EditProjectContent() {
 
     // Client-side validation for required fields
     if (!formData.title || formData.title.length < 5) {
-      setError("Title must be at least 5 characters");
+      const errorMessage = "Title must be at least 5 characters";
+      setError(errorMessage);
       setIsSaving(false);
       return;
     }
     if (!formData.description || formData.description.length < 10) {
-      setError("Description must be at least 10 characters");
+      const errorMessage = "Description must be at least 10 characters";
+      setError(errorMessage);
       setIsSaving(false);
       return;
     }
     if (!formData.budgetTarget || parseFloat(formData.budgetTarget) <= 0) {
-      setError("Budget is required and must be a positive number");
+      const errorMessage = "Budget is required and must be a positive number";
+      setError(errorMessage);
       setIsSaving(false);
       return;
     }
@@ -239,9 +246,9 @@ function EditProjectContent() {
       formData.longitude,
     );
     if (projectAtLocation) {
-      setError(
-        `Titik ini sudah dipakai oleh proyek "${projectAtLocation.title}". Hapus proyek lama dulu sebelum memakai titik yang sama.`,
-      );
+      const errorMessage = `This location is already used by "${projectAtLocation.title}". Delete the old project before reusing the same point.`;
+      setError(errorMessage);
+      toast.error("Location already used", errorMessage);
       setIsSaving(false);
       return;
     }
@@ -278,15 +285,22 @@ function EditProjectContent() {
       );
 
       if (result.success) {
+        toast.success(
+          isCreate ? "Success" : "Saved",
+          isCreate ? "Project created." : "Project updated.",
+        );
         router.push("/admin/projects");
         router.refresh();
       } else {
-        setError(result.message || "Failed to save project");
+        const errorMessage = result.message || "Failed to save project";
+        setError(errorMessage);
+        toast.error("Save failed", errorMessage);
       }
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(errorMessage);
+      toast.error("Save failed", errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -603,7 +617,7 @@ function EditProjectContent() {
                       ]);
                     } catch (err) {
                       console.error(err);
-                      alert("Document upload failed.");
+                      toast.error("Upload failed", "Document upload failed.");
                     } finally {
                       setIsUploading(false);
                     }
@@ -727,9 +741,11 @@ function EditProjectContent() {
                     const projectAtLocation = findProjectAtLocation(lat, lng);
                     if (projectAtLocation) {
                       setError(
-                        `Titik ini sudah dipakai oleh proyek "${projectAtLocation.title}". Hapus proyek lama dulu sebelum memakai titik yang sama.`,
+                        `This location is already used by "${projectAtLocation.title}". Delete the old project before reusing the same point.`,
                       );
-                    } else if (error?.startsWith("Titik ini sudah dipakai")) {
+                    } else if (
+                      error?.startsWith("This location is already used")
+                    ) {
                       setError(null);
                     }
                   }}

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/shared/AppToaster";
 import {
   formatAdminProjectBudget,
   formatAdminProjectDate,
@@ -17,6 +18,7 @@ import { AdminProjectsToolbar } from "./AdminProjectsToolbar";
 
 export function AdminProjectsPageContent() {
   const router = useRouter();
+  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<"All" | AdminProjectStatus>(
     "All",
@@ -70,13 +72,14 @@ export function AdminProjectsPageContent() {
         }
       } catch (error) {
         console.error("Failed to fetch projects", error);
+        toast.error("Projects failed to load", "Please refresh and try again.");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProjects();
-  }, []);
+  }, [toast]);
 
   const filtered = projects.filter((p) => {
     const matchSearch =
@@ -99,9 +102,10 @@ export function AdminProjectsPageContent() {
         if (res.ok) {
           setProjects((prev) => prev.filter((p) => p.id !== id));
           setAllProjectsData((prev) => prev.filter((p) => p.id !== id));
+          toast.success("Success", "Project deleted.");
         }
       } catch {
-        alert("Deletion failed.");
+        toast.error("Deletion failed", "Please try again.");
       }
     }
   };

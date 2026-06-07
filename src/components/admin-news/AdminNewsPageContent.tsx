@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useToast } from "@/components/shared/AppToaster";
 import {
   createAdminNews,
   deleteAdminNews,
@@ -15,6 +16,7 @@ import { AdminNewsHeader } from "./AdminNewsHeader";
 import { AdminNewsTable } from "./AdminNewsTable";
 
 export function AdminNewsPageContent() {
+  const toast = useToast();
   const [news, setNews] = useState<AdminNewsWithExtras[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,21 +35,23 @@ export function AdminNewsPageContent() {
   const [editImage, setEditImage] = useState<File | null>(null);
   const editingNews = news.find((item) => item.id === editNewsId);
 
-  useEffect(() => {
-    fetchNews();
-  }, []);
-
-  async function fetchNews() {
+  const fetchNews = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       setNews(await fetchAdminNewsItems());
     } catch {
-      setError("Gagal mengambil data berita");
+      const errorMessage = "Failed to load news.";
+      setError(errorMessage);
+      toast.error("Failed to load news", errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchNews();
+  }, [fetchNews]);
 
   function handleDragOver(event: React.DragEvent) {
     event.preventDefault();
@@ -94,7 +98,7 @@ export function AdminNewsPageContent() {
     if (editImage) {
       const uploadedUrl = await uploadImage(editImage);
       if (!uploadedUrl) {
-        alert("Gagal mengunggah gambar berita");
+        toast.error("Upload failed", "Failed to upload the news image.");
         return;
       }
       thumbnailUrl = uploadedUrl;
@@ -108,11 +112,11 @@ export function AdminNewsPageContent() {
       });
       await fetchNews();
       setEditNewsId(null);
+      toast.success("Saved", "News changes saved.");
     } catch (err) {
-      alert(
-        err instanceof Error
-          ? `Gagal menyimpan perubahan: ${err.message}`
-          : "Gagal menyimpan perubahan",
+      toast.error(
+        "Save failed",
+        err instanceof Error ? err.message : "Failed to save changes.",
       );
     }
   }
@@ -125,7 +129,7 @@ export function AdminNewsPageContent() {
     if (newImage) {
       const uploadedUrl = await uploadImage(newImage);
       if (!uploadedUrl) {
-        alert("Gagal mengunggah gambar berita");
+        toast.error("Upload failed", "Failed to upload the news image.");
         setCreating(false);
         return;
       }
@@ -143,11 +147,11 @@ export function AdminNewsPageContent() {
       setNewContent("");
       setNewImage(null);
       setNews((prev) => [createdNews, ...prev]);
+      toast.success("Success", "News created.");
     } catch (err) {
-      alert(
-        `Gagal membuat berita: ${
-          err instanceof Error ? err.message : "Unknown error"
-        }`,
+      toast.error(
+        "Create failed",
+        err instanceof Error ? err.message : "Unknown error",
       );
     } finally {
       setCreating(false);
@@ -155,18 +159,23 @@ export function AdminNewsPageContent() {
   }
 
   async function handleDelete(newsId: string) {
-    if (!window.confirm("Hapus berita ini?")) return;
+    if (!window.confirm("Delete this news item?")) return;
 
     try {
       await deleteAdminNews(newsId);
       await fetchNews();
+      toast.success("Success", "News deleted.");
     } catch (err) {
-      alert(
-        err instanceof Error
-          ? `Gagal menghapus berita: ${err.message}`
-          : "Gagal menghapus berita",
+      toast.error(
+        "Delete failed",
+        err instanceof Error ? err.message : "Failed to delete news.",
       );
     }
+  }
+
+  function handleToggleHeadline(newsId: string) {
+    setNews((currentNews) => setAdminNewsHeadline(currentNews, newsId));
+    toast.success("Saved", "Headline news updated.");
   }
 
   return (
@@ -178,8 +187,8 @@ export function AdminNewsPageContent() {
           inputId="edit-image-input"
           isDragging={isDragging}
           isSaving={uploading}
-          modalTitle="Edit Berita"
-          submitLabel="Simpan"
+          modalTitle="Edit News"
+          submitLabel="Save"
           title={editTitle}
           onCancel={() => setEditNewsId(null)}
           onContentChange={setEditContent}
@@ -201,7 +210,7 @@ export function AdminNewsPageContent() {
           isSaving={creating}
           isUploading={uploading}
           modalTitle="Create News"
-          submitLabel="Simpan"
+          submitLabel="Save"
           title={newTitle}
           onCancel={() => setShowCreate(false)}
           onContentChange={setNewContent}
@@ -222,9 +231,7 @@ export function AdminNewsPageContent() {
           news={news}
           onDelete={handleDelete}
           onEdit={handleEditOpen}
-          onToggleHeadline={(id) =>
-            setNews((currentNews) => setAdminNewsHeadline(currentNews, id))
-          }
+          onToggleHeadline={handleToggleHeadline}
         />
       </div>
     </>

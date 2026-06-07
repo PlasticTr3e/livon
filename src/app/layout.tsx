@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { UserProvider } from "../context/UserContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { AppToasterProvider } from "@/components/shared/AppToaster";
 
 export const metadata: Metadata = {
   title: "Livon",
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body suppressHydrationWarning>
         <UserProvider>
           <ThemeProvider>
-            <NuqsAdapter>{children}</NuqsAdapter>
+            <AppToasterProvider>
+              <NuqsAdapter>{children}</NuqsAdapter>
+            </AppToasterProvider>
           </ThemeProvider>
         </UserProvider>
       </body>

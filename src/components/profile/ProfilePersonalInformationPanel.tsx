@@ -4,7 +4,7 @@ import type { ProfileRole, UserWithProfile } from "@/lib/profile/profile-types";
 import { ProfileSectionHeader } from "./ProfileSectionHeader";
 
 type ProfilePersonalInformationPanelProps = {
-  feedback: string | null;
+  isSaving: boolean;
   user: UserWithProfile;
   userRole: ProfileRole;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
@@ -14,7 +14,7 @@ const inputClassName =
   "h-12 w-full rounded-xl border border-gray-200 bg-white px-5 text-sm text-gray-800 transition focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white";
 
 export function ProfilePersonalInformationPanel({
-  feedback,
+  isSaving,
   user,
   userRole,
   onSubmit,
@@ -44,21 +44,11 @@ export function ProfilePersonalInformationPanel({
 
         <button
           type="submit"
-          className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-green-600 text-sm font-semibold text-white transition-all hover:bg-green-700"
+          disabled={isSaving}
+          className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-green-600 text-sm font-semibold text-white transition-all hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          <Save className="h-4 w-4" /> Save
+          <Save className="h-4 w-4" /> {isSaving ? "Saving..." : "Save"}
         </button>
-
-        {feedback && (
-          <div
-            className={cn(
-              "mt-2 text-center text-sm font-semibold",
-              feedback.includes("success") ? "text-green-600" : "text-red-500",
-            )}
-          >
-            {feedback}
-          </div>
-        )}
       </form>
     </div>
   );

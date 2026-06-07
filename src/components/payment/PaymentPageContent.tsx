@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useToast } from "@/components/shared/AppToaster";
 import {
   createDonationPayment,
   fetchPaymentProject,
@@ -25,6 +26,7 @@ export function PaymentPageContent() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const toast = useToast();
   const amount = Number.parseInt(searchParams.get("amount") || "0", 10);
   const isFromMidtransSuccess = ["settlement", "capture"].includes(
     searchParams.get("transaction_status") || "",
@@ -62,13 +64,14 @@ export function PaymentPageContent() {
         setProject(nextProject);
       } catch (error) {
         console.error("Failed to fetch project:", error);
+        toast.error("Project unavailable", "Failed to load payment details.");
       } finally {
         setIsLoadingProject(false);
       }
     }
 
     if (id) loadProject();
-  }, [id]);
+  }, [id, toast]);
 
   async function handleConfirmPayment() {
     setIsProcessing(true);
@@ -76,7 +79,10 @@ export function PaymentPageContent() {
     try {
       const token = getStoredPaymentToken();
       if (!token) {
-        alert("Please login to continue your donation.");
+        toast.error(
+          "Login required",
+          "Please login to continue your donation.",
+        );
         return;
       }
 
@@ -89,20 +95,25 @@ export function PaymentPageContent() {
       window.snap.pay(snapToken, {
         onSuccess: handlePaymentSuccess,
         onPending: () => {
-          alert(
+          toast.info(
+            "Waiting for payment",
             "Waiting for payment! Please complete your payment through the selected VA.",
           );
         },
         onError: () => {
-          alert("Payment failed. Please try again.");
+          toast.error("Payment failed", "Please try again.");
         },
         onClose: () => {
-          alert("You closed the payment popup without completing it.");
+          toast.info(
+            "Payment not completed",
+            "You closed the payment popup without completing it.",
+          );
         },
       });
     } catch (error) {
       console.error(error);
-      alert(
+      toast.error(
+        "Donation failed",
         error instanceof Error
           ? error.message
           : "An error occurred while processing the donation.",
@@ -118,6 +129,7 @@ export function PaymentPageContent() {
       time: getPaymentReceiptTime(),
     });
     setStep("success");
+    toast.success("Success", "Payment completed successfully.");
   }
 
   if (isLoadingProject) {

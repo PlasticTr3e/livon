@@ -6,6 +6,7 @@ import { parseAsString, useQueryState } from "nuqs";
 import { apiFetchJson } from "@/lib/api-client";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
+import { useToast } from "@/components/shared/AppToaster";
 import {
   getLoginRedirectPath,
   mapApiRoleToLoginRole,
@@ -30,6 +31,7 @@ export function LoginPageContent() {
   const router = useRouter();
   const { login } = useUser();
   const { theme, toggleTheme } = useTheme();
+  const toast = useToast();
 
   const [registered, setRegistered] = useQueryState(
     "registered",
@@ -41,24 +43,22 @@ export function LoginPageContent() {
     email: "",
     password: "",
   });
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [activeHeroImageIndex, setActiveHeroImageIndex] = useState(0);
 
   useEffect(() => {
     if (registered === "true") {
-      setSuccessMessage(LOGIN_SUCCESS_MESSAGES.registered);
+      toast.success("Success", LOGIN_SUCCESS_MESSAGES.registered);
       setRegistered(null);
       return;
     }
 
     if (verified === "true") {
-      setSuccessMessage(LOGIN_SUCCESS_MESSAGES.verified);
+      toast.success("Success", LOGIN_SUCCESS_MESSAGES.verified);
       setVerified(null);
     }
-  }, [registered, setRegistered, setVerified, verified]);
+  }, [registered, setRegistered, setVerified, toast, verified]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -82,7 +82,6 @@ export function LoginPageContent() {
     event.preventDefault();
     if (isLoading) return;
 
-    setError("");
     setIsLoading(true);
 
     try {
@@ -93,7 +92,8 @@ export function LoginPageContent() {
       );
 
       if (!result.success || !result.data) {
-        setError(result.message || "Login failed");
+        const errorMessage = result.message || "Login failed";
+        toast.error("Login failed", errorMessage);
         return;
       }
 
@@ -103,6 +103,9 @@ export function LoginPageContent() {
       localStorage.setItem("livon-token", result.data.token);
       login(mappedRole, userName);
       router.push(getLoginRedirectPath(mappedRole));
+    } catch {
+      const errorMessage = "Unable to sign in right now. Please try again.";
+      toast.error("Login failed", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -112,8 +115,6 @@ export function LoginPageContent() {
     <div className="flex min-h-screen bg-white dark:bg-[#0B1120]">
       <LoginFormPanel
         credentials={credentials}
-        error={error}
-        successMessage={successMessage}
         isLoading={isLoading}
         isPasswordVisible={isPasswordVisible}
         theme={theme}

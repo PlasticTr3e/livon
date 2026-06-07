@@ -17,17 +17,19 @@ import type {
   ProfileTab,
   UserWithProfile,
 } from "@/lib/profile/profile-types";
+import { useToast } from "@/components/shared/AppToaster";
 import { cn } from "@/components/ui/primitives";
 import { ProfileActivityPanel } from "./ProfileActivityPanel";
 import { ProfilePersonalInformationPanel } from "./ProfilePersonalInformationPanel";
 import { ProfileSidebar } from "./ProfileSidebar";
 
 export function ProfilePageContent() {
+  const toast = useToast();
   const [user, setUser] = useState<UserWithProfile | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [activities, setActivities] = useState<ProfileActivityItem[]>([]);
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   useEffect(() => {
     const handleToggle = () => setSidebarOpen((prev) => !prev);
@@ -63,26 +65,33 @@ export function ProfilePageContent() {
 
   async function handleProfileUpdate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFeedback(null);
 
     const token = getStoredProfileToken();
     if (!token || !user) return;
 
-    const updatedProfile = await updateProfileUser(
-      user,
-      new FormData(event.currentTarget),
-      token,
-    );
+    setIsSavingProfile(true);
 
-    if (!updatedProfile) {
-      setFeedback("Failed to update data.");
-      return;
+    try {
+      const updatedProfile = await updateProfileUser(
+        user,
+        new FormData(event.currentTarget),
+        token,
+      );
+
+      if (!updatedProfile) {
+        toast.error("Failed to save personal information");
+        return;
+      }
+
+      setUser((currentUser) =>
+        currentUser ? mergeUpdatedProfile(currentUser, updatedProfile) : null,
+      );
+      toast.success("Saved", "Personal information saved.");
+    } catch {
+      toast.error("Failed to save personal information");
+    } finally {
+      setIsSavingProfile(false);
     }
-
-    setUser((currentUser) =>
-      currentUser ? mergeUpdatedProfile(currentUser, updatedProfile) : null,
-    );
-    setFeedback("Data successfully updated!");
   }
 
   if (!user) {
@@ -119,7 +128,7 @@ export function ProfilePageContent() {
       <main className={cn("flex-1 overflow-y-auto p-6 pt-16 md:p-10")}>
         {activeTab === "personal" && (
           <ProfilePersonalInformationPanel
-            feedback={feedback}
+            isSaving={isSavingProfile}
             user={user}
             userRole={userRole}
             onSubmit={handleProfileUpdate}

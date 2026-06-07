@@ -5,6 +5,7 @@ import { AdminCommentsBackBar } from "@/components/admin-comments/AdminCommentsB
 import { AdminCommentsDashboardView } from "@/components/admin-comments/AdminCommentsDashboardView";
 import { AdminCommentsHeader } from "@/components/admin-comments/AdminCommentsHeader";
 import { AdminCommentsList } from "@/components/admin-comments/AdminCommentsList";
+import { useToast } from "@/components/shared/AppToaster";
 import {
   deleteAdminComment,
   fetchAdminCommentsData,
@@ -24,6 +25,7 @@ import type {
 } from "@/lib/admin-comments/admin-comments-types";
 
 export function AdminCommentsPageContent() {
+  const toast = useToast();
   const [comments, setComments] = useState<AdminCommentItem[]>([]);
   const [projects, setProjects] = useState<AdminCommentProject[]>([]);
   const [selectedProject, setSelectedProject] =
@@ -99,8 +101,10 @@ export function AdminCommentsPageContent() {
       setComments((currentComments) =>
         currentComments.filter((comment) => comment.id !== commentId),
       );
+      toast.success("Success", "Comment deleted.");
     } catch (error) {
       console.error("Error deleting comment:", error);
+      toast.error("Delete failed", "Failed to delete comment.");
     }
   }
 

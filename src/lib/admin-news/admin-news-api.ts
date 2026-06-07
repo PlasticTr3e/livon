@@ -11,7 +11,7 @@ type AdminNewsListResponse = {
 
 export async function fetchAdminNewsItems() {
   const response = await fetch("/api/news?page=1&limit=20");
-  if (!response.ok) throw new Error("Gagal mengambil data berita");
+  if (!response.ok) throw new Error("Failed to load news.");
 
   const data = await response.json();
   const headlineId =
@@ -56,7 +56,7 @@ export async function updateAdminNews(
   });
 
   if (!result.success) {
-    throw new Error(result.message || "Gagal menyimpan perubahan");
+    throw new Error(result.message || "Failed to save changes.");
   }
 }
 
@@ -68,7 +68,7 @@ export async function deleteAdminNews(newsId: string) {
   });
 
   if (!result.success) {
-    throw new Error(result.message || "Gagal menghapus berita");
+    throw new Error(result.message || "Failed to delete news.");
   }
 }
 

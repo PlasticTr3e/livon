@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle, X } from "lucide-react";
 import { apiFetchJson } from "@/lib/api-client";
+import { useToast } from "@/components/shared/AppToaster";
 import { Button } from "@/components/ui/primitives";
 
 type UpdateProjectStatusDialogProps = {
@@ -37,6 +38,7 @@ export function UpdateProjectStatusDialog({
   projectId,
   onUpdateSuccess,
 }: UpdateProjectStatusDialogProps) {
+  const toast = useToast();
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
   const [notes, setNotes] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
@@ -76,10 +78,11 @@ export function UpdateProjectStatusDialog({
       }
 
       onUpdateSuccess(selectedStatus);
+      toast.success("Saved", "Project status updated.");
       onClose();
     } catch (error) {
       console.error(error);
-      alert("Gagal mengupdate status proyek.");
+      toast.error("Update failed", "Failed to update project status.");
     } finally {
       setIsUpdating(false);
     }
