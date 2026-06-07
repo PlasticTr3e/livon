@@ -21,10 +21,10 @@ export function AdminDashboardSentimentChart({
   return (
     <Card className="flex min-h-[350px] flex-col border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#1F2937] lg:col-span-2">
       <div className="mb-5">
-        <h3 className="font-bold text-gray-900 dark:text-white">
+        <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
           Project Sentiment Distribution
         </h3>
-        <p className="mt-0.5 text-sm text-gray-500 dark:text-white">
+        <p className="mt-0.5 text-xs text-gray-500 dark:text-white">
           Comparison of comment sentiment on top 5 projects
         </p>
       </div>

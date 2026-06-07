@@ -5,10 +5,10 @@ import Link from "next/link";
 export function AdminDashboardQuickActions() {
   return (
     <div className="pt-2">
-      <h3 className="mb-4 px-1 text-sm font-bold text-gray-900 dark:text-white">
+      <h3 className="mb-4 px-1 text-lg font-bold tracking-tight text-gray-900 dark:text-white">
         Quick Actions
       </h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {ADMIN_DASHBOARD_ACTIONS.map((action) => {
           const ActionIcon = action.icon;
 
@@ -24,7 +24,7 @@ export function AdminDashboardQuickActions() {
                 >
                   <ActionIcon className={`h-5 w-5 ${action.color}`} />
                 </div>
-                <span className="text-sm font-semibold text-gray-800 dark:text-white">
+                <span className="text-xs font-semibold text-gray-800 dark:text-white">
                   {action.label}
                 </span>
               </div>
