@@ -1,4 +1,4 @@
-import { Edit2, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Edit2, Image as ImageIcon, Star, Trash2 } from "lucide-react";
 import { Badge, Card, cn } from "@/components/ui/primitives";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { LoadingState } from "@/components/shared/LoadingState";
@@ -22,29 +22,28 @@ export function AdminNewsTable({
   onToggleHeadline,
 }: AdminNewsTableProps) {
   return (
-    <Card className="border-green-100 p-5 shadow-sm dark:border-gray-800">
+    <Card className="overflow-hidden rounded-2xl border-green-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#1F2937]">
       {isLoading ? (
         <LoadingState
-          label="Memuat data berita..."
+          label="Loading news..."
           variant="panel"
           className="bg-transparent"
         />
       ) : error ? (
         <div className="py-10 text-center text-red-500">{error}</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] border-collapse text-left text-sm md:min-w-0">
+        <div className="-mx-5 overflow-x-auto">
+          <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-gray-200 text-xs font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:text-white">
-                <th className="px-4 py-3">News Title</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Publication Date</th>
-                <th className="px-4 py-3">Author</th>
-                <th className="px-4 py-3">Headline</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+              <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
+                <th className="px-8 py-4">News Details</th>
+                <th className="px-4 py-4 text-center">Status</th>
+                <th className="px-4 py-4">Publication Date</th>
+                <th className="px-4 py-4">Author</th>
+                <th className="px-8 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
               {news.map((item) => (
                 <AdminNewsTableRow
                   key={item.id}
@@ -76,11 +75,11 @@ function AdminNewsTableRow({
   return (
     <tr
       className={cn(
-        "transition-colors hover:bg-green-50 dark:hover:bg-green-900/10",
-        item.isHeadline && "ring-2 ring-green-400",
+        "group transition-colors hover:bg-green-50/50 dark:hover:bg-green-900/20",
+        item.isHeadline && "bg-yellow-50/40 dark:bg-yellow-900/10",
       )}
     >
-      <td className="px-4 py-4">
+      <td className="px-8 py-6">
         <div className="flex items-center gap-3">
           {item.thumbnailUrl ? (
             <ImageWithFallback
@@ -88,59 +87,74 @@ function AdminNewsTableRow({
               alt={item.title}
               width={40}
               height={40}
-              className="h-10 w-10 flex-shrink-0 rounded border border-gray-200 object-cover dark:border-gray-800"
+              className="h-12 w-12 flex-shrink-0 rounded-xl border border-gray-200 object-cover dark:border-gray-800"
             />
           ) : (
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-[#1F2937]">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-[#1F2937]">
               <ImageIcon className="h-4 w-4 text-gray-400" />
             </div>
           )}
-          <span className="line-clamp-2 font-semibold text-gray-900 dark:text-white">
-            {item.title}
-          </span>
+          <div className="min-w-0">
+            <span className="line-clamp-2 text-sm font-semibold text-gray-900 transition-colors group-hover:text-green-700 dark:text-white dark:group-hover:text-green-400">
+              {item.title}
+            </span>
+            {item.isHeadline && (
+              <span className="mt-1 inline-flex rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-yellow-700 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+                Headline
+              </span>
+            )}
+          </div>
         </div>
       </td>
-      <td className="px-4 py-4">
-        <Badge
-          className={cn(
-            "text-xs",
-            item.publishedAt
-              ? "border-green-300 bg-green-100 text-green-700"
-              : "border-gray-300 bg-gray-100 text-gray-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white",
-          )}
-        >
-          {item.publishedAt ? "Published" : "Draft"}
-        </Badge>
+      <td className="px-4 py-6">
+        <div className="flex justify-center">
+          <Badge
+            className={cn(
+              "rounded-full px-4 py-1 text-[10px] font-semibold",
+              item.publishedAt
+                ? "border-green-300 bg-green-100 text-green-700"
+                : "border-gray-300 bg-gray-100 text-gray-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white",
+            )}
+          >
+            {item.publishedAt ? "Published" : "Draft"}
+          </Badge>
+        </div>
       </td>
-      <td className="px-4 py-4 text-xs text-gray-500 dark:text-white">
+      <td className="px-4 py-6 text-xs font-semibold text-gray-500 dark:text-white">
         {item.publishedAt
           ? new Date(item.publishedAt).toLocaleDateString()
           : "-"}
       </td>
-      <td className="px-4 py-4 text-xs text-gray-700 dark:text-white">
+      <td className="px-4 py-6 text-xs font-semibold text-gray-700 dark:text-white">
         {item.author?.agencyProfile?.agencyName || item.createdById}
       </td>
-      <td className="px-4 py-4 text-center">
-        <input
-          type="radio"
-          name="headline-news"
-          checked={!!item.isHeadline}
-          onChange={() => onToggleHeadline(item.id)}
-          aria-label="Set as headline"
-        />
-      </td>
-      <td className="px-4 py-4 text-right">
-        <div className="flex items-center justify-end gap-1">
+      <td className="px-8 py-6">
+        <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600"
+            className={cn(
+              "rounded-xl border border-gray-100 bg-white p-2.5 shadow-sm transition-all hover:bg-yellow-400 hover:text-white dark:border-gray-800 dark:bg-[#1F2937]",
+              item.isHeadline
+                ? "text-yellow-500 dark:text-yellow-300"
+                : "text-gray-400 dark:text-gray-500",
+            )}
+            onClick={() => onToggleHeadline(item.id)}
+            title={item.isHeadline ? "Current headline" : "Set as headline"}
+          >
+            <Star
+              className={cn("h-4 w-4", item.isHeadline && "fill-current")}
+            />
+          </button>
+          <button
+            type="button"
+            className="rounded-xl border border-gray-100 bg-white p-2.5 text-green-600 shadow-sm transition-all hover:bg-green-600 hover:text-white dark:border-gray-800 dark:bg-[#1F2937] dark:text-green-400 dark:hover:bg-green-700"
             onClick={() => onEdit(item)}
           >
             <Edit2 className="h-4 w-4" />
           </button>
           <button
             type="button"
-            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+            className="rounded-xl border border-gray-100 bg-white p-2.5 text-red-500 shadow-sm transition-all hover:bg-red-500 hover:text-white dark:border-gray-800 dark:bg-[#1F2937] dark:text-red-400 dark:hover:bg-red-600"
             onClick={() => onDelete(item.id)}
           >
             <Trash2 className="h-4 w-4" />
