@@ -33,7 +33,7 @@ export function MapSidebar({
   return (
     <aside
       className={cn(
-        "absolute z-10 flex h-full w-80 flex-col border-r border-gray-200 bg-white shadow-lg transition-transform duration-300 ease-in-out dark:border-gray-800 dark:bg-[#111827] md:relative md:shadow-none",
+        "absolute z-[1200] flex h-full w-80 flex-col border-r border-gray-200 bg-white shadow-lg transition-transform duration-300 ease-in-out dark:border-gray-800 dark:bg-[#111827] md:relative md:z-auto md:shadow-none",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
       )}
     >

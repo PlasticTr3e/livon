@@ -2,9 +2,18 @@ import { Layers } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import { getMapStatusStyle, MAP_LEGEND_ITEMS } from "@/lib/map/map-format";
 
-export function MapLegend() {
+type MapLegendProps = {
+  isHidden: boolean;
+};
+
+export function MapLegend({ isHidden }: MapLegendProps) {
   return (
-    <div className="absolute left-4 top-4 z-[900] flex flex-col gap-2">
+    <div
+      className={cn(
+        "absolute left-4 top-4 z-[900] flex flex-col gap-2 transition-all duration-200",
+        isHidden && "pointer-events-none opacity-0",
+      )}
+    >
       <div className="rounded-2xl border border-gray-100 bg-white/90 p-3 shadow-lg backdrop-blur-md dark:border-gray-800 dark:bg-[#111827]/90">
         <div className="mb-2 flex items-center gap-2 px-1">
           <Layers className="h-4 w-4 text-gray-400" />

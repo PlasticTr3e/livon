@@ -29,14 +29,22 @@ export function MapPageContent() {
   const [selectedProject, setSelectedProject] = useState<MapProject | null>(
     null,
   );
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<MapStatusFilter>("All");
   const [userVotes, setUserVotes] = useState<Record<string, MapVoteChoice>>({});
   const [savingVotes, setSavingVotes] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const handleToggle = () => setSidebarOpen((prev) => !prev);
+    const handleToggle = () =>
+      setSidebarOpen((isOpen) => {
+        if (!isOpen) {
+          setSelectedProject(null);
+        }
+
+        return !isOpen;
+      });
+
     window.addEventListener("toggle-app-sidebar", handleToggle);
     return () => window.removeEventListener("toggle-app-sidebar", handleToggle);
   }, []);
@@ -136,6 +144,11 @@ export function MapPageContent() {
     setSelectedProject(project);
   }
 
+  function handleMapProjectSelect(project: MapProject) {
+    setSidebarOpen(false);
+    setSelectedProject(project);
+  }
+
   return (
     <div className="relative flex h-full overflow-hidden bg-slate-50 dark:bg-[#0B1120]">
       <MapSidebar
@@ -154,9 +167,10 @@ export function MapPageContent() {
       <div className="relative flex h-full flex-1 flex-col">
         <MapCanvasArea
           isLoading={isLoading}
+          isSidebarOpen={sidebarOpen}
           projects={filteredProjects}
           selectedProject={selectedProject}
-          onProjectSelect={setSelectedProject}
+          onProjectSelect={handleMapProjectSelect}
         />
 
         {selectedProject && (

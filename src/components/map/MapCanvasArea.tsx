@@ -12,6 +12,7 @@ const ProjectMap = dynamic(() => import("@/components/maps/ProjectMap"), {
 
 type MapCanvasAreaProps = {
   isLoading: boolean;
+  isSidebarOpen: boolean;
   projects: MapProject[];
   selectedProject: MapProject | null;
   onProjectSelect: (project: MapProject) => void;
@@ -19,6 +20,7 @@ type MapCanvasAreaProps = {
 
 export function MapCanvasArea({
   isLoading,
+  isSidebarOpen,
   projects,
   selectedProject,
   onProjectSelect,
@@ -35,7 +37,7 @@ export function MapCanvasArea({
           }}
         />
       )}
-      <MapLegend />
+      <MapLegend isHidden={isSidebarOpen} />
     </div>
   );
 }

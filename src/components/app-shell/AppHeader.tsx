@@ -43,7 +43,7 @@ export function AppHeader({
   onOpenProfile,
 }: AppHeaderProps) {
   return (
-    <header className="relative z-10 flex h-16 flex-none items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-800 dark:bg-[#111827]">
+    <header className="relative z-[2147483645] flex h-16 flex-none items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-800 dark:bg-[#111827]">
       <div className="flex items-center gap-2 md:gap-6">
         {showSidebarToggle && <AppSidebarToggle />}
         <AppBrandLink href={homeHref} />
