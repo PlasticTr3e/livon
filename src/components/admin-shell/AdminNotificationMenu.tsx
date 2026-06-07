@@ -1,37 +1,32 @@
 import { Bell } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import {
-  formatNotificationTime,
-  getNotificationDotColor,
-  type AppNotification,
-} from "@/lib/app-shell/notifications";
+  formatAdminNotificationTime,
+  type AdminNotification,
+} from "@/lib/admin-shell/admin-notifications";
 
-type AppNotificationMenuProps = {
-  notifications: AppNotification[];
-  unreadCount: number;
+type AdminNotificationMenuProps = {
   isLoading: boolean;
   isOpen: boolean;
+  notifications: AdminNotification[];
+  unreadCount: number;
   onOpenChange: (isOpen: boolean) => void;
-  onNavigate: () => void;
 };
 
-export function AppNotificationMenu({
-  notifications,
-  unreadCount,
+export function AdminNotificationMenu({
   isLoading,
   isOpen,
+  notifications,
+  unreadCount,
   onOpenChange,
-  onNavigate,
-}: AppNotificationMenuProps) {
+}: AdminNotificationMenuProps) {
   return (
     <div className="relative z-[2147483647]" data-notification-dropdown>
       <button
         type="button"
-        onClick={onNavigate}
+        onClick={() => onOpenChange(!isOpen)}
         onMouseEnter={() => onOpenChange(true)}
-        onMouseLeave={() => onOpenChange(false)}
         className="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800"
-        aria-label="Open notifications"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
@@ -52,12 +47,19 @@ export function AppNotificationMenu({
               {unreadCount}
             </span>
           </div>
-
           <div className="max-h-64 overflow-y-auto">
-            <NotificationMenuContent
-              notifications={notifications}
-              isLoading={isLoading}
-            />
+            {isLoading ? (
+              <AdminNotificationEmptyState label="Memuat notifikasi..." />
+            ) : notifications.length === 0 ? (
+              <AdminNotificationEmptyState label="Tidak ada notifikasi" />
+            ) : (
+              notifications.map((notification) => (
+                <AdminNotificationItem
+                  key={notification.id}
+                  notification={notification}
+                />
+              ))
+            )}
           </div>
         </div>
       )}
@@ -65,36 +67,30 @@ export function AppNotificationMenu({
   );
 }
 
-function NotificationMenuContent({
-  notifications,
-  isLoading,
-}: Pick<AppNotificationMenuProps, "notifications" | "isLoading">) {
-  if (isLoading) {
-    return (
-      <div className="p-3 text-center text-sm text-gray-500 dark:text-white">
-        Memuat notifikasi...
-      </div>
-    );
-  }
+function AdminNotificationEmptyState({ label }: { label: string }) {
+  return (
+    <div className="p-3 text-center text-sm text-gray-500 dark:text-white">
+      {label}
+    </div>
+  );
+}
 
-  if (notifications.length === 0) {
-    return (
-      <div className="p-3 text-center text-sm text-gray-500 dark:text-white">
-        Tidak ada notifikasi
-      </div>
-    );
-  }
-
-  return notifications.map((notification) => (
+function AdminNotificationItem({
+  notification,
+}: {
+  notification: AdminNotification;
+}) {
+  return (
     <div
-      key={notification.id}
-      className="flex cursor-pointer gap-3 border-b border-gray-100 p-3 transition-colors last:border-0 hover:bg-slate-50 dark:border-gray-800 dark:hover:bg-slate-700"
+      className={cn(
+        "flex cursor-pointer gap-3 border-b border-gray-100 p-3 transition-colors last:border-0 hover:bg-slate-50 dark:border-gray-800 dark:hover:bg-slate-700",
+        !notification.isRead ? "bg-green-50 dark:bg-[#1F2937]" : "",
+      )}
     >
       <div
         className={cn(
           "mt-1.5 h-2 w-2 shrink-0 rounded-full",
-          getNotificationDotColor(notification.type),
-          !notification.isRead && "animate-pulse",
+          !notification.isRead ? "bg-green-500" : "bg-gray-400",
         )}
       />
       <div className="flex-1">
@@ -112,9 +108,9 @@ function NotificationMenuContent({
           {notification.message || ""}
         </p>
         <p className="mt-1 text-[10px] font-medium text-green-600 dark:text-green-400">
-          {formatNotificationTime(notification.createdAt)}
+          {formatAdminNotificationTime(notification.createdAt)}
         </p>
       </div>
     </div>
-  ));
+  );
 }
