@@ -142,7 +142,7 @@ export default function MapPage() {
   const [selectedProject, setSelectedProject] = useState<ProjectMapData | null>(
     null,
   );
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("All");
   const [userVotes, setUserVotes] = useState<Record<string, VoteChoice>>({});
@@ -150,7 +150,15 @@ export default function MapPage() {
 
   // Listen to global app sidebar toggle
   useEffect(() => {
-    const handleToggle = () => setSidebarOpen((prev) => !prev);
+    const handleToggle = () =>
+      setSidebarOpen((isOpen) => {
+        if (!isOpen) {
+          setSelectedProject(null);
+        }
+
+        return !isOpen;
+      });
+
     window.addEventListener("toggle-app-sidebar", handleToggle);
     return () => window.removeEventListener("toggle-app-sidebar", handleToggle);
   }, []);
@@ -437,12 +445,23 @@ export default function MapPage() {
     setSelectedProject(project);
   };
 
+  const handleMapProjectSelect = (project: { id: string }) => {
+    const fullProject = filteredProjects.find((item) => item.id === project.id);
+    if (!fullProject) return;
+
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+
+    setSelectedProject(fullProject);
+  };
+
   return (
     <div className="flex h-full bg-slate-50 dark:bg-[#0B1120] relative overflow-hidden">
       {/* ── Left Sidebar ── */}
       <div
         className={cn(
-          "absolute md:relative z-10 w-80 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out shadow-lg md:shadow-none",
+          "absolute md:relative z-[2147483646] w-80 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out shadow-lg md:shadow-none",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
@@ -581,18 +600,20 @@ export default function MapPage() {
             <ProjectMap
               projects={filteredProjects}
               selectedProject={selectedProject}
-              onProjectSelect={(project: { id: string }) => {
-                const fullProject = filteredProjects.find(
-                  (item) => item.id === project.id,
-                );
-                if (fullProject) setSelectedProject(fullProject);
-              }}
+              onProjectSelect={handleMapProjectSelect}
             />
           )}
         </div>
 
         {/* Legend / Map Controls */}
-        <div className="absolute left-4 top-4 z-[900] flex flex-col gap-2">
+        <div
+          className={cn(
+            "absolute left-4 top-4 z-[900] flex flex-col gap-2 transition-opacity duration-200",
+            sidebarOpen
+              ? "pointer-events-none opacity-0 md:pointer-events-auto md:opacity-100"
+              : "opacity-100",
+          )}
+        >
           <div className="bg-white/90 backdrop-blur-md dark:bg-[#111827]/90 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-3">
             <div className="flex items-center gap-2 mb-2 px-1">
               <Layers className="w-4 h-4 text-gray-400" />

@@ -404,7 +404,7 @@ export default function ProfilePage() {
 
       <aside
         className={cn(
-          "absolute md:relative z-30 w-72 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex flex-col flex-shrink-0 transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none",
+          "absolute md:relative z-[2147483646] w-72 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex flex-col flex-shrink-0 transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >

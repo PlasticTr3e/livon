@@ -166,7 +166,7 @@ export default function AdminLayout({
   return (
     <div className="flex flex-col h-screen overflow-hidden font-sans bg-slate-50 dark:bg-[#0B1120]">
       {/* ── Top Navbar ── */}
-      <header className="flex-none bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 h-16 px-4 flex items-center justify-between z-30 shadow-sm relative">
+      <header className="relative z-[2147483645] flex h-16 flex-none items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-800 dark:bg-[#111827]">
         <div className="flex items-center gap-2 md:gap-6">
           {/* Mobile Sidebar Toggle */}
           <button
@@ -246,7 +246,7 @@ export default function AdminLayout({
           </button>
 
           {/* Bell */}
-          <div className="relative" data-notification-dropdown>
+          <div className="relative z-[2147483647]" data-notification-dropdown>
             <button
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}
               onMouseEnter={() => setIsNotificationOpen(true)}
@@ -259,7 +259,7 @@ export default function AdminLayout({
             </button>
             {isNotificationOpen && (
               <div
-                className="absolute right-0 mt-0 w-80 bg-white dark:bg-[#1F2937] border border-gray-200 dark:border-gray-800 shadow-xl rounded-xl z-50"
+                className="absolute right-0 z-[2147483647] mt-0 w-80 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-[#1F2937]"
                 onMouseLeave={() => setIsNotificationOpen(false)}
               >
                 <div className="p-3 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800 rounded-t-xl flex items-center justify-between">
@@ -348,13 +348,13 @@ export default function AdminLayout({
         {/* Admin Sidebar */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-20 md:hidden"
+            className="fixed inset-0 z-[2147483645] bg-black/50 md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
         <aside
           className={cn(
-            "absolute md:relative z-30 w-56 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex-shrink-0 flex flex-col shadow-lg md:shadow-none transition-transform duration-300 ease-in-out",
+            "absolute md:relative z-[2147483646] w-56 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex-shrink-0 flex flex-col shadow-lg md:shadow-none transition-transform duration-300 ease-in-out",
             sidebarOpen
               ? "translate-x-0"
               : "-translate-x-full md:translate-x-0",

@@ -23,11 +23,24 @@ export function AppNotificationMenu({
   onOpenChange,
   onNavigate,
 }: AppNotificationMenuProps) {
+  const handleNotificationButtonClick = () => {
+    const shouldUseTapMenu =
+      typeof window !== "undefined" &&
+      window.matchMedia("(hover: none), (pointer: coarse)").matches;
+
+    if (shouldUseTapMenu) {
+      onOpenChange(!isOpen);
+      return;
+    }
+
+    onNavigate();
+  };
+
   return (
     <div className="relative z-[2147483647]" data-notification-dropdown>
       <button
         type="button"
-        onClick={onNavigate}
+        onClick={handleNotificationButtonClick}
         onMouseEnter={() => onOpenChange(true)}
         onMouseLeave={() => onOpenChange(false)}
         className="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800"
