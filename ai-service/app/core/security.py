@@ -1,6 +1,5 @@
 from fastapi import Header, HTTPException, status
 
-
 async def verify_api_key(authorization: str = Header(...)) -> None:
     from app.core.config import settings
 

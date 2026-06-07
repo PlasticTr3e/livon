@@ -206,7 +206,6 @@ export async function POST(req: NextRequest) {
       });
     } catch (mailError) {
       console.error("Failed to send verification email:", mailError);
-      // An endpoint to resend verification should be implemented on the frontend.
     }
 
     return created("User registered successfully", { data: user });
