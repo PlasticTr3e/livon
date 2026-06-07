@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { RegisterForm } from "./register-form";
+import { RegisterPageContent } from "@/components/register/RegisterPageContent";
 
 export default function RegisterPage() {
   return (
@@ -10,7 +10,7 @@ export default function RegisterPage() {
         </div>
       }
     >
-      <RegisterForm />
+      <RegisterPageContent />
     </Suspense>
   );
 }

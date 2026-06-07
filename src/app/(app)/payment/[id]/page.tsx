@@ -6,7 +6,7 @@ import Link from "next/link";
 import Script from "next/script";
 
 // UI Components & Icons
-import { Button, Card } from "@/components/ui/WireframePrimitives";
+import { Button, Card } from "@/components/ui/primitives";
 import { ArrowLeft, CheckCircle2, Shield, Clock, Leaf } from "lucide-react";
 
 // --- TYPES ---

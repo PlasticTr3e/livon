@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { LoginForm } from "./login-form";
+import { LoginPageContent } from "@/components/login/LoginPageContent";
 
 export default function LoginPage() {
   return (
@@ -10,7 +10,7 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginForm />
+      <LoginPageContent />
     </Suspense>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { cn, Badge, Button, Card } from "@/components/ui/WireframePrimitives";
+import { cn, Badge, Button, Card } from "@/components/ui/primitives";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { useUser } from "@/context/UserContext";
 import {
   MapPin,
@@ -20,28 +21,21 @@ import {
   Coins,
 } from "lucide-react";
 
-// Dynamic import for Leaflet map (client-side only)
-const MapLeaflet = dynamic(
-  () =>
-    import("../../../components/mapLeaflet").then((mod) => ({
-      default: mod.MapLeaflet,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full bg-gradient-to-br from-green-100 via-slate-100 to-blue-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-20 h-20 rounded-full bg-white/60 dark:bg-[#1F2937]/60 backdrop-blur-sm flex items-center justify-center mx-auto mb-4 shadow-sm border border-white/50 dark:border-gray-800 animate-pulse">
-            <MapPin className="w-10 h-10 text-green-500 dark:text-green-400" />
-          </div>
-          <p className="text-green-700 dark:text-green-400 font-bold">
-            Loading Map...
-          </p>
+const ProjectMap = dynamic(() => import("@/components/maps/ProjectMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-gradient-to-br from-green-100 via-slate-100 to-blue-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-20 h-20 rounded-full bg-white/60 dark:bg-[#1F2937]/60 backdrop-blur-sm flex items-center justify-center mx-auto mb-4 shadow-sm border border-white/50 dark:border-gray-800 animate-pulse">
+          <MapPin className="w-10 h-10 text-green-500 dark:text-green-400" />
         </div>
+        <p className="text-green-700 dark:text-green-400 font-bold">
+          Loading Map...
+        </p>
       </div>
-    ),
-  },
-);
+    </div>
+  ),
+});
 
 const mapStatusToUI = (status: string) => {
   switch (status) {
@@ -148,7 +142,7 @@ export default function MapPage() {
   const [selectedProject, setSelectedProject] = useState<ProjectMapData | null>(
     null,
   );
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("All");
   const [userVotes, setUserVotes] = useState<Record<string, VoteChoice>>({});
@@ -156,7 +150,15 @@ export default function MapPage() {
 
   // Listen to global app sidebar toggle
   useEffect(() => {
-    const handleToggle = () => setSidebarOpen((prev) => !prev);
+    const handleToggle = () =>
+      setSidebarOpen((isOpen) => {
+        if (!isOpen) {
+          setSelectedProject(null);
+        }
+
+        return !isOpen;
+      });
+
     window.addEventListener("toggle-app-sidebar", handleToggle);
     return () => window.removeEventListener("toggle-app-sidebar", handleToggle);
   }, []);
@@ -258,7 +260,7 @@ export default function MapPage() {
           );
           setProjects(fullProjects.filter(Boolean));
 
-          if (token && userRole === "Resident") {
+          if (token && userRole === "resident") {
             try {
               const activityRes = await fetch(
                 "/api/users/activity?limit=1000",
@@ -303,13 +305,19 @@ export default function MapPage() {
     fetchProjects();
   }, [userRole]);
 
-  const filteredProjects = projects.filter((p) => {
-    const matchSearch =
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchStatus = filterStatus === "All" || p.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  const filteredProjects = useMemo(() => {
+    const normalizedSearchQuery = searchQuery.toLowerCase();
+
+    return projects.filter((project) => {
+      const matchesSearch =
+        project.name.toLowerCase().includes(normalizedSearchQuery) ||
+        project.category.toLowerCase().includes(normalizedSearchQuery);
+      const matchesStatus =
+        filterStatus === "All" || project.status === filterStatus;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [filterStatus, projects, searchQuery]);
 
   const getOppositeVote = (voteType: VoteChoice): VoteChoice =>
     voteType === "agree" ? "disagree" : "agree";
@@ -339,8 +347,8 @@ export default function MapPage() {
   };
 
   const handleVote = async (projectId: string, voteType: VoteChoice) => {
-    if (!userRole || userRole !== "Resident") {
-      alert("Hanya Resident yang bisa voting");
+    if (!userRole || userRole !== "resident") {
+      alert("Hanya resident yang bisa voting");
       return;
     }
 
@@ -437,12 +445,23 @@ export default function MapPage() {
     setSelectedProject(project);
   };
 
+  const handleMapProjectSelect = (project: { id: string }) => {
+    const fullProject = filteredProjects.find((item) => item.id === project.id);
+    if (!fullProject) return;
+
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+
+    setSelectedProject(fullProject);
+  };
+
   return (
     <div className="flex h-full bg-slate-50 dark:bg-[#0B1120] relative overflow-hidden">
       {/* ── Left Sidebar ── */}
       <div
         className={cn(
-          "absolute md:relative z-10 w-80 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out shadow-lg md:shadow-none",
+          "absolute md:relative z-[2147483646] w-80 h-full bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out shadow-lg md:shadow-none",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
@@ -578,15 +597,10 @@ export default function MapPage() {
         {/* Leaflet Map */}
         <div className="w-full h-full relative">
           {!isLoading && (
-            <MapLeaflet
+            <ProjectMap
               projects={filteredProjects}
               selectedProject={selectedProject}
-              onProjectSelect={(project: { id: string }) => {
-                const fullProject = filteredProjects.find(
-                  (item) => item.id === project.id,
-                );
-                if (fullProject) setSelectedProject(fullProject);
-              }}
+              onProjectSelect={handleMapProjectSelect}
             />
           )}
         </div>
@@ -594,8 +608,10 @@ export default function MapPage() {
         {/* Legend / Map Controls */}
         <div
           className={cn(
-            "absolute top-4 right-4 z-20 flex-col gap-2 md:flex",
-            sidebarOpen ? "hidden" : "flex",
+            "absolute left-4 top-4 z-[900] flex flex-col gap-2 transition-opacity duration-200",
+            sidebarOpen
+              ? "pointer-events-none opacity-0 md:pointer-events-auto md:opacity-100"
+              : "opacity-100",
           )}
         >
           <div className="bg-white/90 backdrop-blur-md dark:bg-[#111827]/90 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-3">
@@ -629,22 +645,19 @@ export default function MapPage() {
 
         {/* ── Project Detail Overlay Panel ── */}
         {selectedProject && (
-          <div className="absolute top-4 left-4 md:left-auto md:right-4 z-30 w-full max-w-[280px] bg-white/95 backdrop-blur-xl dark:bg-[#111827]/95 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 flex flex-col max-h-[calc(100vh-10rem)]">
+          <div className="absolute left-4 right-4 top-4 z-[1000] flex max-h-[calc(100dvh-10rem)] w-auto max-w-[280px] flex-col rounded-2xl border border-gray-100 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-gray-800 dark:bg-[#111827]/95 md:left-auto md:right-4 md:w-full">
             {/* Project Photo / Image Area */}
             <div className="relative w-full h-28 bg-gray-200 dark:bg-[#1F2937] rounded-t-2xl overflow-hidden shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <ImageWithFallback
                 src={
                   selectedProject.imageUrl ||
                   "https://images.unsplash.com/photo-1541888009623-fb944e8bc1a8?q=80&w=400&auto=format&fit=crop"
                 }
                 alt="Project thumbnail"
+                fill
+                sizes="280px"
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback if unsplash image fails to load
-                  (e.target as HTMLImageElement).src =
-                    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=400&auto=format&fit=crop";
-                }}
+                fallbackSrc="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=400&auto=format&fit=crop"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent" />
 
@@ -757,7 +770,7 @@ export default function MapPage() {
               )}
 
               {/* Resident Actions */}
-              {userRole === "Resident" && (
+              {userRole === "resident" && (
                 <div className="space-y-2.5">
                   <div>
                     <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mb-1 block">
@@ -855,8 +868,8 @@ export default function MapPage() {
                 )}
               </div>
 
-              {/* Admin view / Manager view*/}
-              {(userRole === "Admin" || userRole === "Manager") && (
+              {/* Agency view */}
+              {userRole === "agency" && (
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-2 bg-gray-50 dark:bg-[#1F2937]/50 rounded-lg border border-gray-100 dark:border-gray-800">

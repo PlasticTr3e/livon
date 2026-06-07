@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-import { Card, Badge, Input, cn } from "@/components/ui/WireframePrimitives";
+import { Card, Badge, Input, cn } from "@/components/ui/primitives";
 import {
   MessageSquare,
   Search,
@@ -21,7 +21,7 @@ type CommentItem = {
   author: string;
   text: string;
   timestamp: string;
-  role: "Resident" | "Manager" | "Admin";
+  role: "resident" | "agency";
   projectName: string;
   projectId: string | null;
   flag: boolean;
@@ -50,6 +50,7 @@ export default function CommentMonitorPage() {
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Format waktu ke format detail (Tanggal & Jam)
   function formatFullDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleString("en-GB", {
@@ -62,14 +63,46 @@ export default function CommentMonitorPage() {
     });
   }
 
+  // Deteksi sentiment dari text
   const analyzeSentiment = (
-    label?: string,
+    text: string,
+    score?: number,
   ): "Positive" | "Negative" | "Neutral" => {
-    if (!label) return "Neutral";
-    
-    const upperLabel = label.toUpperCase();
-    if (upperLabel === "POSITIF") return "Positive";
-    if (upperLabel === "NEGATIF") return "Negative";
+    // Jika ada sentimentScore dari database, gunakan itu
+    if (score !== null && score !== undefined) {
+      if (score > 0.5) return "Positive";
+      if (score < -0.5) return "Negative";
+      return "Neutral";
+    }
+
+    // Fallback ke keyword analysis
+    const positiveWords = [
+      "bagus",
+      "setuju",
+      "mendukung",
+      "alhamdulillah",
+      "terima kasih",
+      "bermanfaat",
+      "selesai",
+      "jernih",
+      "hebat",
+      "mantap",
+    ];
+    const negativeWords = [
+      "berbahaya",
+      "hilang",
+      "rusak",
+      "masalah",
+      "kecewa",
+      "tidak",
+      "waste",
+      "dangerous",
+      "jelek",
+    ];
+    const lower = text.toLowerCase();
+
+    if (positiveWords.some((w) => lower.includes(w))) return "Positive";
+    if (negativeWords.some((w) => lower.includes(w))) return "Negative";
     return "Neutral";
   };
 
@@ -84,13 +117,15 @@ export default function CommentMonitorPage() {
     }
   };
 
-  const mapRole = (role: string): "Resident" | "Manager" | "Admin" => {
+  // Map role dari database ke display name
+  const mapRole = (role: string): "resident" | "agency" => {
     const upperRole = role.toUpperCase();
-    if (upperRole.includes("ADMIN")) return "Admin";
-    if (upperRole.includes("MANAGER")) return "Manager";
-    return "Resident";
+    return upperRole.includes("WARGA") || upperRole.includes("RESIDENT")
+      ? "resident"
+      : "agency";
   };
 
+  // Fetch comments & projects dari API
   useEffect(() => {
     async function fetchData() {
       try {
@@ -152,7 +187,10 @@ export default function CommentMonitorPage() {
             sentimentLabel?: string;
             userId: string;
           }) => {
-            const sentiment = analyzeSentiment(comment.sentimentLabel);
+            const sentiment = analyzeSentiment(
+              comment.text,
+              comment.sentimentScore,
+            );
 
             return {
               id: comment.id,
@@ -175,7 +213,7 @@ export default function CommentMonitorPage() {
 
         setAllComments(transformedComments);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("❌ Error fetching data:", error);
         setAllComments([]);
         setAllProjects([]);
       } finally {
@@ -186,6 +224,7 @@ export default function CommentMonitorPage() {
     fetchData();
   }, []);
 
+  // Handle delete comment
   const handleDeleteComment = async (commentId: string) => {
     try {
       const token = localStorage.getItem("livon-token");
@@ -219,18 +258,18 @@ export default function CommentMonitorPage() {
     }
   };
 
-  const getRoleStyle = (role: "Resident" | "Manager" | "Admin") => {
+  const getRoleStyle = (role: "resident" | "agency") => {
     switch (role) {
-      case "Admin":
-        return "bg-yellow-100 text-yellow-700 border-2 border-yellow-300";
-      case "Manager":
+      case "agency":
         return "bg-blue-100 text-blue-700 border-2 border-blue-300";
       default:
         return "bg-green-100 text-green-700 border-2 border-green-300";
     }
   };
 
+  // Combine projects and comments (including projects with 0 comments)
   const projectsWithComments = [
+    // Add "News" as a pseudo-project if it has comments
     ...(allComments.some((c) => !c.projectId)
       ? [
           {
@@ -242,6 +281,7 @@ export default function CommentMonitorPage() {
           },
         ]
       : []),
+    // Add all actual projects
     ...allProjects.map((p) => ({
       id: p.id,
       name: p.title,

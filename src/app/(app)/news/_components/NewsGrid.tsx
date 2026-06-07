@@ -3,7 +3,7 @@ import { useMemo, useSyncExternalStore } from "react";
 
 import Link from "next/link";
 import { Clock, ChevronRight, SearchX } from "lucide-react";
-import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 
 export interface NewsGridItem {
   id: string;

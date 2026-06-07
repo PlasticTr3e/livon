@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import Script from "next/script";
-import { Card, Badge, Input } from "@/components/ui/WireframePrimitives";
+import { Card, Badge, Input } from "@/components/ui/primitives";
 import { Search, Ban, CheckCircle, Users, Eye } from "lucide-react";
 import { Role } from "@/generated/prisma/enums";
 
@@ -18,8 +18,8 @@ function mapUserRole(user: {
   agencyProfile?: unknown | null;
 }) {
   return user.role?.toUpperCase() === "AGENCY" || user.agencyProfile
-    ? "Agency"
-    : "Resident";
+    ? "agency"
+    : "resident";
 }
 
 function mapUserStatus(user: {
@@ -50,7 +50,7 @@ function statusStyle(status: string) {
 
 function roleStyle(role: string) {
   switch (role) {
-    case "Agency":
+    case "agency":
       return "text-blue-700 bg-blue-50 border border-blue-300";
     default:
       return "text-green-700 bg-green-50 border border-green-300";
@@ -197,8 +197,8 @@ export default async function UserManagementPage({
                 className="text-sm border border-green-300 text-green-700 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white dark:bg-[#1F2937] cursor-pointer"
               >
                 <option value="ALL">All Role</option>
-                <option value="Resident">Resident</option>
-                <option value="Agency">Agency</option>
+                <option value="resident">resident</option>
+                <option value="agency">agency</option>
               </select>
               <select
                 name="status"
@@ -343,7 +343,7 @@ export default async function UserManagementPage({
                                     {address}
                                   </p>
                                 </div>
-                                {role === "Resident" && (
+                                {role === "resident" && (
                                   <>
                                     <div className="rounded-lg border border-gray-100 dark:border-gray-800 bg-slate-50 dark:bg-[#111827]/50 p-4">
                                       <p className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-white">
@@ -380,7 +380,7 @@ export default async function UserManagementPage({
                             </button>
                           </form>
                         )}
-                        {role === "Resident" && (
+                        {role === "resident" && (
                           <form action={toggleResidentBlock}>
                             <input
                               type="hidden"

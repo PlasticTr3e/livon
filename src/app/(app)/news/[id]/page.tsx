@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, User, Tag, Newspaper } from "lucide-react";
-import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import prisma from "@/lib/prisma";
 
 type AgencyProfile = { agencyName: string };
