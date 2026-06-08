@@ -1,7 +1,6 @@
 import re
 
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
-from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 
 _SLANG: dict[str, str] = {
     "gw": "saya", "gue": "saya", "sy": "saya",
