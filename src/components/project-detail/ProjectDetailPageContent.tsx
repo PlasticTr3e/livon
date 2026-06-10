@@ -46,6 +46,11 @@ import {
   Eye,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
+import {
+  getUserAvatarClassName,
+  getUserInitial,
+  getUserProfileDisplayName,
+} from "@/lib/app-shell/user";
 import { ProjectImageCarousel } from "./ProjectImageCarousel";
 import { ProjectImageViewer } from "./ProjectImageViewer";
 import { ProjectPdfViewer } from "./ProjectPdfViewer";
@@ -82,6 +87,7 @@ interface Project {
   endDate: string;
   budget: number;
   fundsCollected?: number;
+  estimatedDurationDays?: number;
   progress: number;
   priorityScore?: number;
   sentimentScore?: number;
@@ -108,7 +114,10 @@ interface ApiComment {
   sentimentScore?: number;
   user?: {
     email?: string;
+    name?: string | null;
     role?: string;
+    citizenProfile?: { fullName?: string | null } | null;
+    agencyProfile?: { agencyName?: string | null } | null;
   };
 }
 
@@ -124,6 +133,7 @@ interface ApiProjectPayload {
   endDate?: string;
   budgetTarget?: string | number;
   currentFunding?: string | number;
+  estimatedDurationDays?: number | string | null;
   _count?: { votes?: number; comments?: number };
   documentUrl?: string[];
   priorityScore?: number | string;
@@ -201,6 +211,17 @@ function computeProgress(
   if (status === "Completed") return 100;
   if (!budget || !fundsCollected) return 0;
   return Math.min(Math.round((fundsCollected / budget) * 100), 100);
+}
+
+function formatDurationDays(durationDays?: number) {
+  if (!durationDays || durationDays < 1) return "Duration TBD";
+
+  if (durationDays >= 30) {
+    const months = Math.floor(durationDays / 30);
+    return `${months} ${months > 1 ? "Months" : "Month"}`;
+  }
+
+  return `${durationDays} ${durationDays > 1 ? "Days" : "Day"}`;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -288,11 +309,18 @@ async function predictCommentSentiment(
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, string> = {
-  Planning: "bg-blue-100 text-blue-700 border-blue-300",
-  Funding: "bg-yellow-100 text-yellow-700 border-yellow-300",
-  Construction: "bg-orange-100 text-orange-700 border-orange-300",
-  Completed: "bg-green-100 text-green-700 border-green-300",
+  Planning:
+    "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-500/20 dark:text-blue-200 dark:border-blue-400/40",
+  Funding:
+    "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-400/20 dark:text-yellow-200 dark:border-yellow-300/40",
+  Construction:
+    "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-400/40",
+  Completed:
+    "bg-green-100 text-green-700 border-green-300 dark:bg-green-500/20 dark:text-green-200 dark:border-green-400/40",
 };
+
+const CATEGORY_BADGE_STYLE =
+  "bg-green-100 text-green-700 border-green-300 dark:bg-green-500/20 dark:text-green-200 dark:border-green-400/40";
 
 function getFileIcon(type: string) {
   switch (type.toLowerCase()) {
@@ -405,6 +433,9 @@ export function ProjectDetailPageContent() {
             fundsCollected: payload.currentFunding
               ? Number(payload.currentFunding)
               : 0,
+            estimatedDurationDays: payload.estimatedDurationDays
+              ? Number(payload.estimatedDurationDays)
+              : undefined,
             progress: computeProgress(
               payload.budgetTarget ? Number(payload.budgetTarget) : 0,
               payload.currentFunding ? Number(payload.currentFunding) : 0,
@@ -489,7 +520,7 @@ export function ProjectDetailPageContent() {
           const loadedComments: Comment[] = commentsData.map(
             (comment: ApiComment) => ({
               id: String(comment.id),
-              author: String(comment.user?.email || "Anonymous"),
+              author: getUserProfileDisplayName(comment.user, "Anonymous"),
               role: String(comment.user?.role || "resident"),
               text: String(comment.text || ""),
               timestamp: formatDate(comment.createdAt as string),
@@ -719,7 +750,10 @@ export function ProjectDetailPageContent() {
 
       const newCommentItem: Comment = {
         id: String(comment.id),
-        author: comment.user?.email || userName || "Anonymous",
+        author: getUserProfileDisplayName(
+          comment.user,
+          userName || "Anonymous",
+        ),
         role: comment.user?.role || userRole || "resident",
         text: String(comment.text || newComment.trim()),
         timestamp: formatDate(comment.createdAt),
@@ -764,6 +798,11 @@ export function ProjectDetailPageContent() {
 
   const handleVote = async (type: VoteChoice) => {
     if (isSavingVote) return;
+
+    if (project.status !== "Planning") {
+      toast.error("Voting closed", "Voting is only available during planning.");
+      return;
+    }
 
     const token = localStorage.getItem("livon-token");
     if (!token) {
@@ -903,6 +942,13 @@ export function ProjectDetailPageContent() {
   const agreePercent =
     totalVotes > 0 ? Math.round((votes.agree / totalVotes) * 100) : 0;
   const aiSourceLabel = aiMetrics?.source === "AI" ? "AI Live" : "Local AI";
+  const fundingProgress =
+    project.budget > 0
+      ? Math.min(
+          Math.round(((project.fundsCollected || 0) / project.budget) * 100),
+          100,
+        )
+      : 0;
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0B1120] overflow-y-auto">
@@ -924,7 +970,7 @@ export function ProjectDetailPageContent() {
             <Badge className={cn("py-1 px-3", STATUS_STYLES[project.status])}>
               {project.status}
             </Badge>
-            <Badge className="py-1 px-3 bg-white border-gray-200 text-gray-600">
+            <Badge className={cn("py-1 px-3", CATEGORY_BADGE_STYLE)}>
               {project.category}
             </Badge>
           </div>
@@ -938,27 +984,11 @@ export function ProjectDetailPageContent() {
                 ? `${project.latitude.toFixed(4)}, ${project.longitude.toFixed(4)}`
                 : project.address}
             </span>
-            {project.status === "Construction" && (
+            {["Construction", "Completed"].includes(project.status) && (
               <span className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-4 duration-500">
                 <Clock className="w-4 h-4 text-green-600" />
                 <span className="font-semibold text-gray-700 dark:text-white">
-                  {project.startDate && project.endDate
-                    ? (() => {
-                        const start = new Date(project.startDate);
-                        const end = new Date(project.endDate);
-                        const diffTime = Math.abs(
-                          end.getTime() - start.getTime(),
-                        );
-                        const diffDays = Math.ceil(
-                          diffTime / (1000 * 60 * 60 * 24),
-                        );
-                        if (diffDays >= 30) {
-                          const months = Math.floor(diffDays / 30);
-                          return `${months} ${months > 1 ? "Months" : "Month"}`;
-                        }
-                        return `${diffDays} ${diffDays > 1 ? "Days" : "Day"}`;
-                      })()
-                    : "Duration TBD"}
+                  {formatDurationDays(project.estimatedDurationDays)}
                 </span>
               </span>
             )}
@@ -1253,108 +1283,121 @@ export function ProjectDetailPageContent() {
               </div>
             )}
 
-            {userRole === "resident" && (
+            {(userRole === "resident" || userRole === "agency") && (
               <Card className="p-6 border-green-100">
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <BarChart2 className="w-5 h-5 text-green-600" /> Community
-                      Voting
-                    </h2>
+                {userRole === "resident" && (
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <BarChart2 className="w-5 h-5 text-green-600" />{" "}
+                        Community Voting
+                      </h2>
+                      {project.status === "Planning" ? (
+                        <Badge className="bg-green-100 text-green-700 border-green-300 dark:bg-green-500/20 dark:text-green-200 dark:border-green-400/40">
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-500 border-gray-300 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
+                          Closed
+                        </Badge>
+                      )}
+                    </div>
                     {project.status === "Planning" ? (
-                      <Badge className="bg-green-100 text-green-700 border-green-300">
-                        Active
-                      </Badge>
+                      <>
+                        <div className="flex gap-3 mb-4">
+                          <button
+                            onClick={() => handleVote("agree")}
+                            disabled={isSavingVote}
+                            className={cn(
+                              "flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 font-bold transition-all disabled:cursor-not-allowed disabled:opacity-60",
+                              userVote === "agree"
+                                ? "bg-green-600 border-green-600 text-white shadow-md"
+                                : "bg-green-50 border-green-200 text-green-700 hover:bg-green-100",
+                            )}
+                          >
+                            <ThumbsUp className="w-5 h-5" />
+                            <span className="text-xl">{votes.agree}</span>
+                            <span className="text-xs uppercase tracking-wider opacity-75">
+                              Agree
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleVote("disagree")}
+                            disabled={isSavingVote}
+                            className={cn(
+                              "flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 font-bold transition-all disabled:cursor-not-allowed disabled:opacity-60",
+                              userVote === "disagree"
+                                ? "bg-red-500 border-red-500 text-white shadow-md"
+                                : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100",
+                            )}
+                          >
+                            <ThumbsDown className="w-5 h-5" />
+                            <span className="text-xl">{votes.disagree}</span>
+                            <span className="text-xs uppercase tracking-wider opacity-75">
+                              Disagree
+                            </span>
+                          </button>
+                        </div>
+                        {userVote && (
+                          <p className="text-xs text-center text-green-600 font-medium">
+                            Your vote has been recorded. Click again to cancel.
+                          </p>
+                        )}
+                      </>
                     ) : (
-                      <Badge className="bg-gray-100 text-gray-500 border-gray-300">
-                        Closed
-                      </Badge>
-                    )}
-                  </div>
-                  {project.status === "Planning" ? (
-                    <>
                       <div className="flex gap-3 mb-4">
-                        <button
-                          onClick={() => handleVote("agree")}
-                          disabled={isSavingVote}
-                          className={cn(
-                            "flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 font-bold transition-all disabled:cursor-not-allowed disabled:opacity-60",
-                            userVote === "agree"
-                              ? "bg-green-600 border-green-600 text-white shadow-md"
-                              : "bg-green-50 border-green-200 text-green-700 hover:bg-green-100",
-                          )}
-                        >
+                        <div className="flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed">
                           <ThumbsUp className="w-5 h-5" />
                           <span className="text-xl">{votes.agree}</span>
                           <span className="text-xs uppercase tracking-wider opacity-75">
-                            Setuju
+                            Agree
                           </span>
-                        </button>
-                        <button
-                          onClick={() => handleVote("disagree")}
-                          disabled={isSavingVote}
-                          className={cn(
-                            "flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 font-bold transition-all disabled:cursor-not-allowed disabled:opacity-60",
-                            userVote === "disagree"
-                              ? "bg-red-500 border-red-500 text-white shadow-md"
-                              : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100",
-                          )}
-                        >
+                        </div>
+                        <div className="flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed">
                           <ThumbsDown className="w-5 h-5" />
                           <span className="text-xl">{votes.disagree}</span>
                           <span className="text-xs uppercase tracking-wider opacity-75">
-                            Tidak
+                            Disagree
                           </span>
-                        </button>
+                        </div>
                       </div>
-                      {userVote && (
-                        <p className="text-xs text-center text-green-600 font-medium">
-                          Your vote has been recorded. Click again to cancel.
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex gap-3 mb-4">
-                      <div className="flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed">
-                        <ThumbsUp className="w-5 h-5" />
-                        <span className="text-xl">{votes.agree}</span>
-                        <span className="text-xs uppercase tracking-wider opacity-75">
-                          Setuju
-                        </span>
-                      </div>
-                      <div className="flex-1 h-14 flex items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed">
-                        <ThumbsDown className="w-5 h-5" />
-                        <span className="text-xl">{votes.disagree}</span>
-                        <span className="text-xs uppercase tracking-wider opacity-75">
-                          Tidak
-                        </span>
-                      </div>
-                    </div>
+                    )}
+                    {project.status !== "Planning" && (
+                      <p className="text-xs text-center text-gray-400 font-medium">
+                        This project has entered the {project.status} stage.
+                      </p>
+                    )}
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    userRole === "resident"
+                      ? "border-t border-gray-100 pt-5 dark:border-gray-800"
+                      : "",
                   )}
-                  {project.status !== "Planning" && (
-                    <p className="text-xs text-center text-gray-400 font-medium">
-                      Proyek sudah memasuki tahap {project.status}.
-                    </p>
-                  )}
-                </div>
-                <div className="border-t border-gray-100 dark:border-gray-800 pt-5">
+                >
                   <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
                     <MessageSquare className="w-5 h-5 text-green-600" />{" "}
                     Community Discussion
                     <span className="text-xs text-gray-500 font-normal bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-                      {comments.length} komentar
+                      {comments.length} comments
                     </span>
                   </h3>
                   <div className="flex gap-3 mb-5">
-                    <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center shrink-0 shadow-sm">
+                    <div
+                      className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm",
+                        getUserAvatarClassName(userRole),
+                      )}
+                    >
                       <span className="text-white text-sm font-bold">
-                        {userName.charAt(0)}
+                        {getUserInitial(userName)}
                       </span>
                     </div>
                     <div className="flex-1">
                       <textarea
                         className="w-full p-3 border border-green-200 dark:border-slate-600 rounded-xl bg-green-50 dark:bg-[#111827] focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 text-sm resize-none h-20 text-gray-800 dark:text-white transition-all"
-                        placeholder={`Tulis pendapat Anda tentang proyek ini, ${userName}...`}
+                        placeholder={`Share your thoughts about this project, ${userName}...`}
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         onKeyDown={(e) => {
@@ -1423,7 +1466,7 @@ export function ProjectDetailPageContent() {
           </div>
 
           <div className="space-y-5">
-            <Card className="p-6 border-0 shadow-lg bg-green-600 text-white rounded-2xl">
+            <Card className="p-6 border-0 bg-green-600 text-white shadow-lg rounded-2xl dark:bg-green-600">
               <div className="relative z-10">
                 <h3 className="text-xs font-medium text-green-100 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
                   <DollarSign className="w-3.5 h-3.5" /> Target Fund
@@ -1432,7 +1475,7 @@ export function ProjectDetailPageContent() {
                   {formatRupiah(project.budget)}
                 </p>
 
-                <div className="space-y-4 bg-white/10 p-4 rounded-xl border border-white/5">
+                <div className="space-y-4 bg-white/10 p-4 rounded-xl border border-white/10">
                   {project.status !== "Planning" && (
                     <div>
                       <div className="flex justify-between text-[13px] text-green-50 mb-2.5">
@@ -1443,21 +1486,14 @@ export function ProjectDetailPageContent() {
                           </span>
                         </span>
                         <span className="font-bold text-white">
-                          {project.budget > 0
-                            ? Math.round(
-                                ((project.fundsCollected || 0) /
-                                  project.budget) *
-                                  100,
-                              )
-                            : 0}
-                          %
+                          {fundingProgress}%
                         </span>
                       </div>
                       <div className="w-full bg-black/20 rounded-full h-2 overflow-hidden">
                         <div
                           className="bg-yellow-400 h-full rounded-full transition-all duration-700"
                           style={{
-                            width: `${project.budget > 0 ? Math.round(((project.fundsCollected || 0) / project.budget) * 100) : 0}%`,
+                            width: `${fundingProgress}%`,
                           }}
                         />
                       </div>
@@ -1466,7 +1502,7 @@ export function ProjectDetailPageContent() {
 
                   {project.status === "Funding" ? (
                     <Link
-                      href={`/app/crowdfunding/${project.id}`}
+                      href={`/crowdfunding/${project.id}`}
                       className="block pt-1"
                     >
                       <Button className="w-full h-11 text-sm font-bold bg-white text-green-700 hover:bg-green-50 border-none shadow-sm transition-all rounded-xl">
@@ -1477,10 +1513,10 @@ export function ProjectDetailPageContent() {
                     <div className="pt-1 text-center">
                       <span className="text-xs text-green-100 font-medium opacity-90">
                         {project.status === "Planning"
-                          ? "⏳ Pendanaan belum dibuka"
+                          ? "Funding is not open yet"
                           : project.status === "Completed"
-                            ? "Pendanaan selesai"
-                            : "Pendanaan ditutup"}
+                            ? "Funding completed"
+                            : "Funding is closed"}
                       </span>
                     </div>
                   )}
@@ -1667,8 +1703,13 @@ export function ProjectDetailPageContent() {
         currentStatus={project.status}
         projectName={project.name}
         projectId={project.id}
-        onUpdateSuccess={(newStatus) =>
-          setProject((prev) => ({ ...prev, status: newStatus }))
+        onUpdateSuccess={(newStatus, estimatedDurationDays) =>
+          setProject((prev) => ({
+            ...prev,
+            status: newStatus,
+            estimatedDurationDays:
+              estimatedDurationDays ?? prev.estimatedDurationDays,
+          }))
         }
       />
 

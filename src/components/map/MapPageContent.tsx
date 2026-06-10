@@ -87,6 +87,14 @@ export function MapPageContent() {
       return;
     }
 
+    const project = projects.find(
+      (currentProject) => currentProject.id === projectId,
+    );
+    if (project?.status !== "Planning") {
+      toast.error("Voting closed", "Voting is only available during planning.");
+      return;
+    }
+
     if (savingVotes[projectId]) return;
 
     const token = getStoredMapToken();

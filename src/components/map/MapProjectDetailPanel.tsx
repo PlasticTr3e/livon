@@ -15,11 +15,14 @@ import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { cn, Badge } from "@/components/ui/primitives";
 import {
   formatRupiahFull,
-  getMapProgressColor,
+  getMapProgressColorValue,
   getMapProjectDuration,
   getMapStatusStyle,
 } from "@/lib/map/map-format";
 import type { MapProject, MapVoteChoice } from "@/lib/map/map-types";
+
+const MAP_CATEGORY_BADGE_CLASS =
+  "border border-green-300 bg-green-100 text-green-700 dark:border-green-400/40 dark:bg-green-500/20 dark:text-green-200";
 
 type MapProjectDetailPanelProps = {
   project: MapProject;
@@ -108,17 +111,6 @@ function MapProjectDetailImage({
       >
         <X className="h-3.5 w-3.5" />
       </button>
-
-      <div className="absolute bottom-2 left-4 flex gap-2">
-        <Badge
-          className={cn(
-            "border-0 px-1.5 py-0.5 text-[9px] shadow-sm",
-            getMapStatusStyle(project.status),
-          )}
-        >
-          {project.status}
-        </Badge>
-      </div>
     </div>
   );
 }
@@ -127,8 +119,21 @@ function MapProjectDetailHeader({ project }: { project: MapProject }) {
   return (
     <div className="flex items-start justify-between px-4 pb-2 pt-3">
       <div className="flex-1 pr-2">
-        <div className="mb-1 flex items-center gap-1.5">
-          <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-medium text-gray-500 dark:bg-[#1F2937]">
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          <Badge
+            className={cn(
+              "px-1.5 py-0.5 text-[9px] shadow-sm",
+              getMapStatusStyle(project.status),
+            )}
+          >
+            {project.status}
+          </Badge>
+          <span
+            className={cn(
+              "rounded-full px-1.5 py-0.5 text-[9px] font-medium",
+              MAP_CATEGORY_BADGE_CLASS,
+            )}
+          >
             {project.category}
           </span>
         </div>
@@ -162,11 +167,11 @@ function MapProjectCoreStats({ project }: { project: MapProject }) {
         <div className="mt-0.5 flex items-center gap-1.5">
           <div className="h-1 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
             <div
-              className={cn(
-                "h-full rounded-full",
-                getMapProgressColor(project.status),
-              )}
-              style={{ width: `${project.progress}%` }}
+              className="h-full rounded-full"
+              style={{
+                width: `${project.progress}%`,
+                backgroundColor: getMapProgressColorValue(project.status),
+              }}
             />
           </div>
           <span className="text-[10px] font-bold text-gray-900 dark:text-white">
@@ -227,29 +232,33 @@ function MapResidentActions({
   onDonate: (projectId: string) => void;
   onVote: (projectId: string, voteType: MapVoteChoice) => void;
 }) {
+  const canVote = project.status === "Planning";
+
   return (
     <div className="space-y-2.5">
-      <div>
-        <span className="mb-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-400">
-          Feedback
-        </span>
-        <div className="flex gap-2">
-          <MapVoteButton
-            count={project.votes.agree}
-            isActive={userVotes[project.id] === "agree"}
-            isSaving={savingVotes[project.id]}
-            type="agree"
-            onClick={() => onVote(project.id, "agree")}
-          />
-          <MapVoteButton
-            count={project.votes.disagree}
-            isActive={userVotes[project.id] === "disagree"}
-            isSaving={savingVotes[project.id]}
-            type="disagree"
-            onClick={() => onVote(project.id, "disagree")}
-          />
+      {canVote && (
+        <div>
+          <span className="mb-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-400">
+            Feedback
+          </span>
+          <div className="flex gap-2">
+            <MapVoteButton
+              count={project.votes.agree}
+              isActive={userVotes[project.id] === "agree"}
+              isSaving={savingVotes[project.id]}
+              type="agree"
+              onClick={() => onVote(project.id, "agree")}
+            />
+            <MapVoteButton
+              count={project.votes.disagree}
+              isActive={userVotes[project.id] === "disagree"}
+              isSaving={savingVotes[project.id]}
+              type="disagree"
+              onClick={() => onVote(project.id, "disagree")}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {project.status === "Funding" && (
         <button
@@ -361,7 +370,7 @@ function MapAgencyStats({ project }: { project: MapProject }) {
             {project.votes.agree + project.votes.disagree}
           </p>
         </div>
-        {project.status === "Construction" && (
+        {["Construction", "Completed"].includes(project.status) && (
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-2 dark:border-gray-800 dark:bg-[#1F2937]/50">
             <p className="mb-0.5 flex items-center text-[9px] font-semibold uppercase text-gray-400">
               <Clock className="mr-1 h-2.5 w-2.5" /> Duration

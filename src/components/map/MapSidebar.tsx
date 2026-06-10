@@ -78,7 +78,7 @@ export function MapSidebar({
       <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
         {isLoading ? (
           <LoadingState
-            label="Memuat proyek..."
+            label="Loading projects..."
             variant="panel"
             className="min-h-32 bg-transparent"
           />

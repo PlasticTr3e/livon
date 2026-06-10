@@ -1,7 +1,13 @@
 import { ChevronRight, ThumbsUp } from "lucide-react";
 import { cn, Badge, Button, Card } from "@/components/ui/primitives";
-import { getMapProgressColor, getMapStatusStyle } from "@/lib/map/map-format";
+import {
+  getMapProgressColorValue,
+  getMapStatusStyle,
+} from "@/lib/map/map-format";
 import type { MapProject } from "@/lib/map/map-types";
+
+const MAP_CATEGORY_BADGE_CLASS =
+  "border border-green-300 bg-green-100 text-green-700 dark:border-green-400/40 dark:bg-green-500/20 dark:text-green-200";
 
 type MapProjectCardProps = {
   isSelected: boolean;
@@ -51,18 +57,23 @@ export function MapProjectCard({
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
           <div
-            className={cn(
-              "h-1.5 rounded-full transition-all",
-              getMapProgressColor(project.status),
-            )}
-            style={{ width: `${project.progress}%` }}
+            className="h-1.5 rounded-full transition-all"
+            style={{
+              width: `${project.progress}%`,
+              backgroundColor: getMapProgressColorValue(project.status),
+            }}
           />
         </div>
       </div>
 
       <div className="flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-800">
         <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-white">
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-gray-700 dark:bg-slate-700 dark:text-white">
+          <span
+            className={cn(
+              "rounded px-1.5 py-0.5 font-medium",
+              MAP_CATEGORY_BADGE_CLASS,
+            )}
+          >
             {project.category}
           </span>
           <span className="flex items-center gap-0.5">

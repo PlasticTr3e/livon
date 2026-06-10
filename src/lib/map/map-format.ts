@@ -66,6 +66,21 @@ export function getMapProgressColor(status: string) {
   }
 }
 
+export function getMapProgressColorValue(status: string) {
+  switch (status) {
+    case "Planning":
+      return "#2563eb";
+    case "Funding":
+      return "#f59e0b";
+    case "Construction":
+      return "#f97316";
+    case "Completed":
+      return "#16a34a";
+    default:
+      return "#9ca3af";
+  }
+}
+
 export function getMapProjectProgress(status: string) {
   switch (status) {
     case "DISETUJUI":
@@ -111,6 +126,17 @@ export function filterMapProjects({
 }
 
 export function getMapProjectDuration(project: MapProject) {
+  if (project.estimatedDurationDays && project.estimatedDurationDays > 0) {
+    if (project.estimatedDurationDays >= 30) {
+      const months = Math.floor(project.estimatedDurationDays / 30);
+      return `${months} ${months > 1 ? "Months" : "Month"}`;
+    }
+
+    return `${project.estimatedDurationDays} ${
+      project.estimatedDurationDays > 1 ? "Days" : "Day"
+    }`;
+  }
+
   if (!project.startDate || !project.endDate) return "Not specified";
 
   const start = new Date(project.startDate);
