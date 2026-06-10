@@ -28,7 +28,7 @@ export function CrowdfundingProjectOverview({
           {project.title}
         </h1>
       </div>
-      <p className="line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-white">
+      <p className="line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-slate-300">
         {project.description}
       </p>
 
@@ -49,7 +49,7 @@ export function CrowdfundingProjectOverview({
 
       <div>
         <div className="mb-1.5 flex justify-between text-sm font-semibold">
-          <span className="text-gray-600 dark:text-white">
+          <span className="text-gray-600 dark:text-slate-300">
             Funding Progress
           </span>
           <span className="text-green-600">{stats.progress}%</span>

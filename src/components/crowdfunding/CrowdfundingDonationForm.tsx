@@ -108,9 +108,7 @@ export function CrowdfundingDonationForm({
             : "cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-slate-700",
         )}
       >
-        {finalAmount >= 10000
-          ? `Pay Donation Rp ${formatCrowdfundingAmount(finalAmount)}`
-          : "Pay Donation"}
+        Pay Donation
       </button>
       <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-400">
         <Shield className="h-3.5 w-3.5 text-green-500" />

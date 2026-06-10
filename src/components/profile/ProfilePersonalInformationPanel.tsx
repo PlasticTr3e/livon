@@ -1,4 +1,7 @@
-import { CheckCircle2, Save } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { CheckCircle2, Eye, EyeOff, Save } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import type { ProfileRole, UserWithProfile } from "@/lib/profile/profile-types";
 import { ProfileSectionHeader } from "./ProfileSectionHeader";
@@ -12,6 +15,11 @@ type ProfilePersonalInformationPanelProps = {
 
 const inputClassName =
   "h-12 w-full rounded-xl border border-gray-200 bg-white px-5 text-sm text-gray-800 transition focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white";
+
+const readOnlyInputClassName = cn(
+  inputClassName,
+  "cursor-not-allowed select-none bg-slate-100 text-gray-500 dark:bg-slate-800 dark:text-white",
+);
 
 export function ProfilePersonalInformationPanel({
   isSaving,
@@ -42,6 +50,8 @@ export function ProfilePersonalInformationPanel({
           </div>
         </ProfileField>
 
+        <PasswordFields />
+
         <button
           type="submit"
           disabled={isSaving}
@@ -50,6 +60,61 @@ export function ProfilePersonalInformationPanel({
           <Save className="h-4 w-4" /> {isSaving ? "Saving..." : "Save"}
         </button>
       </form>
+    </div>
+  );
+}
+
+function PasswordFields() {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const passwordType = isPasswordVisible ? "text" : "password";
+
+  return (
+    <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+          Password
+        </h3>
+        <button
+          type="button"
+          onClick={() => setIsPasswordVisible((current) => !current)}
+          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-slate-100 hover:text-green-600 dark:hover:bg-slate-800"
+          aria-label={isPasswordVisible ? "Hide passwords" : "Show passwords"}
+        >
+          {isPasswordVisible ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+      <div className="space-y-4">
+        <ProfileField label="Current Password">
+          <input
+            name="currentPassword"
+            type={passwordType}
+            autoComplete="current-password"
+            className={inputClassName}
+          />
+        </ProfileField>
+        <ProfileField label="New Password">
+          <input
+            name="newPassword"
+            type={passwordType}
+            autoComplete="new-password"
+            minLength={6}
+            className={inputClassName}
+          />
+        </ProfileField>
+        <ProfileField label="Confirm New Password">
+          <input
+            name="confirmPassword"
+            type={passwordType}
+            autoComplete="new-password"
+            minLength={6}
+            className={inputClassName}
+          />
+        </ProfileField>
+      </div>
     </div>
   );
 }
@@ -66,9 +131,10 @@ function AgencyProfileFields({ user }: { user: UserWithProfile }) {
       </ProfileField>
       <ProfileField label="Email Address">
         <input
-          name="email"
-          defaultValue={user.email}
-          className={inputClassName}
+          type="email"
+          value={user.email}
+          readOnly
+          className={readOnlyInputClassName}
         />
       </ProfileField>
       <ProfileField label="Phone Number">
@@ -101,9 +167,10 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
       </ProfileField>
       <ProfileField label="Email Address">
         <input
-          name="email"
-          defaultValue={user.email}
-          className={inputClassName}
+          type="email"
+          value={user.email}
+          readOnly
+          className={readOnlyInputClassName}
         />
       </ProfileField>
       <ProfileField label="Phone Number">
@@ -118,10 +185,7 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
           type="text"
           value={user.citizenProfile?.nik || ""}
           readOnly
-          className={cn(
-            inputClassName,
-            "cursor-not-allowed select-none bg-slate-100 text-gray-500 dark:bg-slate-800 dark:text-white",
-          )}
+          className={readOnlyInputClassName}
         />
       </ProfileField>
       <ProfileField label="Family card Number (KK)">
@@ -129,10 +193,7 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
           type="text"
           value={user.citizenProfile?.kkNumber || ""}
           readOnly
-          className={cn(
-            inputClassName,
-            "cursor-not-allowed select-none bg-slate-100 text-gray-500 dark:bg-slate-800 dark:text-white",
-          )}
+          className={readOnlyInputClassName}
         />
       </ProfileField>
       <div className="flex gap-3">

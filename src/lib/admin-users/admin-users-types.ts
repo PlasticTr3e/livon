@@ -3,6 +3,7 @@ export type AdminUserRole = "agency" | "resident";
 export type AdminUserStatus = "Verified" | "Pending" | "Blocked";
 
 export type AdminUsersSearchParams = {
+  filter?: string;
   search?: string;
   role?: string;
   status?: string;
@@ -30,6 +31,7 @@ export type AdminUser = {
 };
 
 export type AdminUserFilters = {
+  filter: string;
   role: string;
   search: string;
   status: string;

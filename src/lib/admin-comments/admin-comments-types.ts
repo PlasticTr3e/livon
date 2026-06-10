@@ -56,7 +56,13 @@ export type AdminCommentApiItem = {
   id: string;
   text: string;
   sentimentScore?: number;
-  user?: { email?: string; role?: string };
+  user?: {
+    email?: string;
+    name?: string | null;
+    role?: string;
+    citizenProfile?: { fullName?: string | null } | null;
+    agencyProfile?: { agencyName?: string | null } | null;
+  };
   createdAt: string;
   project?: { title?: string };
   news?: { title?: string };

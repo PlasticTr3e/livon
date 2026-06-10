@@ -3,6 +3,7 @@ import {
   getVoteDelta,
   mapStatusToUI,
 } from "./map-format";
+import { getUserProfileDisplayName } from "@/lib/app-shell/user";
 import type {
   ActivityFeedItem,
   MapComment,
@@ -17,6 +18,9 @@ type ApiMapComment = {
   createdAt?: string;
   user?: {
     email?: string;
+    name?: string | null;
+    citizenProfile?: { fullName?: string | null } | null;
+    agencyProfile?: { agencyName?: string | null } | null;
   };
 };
 
@@ -40,6 +44,7 @@ type ApiProjectDetail = {
   images?: { url?: string | null }[];
   startDate?: string;
   endDate?: string;
+  estimatedDurationDays?: number | string | null;
 };
 
 const fallbackProjectImage =
@@ -151,6 +156,9 @@ async function fetchMapProject(
       imageUrl: getProjectImageUrl(detail),
       startDate: detail.startDate,
       endDate: detail.endDate,
+      estimatedDurationDays: detail.estimatedDurationDays
+        ? Number(detail.estimatedDurationDays)
+        : undefined,
     };
   } catch (error) {
     console.error("Error fetching project details", error);
@@ -173,7 +181,7 @@ async function fetchMapProjectComments(
 
     return comments.map((comment) => ({
       id: String(comment.id),
-      author: comment.user?.email || "Resident",
+      author: getUserProfileDisplayName(comment.user, "Resident"),
       text: comment.text || "",
       timestamp: comment.createdAt
         ? new Date(comment.createdAt).toLocaleDateString()

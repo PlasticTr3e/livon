@@ -56,7 +56,10 @@ export async function updateProfileUser(
     body: JSON.stringify(getProfileUpdateBody(user, formData)),
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    const json = await response.json().catch(() => null);
+    throw new Error(json?.message || "Failed to save personal information");
+  }
 
   const json = (await response.json()) as ApiResponse<Partial<UserWithProfile>>;
   return normalizeApiData(json);
@@ -115,10 +118,13 @@ async function fetchResidentActivities(token: string) {
 }
 
 function getProfileUpdateBody(user: UserWithProfile, formData: FormData) {
+  const passwordFields = getPasswordUpdateBody(formData);
+
   if (user.role !== "WARGA") {
     return {
       phone: formData.get("phone") || undefined,
       address: formData.get("address") || undefined,
+      ...passwordFields,
     };
   }
 
@@ -127,5 +133,14 @@ function getProfileUpdateBody(user: UserWithProfile, formData: FormData) {
     phone: formData.get("phone") || undefined,
     blockHouse: formData.get("blokRumah") || undefined,
     houseNumber: formData.get("noRumah") || undefined,
+    ...passwordFields,
+  };
+}
+
+function getPasswordUpdateBody(formData: FormData) {
+  return {
+    currentPassword: formData.get("currentPassword") || undefined,
+    newPassword: formData.get("newPassword") || undefined,
+    confirmPassword: formData.get("confirmPassword") || undefined,
   };
 }

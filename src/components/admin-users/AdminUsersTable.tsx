@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban, CheckCircle, Eye, Loader2 } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { memo, useActionState, useCallback, useEffect, useState } from "react";
 import { useToast } from "@/components/shared/AppToaster";
 import { Badge, cn } from "@/components/ui/primitives";
 import {
@@ -29,7 +29,11 @@ const initialAdminUserActionState: AdminUserActionState = {
   status: "idle",
 };
 
-export function AdminUsersTable({ users }: AdminUsersTableProps) {
+export const AdminUsersTable = memo(function AdminUsersTable({
+  users,
+}: AdminUsersTableProps) {
+  const [verifierUserId] = useState(() => getCurrentVerifierUserId());
+
   return (
     <div className="-mx-5 overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-left">
@@ -43,15 +47,25 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
         </thead>
         <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
           {users.map((user) => (
-            <AdminUsersTableRow key={user.id} user={user} />
+            <AdminUsersTableRow
+              key={user.id}
+              user={user}
+              verifierUserId={verifierUserId}
+            />
           ))}
         </tbody>
       </table>
     </div>
   );
-}
+});
 
-function AdminUsersTableRow({ user }: { user: AdminUser }) {
+const AdminUsersTableRow = memo(function AdminUsersTableRow({
+  user,
+  verifierUserId,
+}: {
+  user: AdminUser;
+  verifierUserId: string;
+}) {
   const toast = useToast();
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [verifyState, verifyAction, isVerifying] = useActionState(
@@ -65,6 +79,8 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
   const role = getAdminUserRole(user);
   const status = getAdminUserStatus(user);
   const displayName = getAdminUserDisplayName(user);
+  const openDetails = useCallback(() => setIsDetailsOpen(true), []);
+  const closeDetails = useCallback(() => setIsDetailsOpen(false), []);
 
   useEffect(() => {
     if (verifyState.status === "success") {
@@ -127,7 +143,7 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={() => setIsDetailsOpen(true)}
+            onClick={openDetails}
             className="rounded-xl border border-gray-100 bg-white p-2.5 text-blue-600 shadow-sm transition-all hover:bg-blue-600 hover:text-white dark:border-gray-800 dark:bg-[#1F2937] dark:text-blue-400 dark:hover:bg-blue-700"
             title="View user"
           >
@@ -140,7 +156,7 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
                 type="button"
                 aria-label="Close user details"
                 className="absolute inset-0 bg-black/40"
-                onClick={() => setIsDetailsOpen(false)}
+                onClick={closeDetails}
               />
               <div className="relative z-10">
                 <AdminUserDetailsDialog role={role} user={user} />
@@ -151,6 +167,11 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
           {status === "Pending" && (
             <form action={verifyAction}>
               <input type="hidden" name="userId" value={user.id} />
+              <input
+                type="hidden"
+                name="verifierUserId"
+                value={verifierUserId}
+              />
               <ActionIconButton
                 disabled={isVerifying}
                 title="Verify user"
@@ -188,9 +209,31 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
       </td>
     </tr>
   );
+});
+
+function getCurrentVerifierUserId() {
+  if (typeof window === "undefined") return "";
+
+  const token = localStorage.getItem("livon-token");
+  if (!token) return "";
+
+  try {
+    const [, payload] = token.split(".");
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const paddedPayload = normalizedPayload.padEnd(
+      Math.ceil(normalizedPayload.length / 4) * 4,
+      "=",
+    );
+    const decodedPayload = JSON.parse(atob(paddedPayload)) as {
+      userId?: string;
+    };
+    return decodedPayload.userId || "";
+  } catch {
+    return "";
+  }
 }
 
-function ActionIconButton({
+const ActionIconButton = memo(function ActionIconButton({
   children,
   className,
   disabled,
@@ -214,4 +257,4 @@ function ActionIconButton({
       {children}
     </button>
   );
-}
+});

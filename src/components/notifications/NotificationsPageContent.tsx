@@ -69,14 +69,6 @@ export function NotificationsPageContent() {
     }
   }
 
-  function handleDelete(notificationId: string) {
-    setNotifications((currentNotifications) =>
-      currentNotifications.filter(
-        (notification) => notification.id !== notificationId,
-      ),
-    );
-  }
-
   return (
     <div className="flex-1 overflow-auto bg-slate-50 p-6 dark:bg-[#0B1120]">
       <div className="mx-auto max-w-4xl">
@@ -91,7 +83,6 @@ export function NotificationsPageContent() {
           filter={filter}
           isLoading={isLoading}
           notifications={filteredNotifications}
-          onDelete={handleDelete}
           onMarkAsRead={handleMarkAsRead}
         />
       </div>

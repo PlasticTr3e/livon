@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useToast } from "@/components/shared/AppToaster";
+import { LoadingState } from "@/components/shared/LoadingState";
 import {
   createAdminNews,
   deleteAdminNews,
@@ -11,9 +13,17 @@ import {
 } from "@/lib/admin-news/admin-news-api";
 import { uploadAdminNewsImage } from "@/lib/admin-news/admin-news-upload";
 import type { AdminNewsWithExtras } from "@/lib/admin-news/admin-news-types";
-import { AdminNewsFormModal } from "./AdminNewsFormModal";
 import { AdminNewsHeader } from "./AdminNewsHeader";
 import { AdminNewsTable } from "./AdminNewsTable";
+
+const AdminNewsFormModal = dynamic(
+  () =>
+    import("./AdminNewsFormModal").then((module) => module.AdminNewsFormModal),
+  {
+    ssr: false,
+    loading: () => <AdminNewsModalLoading />,
+  },
+);
 
 export function AdminNewsPageContent() {
   const toast = useToast();
@@ -235,5 +245,17 @@ export function AdminNewsPageContent() {
         />
       </div>
     </>
+  );
+}
+
+function AdminNewsModalLoading() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 px-4 pb-6 pt-24 md:pt-28">
+      <LoadingState
+        label="Loading news form..."
+        variant="panel"
+        className="min-h-40 w-full max-w-lg bg-white shadow-lg dark:bg-[#111827]"
+      />
+    </div>
   );
 }

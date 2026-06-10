@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { AdminDashboardHeader } from "@/components/admin-dashboard/AdminDashboardHeader";
 import { AdminDashboardLoading } from "@/components/admin-dashboard/AdminDashboardLoading";
 import { AdminDashboardMetricCards } from "@/components/admin-dashboard/AdminDashboardMetricCards";
 import { AdminDashboardPriorityProjects } from "@/components/admin-dashboard/AdminDashboardPriorityProjects";
 import { AdminDashboardQuickActions } from "@/components/admin-dashboard/AdminDashboardQuickActions";
-import { AdminDashboardSentimentChart } from "@/components/admin-dashboard/AdminDashboardSentimentChart";
-import { AdminDashboardStatusChart } from "@/components/admin-dashboard/AdminDashboardStatusChart";
+import { LoadingState } from "@/components/shared/LoadingState";
 import { fetchAdminDashboardData } from "@/lib/admin-dashboard/admin-dashboard-api";
 import { EMPTY_DASHBOARD_METRICS } from "@/lib/admin-dashboard/admin-dashboard-constants";
 import {
@@ -20,6 +20,28 @@ import type {
   AdminDashboardSortMode,
   ProjectStatusChartItem,
 } from "@/lib/admin-dashboard/admin-dashboard-types";
+
+const AdminDashboardSentimentChart = dynamic(
+  () =>
+    import("@/components/admin-dashboard/AdminDashboardSentimentChart").then(
+      (module) => module.AdminDashboardSentimentChart,
+    ),
+  {
+    ssr: false,
+    loading: () => <DashboardChartLoading label="Loading sentiment chart..." />,
+  },
+);
+
+const AdminDashboardStatusChart = dynamic(
+  () =>
+    import("@/components/admin-dashboard/AdminDashboardStatusChart").then(
+      (module) => module.AdminDashboardStatusChart,
+    ),
+  {
+    ssr: false,
+    loading: () => <DashboardChartLoading label="Loading status chart..." />,
+  },
+);
 
 export function AdminDashboardPageContent() {
   const [isLoading, setIsLoading] = useState(true);
@@ -95,5 +117,15 @@ export function AdminDashboardPageContent() {
       />
       <AdminDashboardQuickActions />
     </div>
+  );
+}
+
+function DashboardChartLoading({ label }: { label: string }) {
+  return (
+    <LoadingState
+      label={label}
+      variant="panel"
+      className="min-h-[350px] border border-gray-200 bg-white dark:border-gray-800 dark:bg-[#1F2937]"
+    />
   );
 }

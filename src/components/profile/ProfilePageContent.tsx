@@ -69,14 +69,17 @@ export function ProfilePageContent() {
     const token = getStoredProfileToken();
     if (!token || !user) return;
 
+    const formData = new FormData(event.currentTarget);
+    const passwordError = validatePasswordUpdate(formData);
+    if (passwordError) {
+      toast.error("Password update failed", passwordError);
+      return;
+    }
+
     setIsSavingProfile(true);
 
     try {
-      const updatedProfile = await updateProfileUser(
-        user,
-        new FormData(event.currentTarget),
-        token,
-      );
+      const updatedProfile = await updateProfileUser(user, formData, token);
 
       if (!updatedProfile) {
         toast.error("Failed to save personal information");
@@ -87,8 +90,11 @@ export function ProfilePageContent() {
         currentUser ? mergeUpdatedProfile(currentUser, updatedProfile) : null,
       );
       toast.success("Saved", "Personal information saved.");
-    } catch {
-      toast.error("Failed to save personal information");
+    } catch (error) {
+      toast.error(
+        "Failed to save personal information",
+        error instanceof Error ? error.message : undefined,
+      );
     } finally {
       setIsSavingProfile(false);
     }
@@ -141,4 +147,26 @@ export function ProfilePageContent() {
       </main>
     </div>
   );
+}
+
+function validatePasswordUpdate(formData: FormData) {
+  const currentPassword = String(formData.get("currentPassword") || "");
+  const newPassword = String(formData.get("newPassword") || "");
+  const confirmPassword = String(formData.get("confirmPassword") || "");
+  const hasPasswordInput = Boolean(
+    currentPassword || newPassword || confirmPassword,
+  );
+
+  if (!hasPasswordInput) return null;
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    return "Current password, new password, and confirmation are required.";
+  }
+  if (newPassword.length < 6) {
+    return "Password must be at least 6 characters.";
+  }
+  if (newPassword !== confirmPassword) {
+    return "Passwords do not match.";
+  }
+
+  return null;
 }

@@ -14,7 +14,6 @@ import { REGISTER_HERO_IMAGES } from "@/lib/register/register-copy";
 import type {
   RegisterFormData,
   RegisterFormErrors,
-  RegisterRole,
 } from "@/lib/register/register-types";
 import { RegisterFormPanel } from "./RegisterFormPanel";
 import { RegisterHeroPanel } from "./RegisterHeroPanel";
@@ -49,10 +48,6 @@ export function RegisterPageContent() {
 
   function handleFieldChange(field: keyof RegisterFormData, value: string) {
     setFormData((currentData) => ({ ...currentData, [field]: value }));
-  }
-
-  function handleRoleChange(role: RegisterRole) {
-    setFormData((currentData) => ({ ...currentData, role }));
   }
 
   async function handleRegister(event: React.FormEvent) {
@@ -98,7 +93,6 @@ export function RegisterPageContent() {
         isPasswordVisible={isPasswordVisible}
         isConfirmPasswordVisible={isConfirmPasswordVisible}
         onFieldChange={handleFieldChange}
-        onRoleChange={handleRoleChange}
         onSubmit={handleRegister}
         onTogglePasswordVisibility={() =>
           setIsPasswordVisible((isVisible) => !isVisible)

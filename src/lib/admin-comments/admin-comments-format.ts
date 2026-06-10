@@ -11,6 +11,7 @@ import type {
   AdminCommentSentiment,
   AdminCommentSentimentFilter,
 } from "@/lib/admin-comments/admin-comments-types";
+import { getUserProfileDisplayName } from "@/lib/app-shell/user";
 
 const POSITIVE_WORDS = [
   "bagus",
@@ -146,7 +147,7 @@ export function mapAdminComment(
 
   return {
     id: comment.id,
-    author: comment.user?.email || "Unknown User",
+    author: getUserProfileDisplayName(comment.user, "Unknown User"),
     text: comment.text || "",
     role: mapAdminCommentRole(comment.user?.role || "WARGA"),
     projectName: comment.project?.title || comment.news?.title || "News",

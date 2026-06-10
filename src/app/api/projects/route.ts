@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     if (minLat && maxLat && minLng && maxLng) {
       projects = await prisma.$queryRaw`
-        SELECT id, title, status, latitude, longitude
+        SELECT id, title, description, status, latitude, longitude, "budgetTarget", "currentFunding", "estimatedDurationDays", "imageUrls"
         FROM projects
         WHERE latitude BETWEEN ${parseFloat(minLat)} AND ${parseFloat(maxLat)}
           AND longitude BETWEEN ${parseFloat(minLng)} AND ${parseFloat(maxLng)}
@@ -64,7 +64,12 @@ export async function GET(req: NextRequest) {
         select: {
           id: true,
           title: true,
+          description: true,
           status: true,
+          budgetTarget: true,
+          currentFunding: true,
+          estimatedDurationDays: true,
+          imageUrls: true,
           latitude: true,
           longitude: true,
         },

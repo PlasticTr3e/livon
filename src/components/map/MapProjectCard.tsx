@@ -1,19 +1,30 @@
+import { memo, useCallback } from "react";
 import { ChevronRight, ThumbsUp } from "lucide-react";
 import { cn, Badge, Button, Card } from "@/components/ui/primitives";
-import { getMapProgressColor, getMapStatusStyle } from "@/lib/map/map-format";
+import {
+  getMapProgressColorValue,
+  getMapStatusStyle,
+} from "@/lib/map/map-format";
 import type { MapProject } from "@/lib/map/map-types";
+
+const MAP_CATEGORY_BADGE_CLASS =
+  "border border-green-300 bg-green-100 text-green-700 dark:border-green-400/40 dark:bg-green-500/20 dark:text-green-200";
 
 type MapProjectCardProps = {
   isSelected: boolean;
   project: MapProject;
-  onClick: () => void;
+  onSelect: (project: MapProject) => void;
 };
 
-export function MapProjectCard({
+export const MapProjectCard = memo(function MapProjectCard({
   isSelected,
   project,
-  onClick,
+  onSelect,
 }: MapProjectCardProps) {
+  const handleClick = useCallback(() => {
+    onSelect(project);
+  }, [onSelect, project]);
+
   return (
     <Card
       className={cn(
@@ -22,7 +33,7 @@ export function MapProjectCard({
           ? "border-green-500 bg-green-50 ring-2 ring-green-200 dark:border-green-600 dark:bg-green-900/20 dark:ring-green-900"
           : "hover:border-green-300 hover:shadow-md dark:hover:border-green-700",
       )}
-      onClick={onClick}
+      onClick={handleClick}
     >
       <div className="mb-2 flex items-start justify-between">
         <h3 className="pr-2 text-sm font-semibold leading-tight text-gray-800 dark:text-white">
@@ -51,18 +62,23 @@ export function MapProjectCard({
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
           <div
-            className={cn(
-              "h-1.5 rounded-full transition-all",
-              getMapProgressColor(project.status),
-            )}
-            style={{ width: `${project.progress}%` }}
+            className="h-1.5 rounded-full transition-all"
+            style={{
+              width: `${project.progress}%`,
+              backgroundColor: getMapProgressColorValue(project.status),
+            }}
           />
         </div>
       </div>
 
       <div className="flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-800">
         <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-white">
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-gray-700 dark:bg-slate-700 dark:text-white">
+          <span
+            className={cn(
+              "rounded px-1.5 py-0.5 font-medium",
+              MAP_CATEGORY_BADGE_CLASS,
+            )}
+          >
             {project.category}
           </span>
           <span className="flex items-center gap-0.5">
@@ -78,4 +94,4 @@ export function MapProjectCard({
       </div>
     </Card>
   );
-}
+});

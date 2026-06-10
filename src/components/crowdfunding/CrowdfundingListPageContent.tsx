@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   fetchCrowdfundingProjects,
   getStoredCrowdfundingToken,
@@ -37,13 +37,16 @@ export function CrowdfundingListPageContent() {
     () => filterCrowdfundingProjects(projects, searchQuery),
     [projects, searchQuery],
   );
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-slate-50 dark:bg-[#0B1120]">
       <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-8 md:px-6">
         <CrowdfundingHeader
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
         />
         <CrowdfundingCampaignList
           isLoading={isLoading}

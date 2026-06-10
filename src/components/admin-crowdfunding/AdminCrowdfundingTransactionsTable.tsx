@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Badge, Card, cn } from "@/components/ui/primitives";
 import {
   formatAdminCrowdfundingAmount,
@@ -13,80 +14,85 @@ type AdminCrowdfundingTransactionsTableProps = {
   limit?: number;
 };
 
-export function AdminCrowdfundingTransactionsTable({
-  transactions,
-  emptyMessage,
-  showProject = false,
-  showTransactionId = false,
-  limit,
-}: AdminCrowdfundingTransactionsTableProps) {
-  const visibleTransactions = limit
-    ? transactions.slice(0, limit)
-    : transactions;
+export const AdminCrowdfundingTransactionsTable = memo(
+  function AdminCrowdfundingTransactionsTable({
+    transactions,
+    emptyMessage,
+    showProject = false,
+    showTransactionId = false,
+    limit,
+  }: AdminCrowdfundingTransactionsTableProps) {
+    const visibleTransactions = useMemo(
+      () => (limit ? transactions.slice(0, limit) : transactions),
+      [limit, transactions],
+    );
 
-  return (
-    <div className="-mx-5 overflow-x-auto">
-      <table className="w-full min-w-[720px] border-collapse text-left">
-        <thead>
-          <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
-            {showTransactionId && <th className="px-8 py-4">TRX ID</th>}
-            <th className="px-8 py-4">Donor</th>
-            {showProject && <th className="px-4 py-4">Project</th>}
-            <th className="px-4 py-4">Amount</th>
-            <th className="px-4 py-4">Time</th>
-            <th className="px-8 py-4 text-center">Status</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
-          {visibleTransactions.length > 0 ? (
-            visibleTransactions.map((transaction) => (
-              <TransactionRow
-                key={transaction.id}
-                transaction={transaction}
-                showProject={showProject}
-                showTransactionId={showTransactionId}
-              />
-            ))
-          ) : (
-            <tr>
-              <td
-                colSpan={getColumnCount(showProject, showTransactionId)}
-                className="py-24 text-center text-[10px] font-medium uppercase tracking-widest text-gray-400 dark:text-white"
-              >
-                {emptyMessage}
-              </td>
+    return (
+      <div className="-mx-5 overflow-x-auto">
+        <table className="w-full min-w-[720px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
+              {showTransactionId && <th className="px-8 py-4">TRX ID</th>}
+              <th className="px-8 py-4">Donor</th>
+              {showProject && <th className="px-4 py-4">Project</th>}
+              <th className="px-4 py-4">Amount</th>
+              <th className="px-4 py-4">Time</th>
+              <th className="px-8 py-4 text-center">Status</th>
             </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-export function AdminCrowdfundingRecentTransactions({
-  transactions,
-}: {
-  transactions: AdminCrowdfundingTransaction[];
-}) {
-  return (
-    <Card className="overflow-hidden rounded-2xl border-green-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#1F2937]">
-      <div className="mb-5 flex items-center justify-between">
-        <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-          Recent Transactions
-        </h3>
+          </thead>
+          <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
+            {visibleTransactions.length > 0 ? (
+              visibleTransactions.map((transaction) => (
+                <TransactionRow
+                  key={transaction.id}
+                  transaction={transaction}
+                  showProject={showProject}
+                  showTransactionId={showTransactionId}
+                />
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={getColumnCount(showProject, showTransactionId)}
+                  className="py-24 text-center text-[10px] font-medium uppercase tracking-widest text-gray-400 dark:text-white"
+                >
+                  {emptyMessage}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
+    );
+  },
+);
 
-      <AdminCrowdfundingTransactionsTable
-        transactions={transactions}
-        emptyMessage="No transaction data yet"
-        showProject
-        limit={3}
-      />
-    </Card>
-  );
-}
+export const AdminCrowdfundingRecentTransactions = memo(
+  function AdminCrowdfundingRecentTransactions({
+    transactions,
+  }: {
+    transactions: AdminCrowdfundingTransaction[];
+  }) {
+    return (
+      <Card className="overflow-hidden rounded-2xl border-green-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#1F2937]">
+        <div className="mb-5 flex items-center justify-between">
+          <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Recent Transactions
+          </h3>
+        </div>
 
-function TransactionRow({
+        <AdminCrowdfundingTransactionsTable
+          transactions={transactions}
+          emptyMessage="No transaction data yet"
+          showProject
+          limit={3}
+        />
+      </Card>
+    );
+  },
+);
+
+const TransactionRow = memo(function TransactionRow({
   transaction,
   showProject,
   showTransactionId,
@@ -139,7 +145,7 @@ function TransactionRow({
       </td>
     </tr>
   );
-}
+});
 
 function getColumnCount(showProject: boolean, showTransactionId: boolean) {
   return 4 + Number(showProject) + Number(showTransactionId);

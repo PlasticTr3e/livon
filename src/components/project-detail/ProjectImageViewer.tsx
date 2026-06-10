@@ -51,6 +51,8 @@ export function ProjectImageViewer({
             src={images[imageIndex]}
             alt={projectName}
             fill
+            sizes="(min-width: 1024px) 1024px, 100vw"
+            priority
             className="rounded-lg object-contain shadow-2xl"
           />
         </div>

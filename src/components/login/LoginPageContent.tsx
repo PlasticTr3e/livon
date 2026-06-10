@@ -11,6 +11,7 @@ import {
   getLoginRedirectPath,
   mapApiRoleToLoginRole,
 } from "@/lib/login/login-auth";
+import { fetchSessionDisplayName } from "@/lib/app-shell/session-profile";
 import {
   LOGIN_HERO_IMAGES,
   LOGIN_SUCCESS_MESSAGES,
@@ -98,9 +99,9 @@ export function LoginPageContent() {
       }
 
       const mappedRole = mapApiRoleToLoginRole(result.data.user.role);
-      const userName = result.data.user.name || result.data.user.email;
 
       localStorage.setItem("livon-token", result.data.token);
+      const userName = await fetchSessionDisplayName(result.data.token);
       login(mappedRole, userName);
       router.push(getLoginRedirectPath(mappedRole));
     } catch {
