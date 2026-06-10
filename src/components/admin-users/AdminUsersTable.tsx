@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban, CheckCircle, Eye, Loader2 } from "lucide-react";
-import { useActionState, useEffect, useState } from "react";
+import { memo, useActionState, useCallback, useEffect, useState } from "react";
 import { useToast } from "@/components/shared/AppToaster";
 import { Badge, cn } from "@/components/ui/primitives";
 import {
@@ -29,7 +29,9 @@ const initialAdminUserActionState: AdminUserActionState = {
   status: "idle",
 };
 
-export function AdminUsersTable({ users }: AdminUsersTableProps) {
+export const AdminUsersTable = memo(function AdminUsersTable({
+  users,
+}: AdminUsersTableProps) {
   const [verifierUserId] = useState(() => getCurrentVerifierUserId());
 
   return (
@@ -55,9 +57,9 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
       </table>
     </div>
   );
-}
+});
 
-function AdminUsersTableRow({
+const AdminUsersTableRow = memo(function AdminUsersTableRow({
   user,
   verifierUserId,
 }: {
@@ -77,6 +79,8 @@ function AdminUsersTableRow({
   const role = getAdminUserRole(user);
   const status = getAdminUserStatus(user);
   const displayName = getAdminUserDisplayName(user);
+  const openDetails = useCallback(() => setIsDetailsOpen(true), []);
+  const closeDetails = useCallback(() => setIsDetailsOpen(false), []);
 
   useEffect(() => {
     if (verifyState.status === "success") {
@@ -139,7 +143,7 @@ function AdminUsersTableRow({
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={() => setIsDetailsOpen(true)}
+            onClick={openDetails}
             className="rounded-xl border border-gray-100 bg-white p-2.5 text-blue-600 shadow-sm transition-all hover:bg-blue-600 hover:text-white dark:border-gray-800 dark:bg-[#1F2937] dark:text-blue-400 dark:hover:bg-blue-700"
             title="View user"
           >
@@ -152,7 +156,7 @@ function AdminUsersTableRow({
                 type="button"
                 aria-label="Close user details"
                 className="absolute inset-0 bg-black/40"
-                onClick={() => setIsDetailsOpen(false)}
+                onClick={closeDetails}
               />
               <div className="relative z-10">
                 <AdminUserDetailsDialog role={role} user={user} />
@@ -205,7 +209,7 @@ function AdminUsersTableRow({
       </td>
     </tr>
   );
-}
+});
 
 function getCurrentVerifierUserId() {
   if (typeof window === "undefined") return "";
@@ -229,7 +233,7 @@ function getCurrentVerifierUserId() {
   }
 }
 
-function ActionIconButton({
+const ActionIconButton = memo(function ActionIconButton({
   children,
   className,
   disabled,
@@ -253,4 +257,4 @@ function ActionIconButton({
       {children}
     </button>
   );
-}
+});

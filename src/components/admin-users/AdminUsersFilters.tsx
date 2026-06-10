@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Script from "next/script";
 import { ChevronDown, Filter, Search } from "lucide-react";
 import { Input } from "@/components/ui/primitives";
@@ -7,7 +8,9 @@ type AdminUsersFiltersProps = {
   filters: AdminUserFilters;
 };
 
-export function AdminUsersFilters({ filters }: AdminUsersFiltersProps) {
+export const AdminUsersFilters = memo(function AdminUsersFilters({
+  filters,
+}: AdminUsersFiltersProps) {
   return (
     <div className="mb-5 pt-2">
       <form
@@ -63,4 +66,4 @@ export function AdminUsersFilters({ filters }: AdminUsersFiltersProps) {
       </Script>
     </div>
   );
-}
+});

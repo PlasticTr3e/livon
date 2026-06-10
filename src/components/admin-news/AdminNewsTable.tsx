@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 import { Edit2, Image as ImageIcon, Star, Trash2 } from "lucide-react";
 import { Badge, Card, cn } from "@/components/ui/primitives";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
@@ -13,7 +14,7 @@ type AdminNewsTableProps = {
   onToggleHeadline: (id: string) => void;
 };
 
-export function AdminNewsTable({
+export const AdminNewsTable = memo(function AdminNewsTable({
   error,
   isLoading,
   news,
@@ -59,9 +60,9 @@ export function AdminNewsTable({
       )}
     </Card>
   );
-}
+});
 
-function AdminNewsTableRow({
+const AdminNewsTableRow = memo(function AdminNewsTableRow({
   item,
   onDelete,
   onEdit,
@@ -72,6 +73,21 @@ function AdminNewsTableRow({
   onEdit: (item: AdminNewsWithExtras) => void;
   onToggleHeadline: (id: string) => void;
 }) {
+  const publishedDate = useMemo(
+    () =>
+      item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : "-",
+    [item.publishedAt],
+  );
+  const handleToggleHeadline = useCallback(() => {
+    onToggleHeadline(item.id);
+  }, [item.id, onToggleHeadline]);
+  const handleEdit = useCallback(() => {
+    onEdit(item);
+  }, [item, onEdit]);
+  const handleDelete = useCallback(() => {
+    onDelete(item.id);
+  }, [item.id, onDelete]);
+
   return (
     <tr
       className={cn(
@@ -121,9 +137,7 @@ function AdminNewsTableRow({
         </div>
       </td>
       <td className="px-4 py-6 text-xs font-semibold text-gray-500 dark:text-white">
-        {item.publishedAt
-          ? new Date(item.publishedAt).toLocaleDateString()
-          : "-"}
+        {publishedDate}
       </td>
       <td className="px-4 py-6 text-xs font-semibold text-gray-700 dark:text-white">
         {item.author?.agencyProfile?.agencyName || item.createdById}
@@ -138,7 +152,7 @@ function AdminNewsTableRow({
                 ? "text-yellow-500 dark:text-yellow-300"
                 : "text-gray-400 dark:text-gray-500",
             )}
-            onClick={() => onToggleHeadline(item.id)}
+            onClick={handleToggleHeadline}
             title={item.isHeadline ? "Current headline" : "Set as headline"}
           >
             <Star
@@ -148,14 +162,14 @@ function AdminNewsTableRow({
           <button
             type="button"
             className="rounded-xl border border-gray-100 bg-white p-2.5 text-green-600 shadow-sm transition-all hover:bg-green-600 hover:text-white dark:border-gray-800 dark:bg-[#1F2937] dark:text-green-400 dark:hover:bg-green-700"
-            onClick={() => onEdit(item)}
+            onClick={handleEdit}
           >
             <Edit2 className="h-4 w-4" />
           </button>
           <button
             type="button"
             className="rounded-xl border border-gray-100 bg-white p-2.5 text-red-500 shadow-sm transition-all hover:bg-red-500 hover:text-white dark:border-gray-800 dark:bg-[#1F2937] dark:text-red-400 dark:hover:bg-red-600"
-            onClick={() => onDelete(item.id)}
+            onClick={handleDelete}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -163,4 +177,4 @@ function AdminNewsTableRow({
       </td>
     </tr>
   );
-}
+});
