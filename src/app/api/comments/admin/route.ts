@@ -36,7 +36,15 @@ export async function GET(req: NextRequest) {
         deletedAt: null,
       },
       include: {
-        user: { select: { id: true, email: true, role: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            citizenProfile: { select: { fullName: true } },
+            agencyProfile: { select: { agencyName: true } },
+          },
+        },
         project: { select: { id: true, title: true } },
         news: { select: { id: true, title: true } },
       },
