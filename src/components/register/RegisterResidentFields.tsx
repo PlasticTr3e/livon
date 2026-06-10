@@ -27,7 +27,7 @@ export function RegisterResidentFields({
 
       <RegisterTextInput
         type="text"
-        placeholder="NIK (16 digits, optional)"
+        placeholder="NIK (16 digits)"
         value={formData.nik}
         onChange={(event) => onFieldChange("nik", event.target.value)}
         error={errors.nik}

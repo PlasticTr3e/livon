@@ -14,8 +14,6 @@ export function createRegisterFormData(
     blokRumah: "",
     noRumah: "",
     role: "WARGA",
-    agencyName: "",
-    address: "",
     phone: "",
   };
 }
@@ -57,12 +55,6 @@ export function validateRegisterForm(formData: RegisterFormData) {
     if (!formData.noRumah.trim()) errors.noRumah = "House Number is required";
   }
 
-  if (formData.role === "AGENCY") {
-    if (!formData.agencyName.trim())
-      errors.agencyName = "Agency name is required";
-    if (!formData.address.trim()) errors.address = "Address is required";
-  }
-
   return errors;
 }
 
@@ -77,8 +69,6 @@ export function createRegisterPayload(formData: RegisterFormData) {
     nik: formData.nik,
     blockHouse: formData.blokRumah,
     houseNumber: formData.noRumah,
-    agencyName: formData.agencyName,
-    address: formData.address,
   };
 }
 

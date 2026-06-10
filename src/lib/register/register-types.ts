@@ -1,4 +1,4 @@
-export type RegisterRole = "WARGA" | "AGENCY";
+export type RegisterRole = "WARGA";
 
 export type RegisterFormData = {
   fullName: string;
@@ -10,8 +10,6 @@ export type RegisterFormData = {
   blokRumah: string;
   noRumah: string;
   role: RegisterRole;
-  agencyName: string;
-  address: string;
   phone: string;
 };
 

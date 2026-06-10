@@ -4,6 +4,7 @@ import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { LoadingState } from "@/components/shared/LoadingState";
+import { fetchSessionDisplayName } from "@/lib/app-shell/session-profile";
 
 function GoogleSuccessContent() {
   const router = useRouter();
@@ -11,41 +12,45 @@ function GoogleSuccessContent() {
   const { login } = useUser();
 
   useEffect(() => {
-    const token = searchParams.get("token");
+    async function finishGoogleLogin() {
+      const token = searchParams.get("token");
 
-    if (token) {
-      localStorage.setItem("livon-token", token);
-      try {
-        const payload = token.split(".")[1];
-        const decodedPayload = JSON.parse(atob(payload));
+      if (token) {
+        localStorage.setItem("livon-token", token);
+        try {
+          const payload = token.split(".")[1];
+          const decodedPayload = JSON.parse(atob(payload));
 
-        const userRole: "Resident" | "Manager" =
-          decodedPayload.role === "WARGA" ? "Resident" : "Manager";
+          const userRole = decodedPayload.role === "WARGA" ? "WARGA" : "AGENCY";
+          const userName = await fetchSessionDisplayName(token);
 
-        login(userRole, decodedPayload.email);
+          login(userRole, userName);
 
-        if (userRole === "Manager" || decodedPayload.role === "ADMIN") {
-          router.push("/admin/users");
-        } else {
-          router.push("/map");
+          if (userRole === "AGENCY") {
+            router.push("/admin/users");
+          } else {
+            router.push("/map");
+          }
+        } catch {
+          router.push("/auth/login?error=InvalidToken");
         }
-      } catch {
-        router.push("/auth/login?error=InvalidToken");
+      } else {
+        router.push("/auth/login?error=NoToken");
       }
-    } else {
-      router.push("/auth/login?error=NoToken");
     }
+
+    finishGoogleLogin();
   }, [searchParams, router, login]);
 
   return (
-    <LoadingState label="Masuk dengan Google..." className="min-h-screen" />
+    <LoadingState label="Signing in with Google..." className="min-h-screen" />
   );
 }
 
 export default function GoogleSuccessPage() {
   return (
     <Suspense
-      fallback={<LoadingState label="Memuat..." className="min-h-screen" />}
+      fallback={<LoadingState label="Loading..." className="min-h-screen" />}
     >
       <GoogleSuccessContent />
     </Suspense>
