@@ -13,15 +13,27 @@ export async function verifyAdminUser(
   formData: FormData,
 ): Promise<AdminUserActionState> {
   const userId = String(formData.get("userId") || "");
+  const verifierUserId = String(formData.get("verifierUserId") || "");
   if (!userId) {
     return { message: "User ID is missing.", status: "error" };
   }
 
   try {
+    const agencyProfile = verifierUserId
+      ? await prisma.agencyProfile.findUnique({
+          where: { userId: verifierUserId },
+          select: { id: true },
+        })
+      : null;
+
     await prisma.$transaction([
       prisma.citizenProfile.updateMany({
         where: { userId },
-        data: { isVerified: true },
+        data: {
+          isVerified: true,
+          verifiedAt: new Date(),
+          ...(agencyProfile?.id ? { verifiedBy: agencyProfile.id } : {}),
+        },
       }),
       prisma.agencyProfile.updateMany({
         where: { userId },

@@ -42,8 +42,8 @@ export function AdminNewsFormModal({
   onTitleChange,
 }: AdminNewsFormModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6">
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-8 shadow-lg dark:bg-[#111827]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 px-4 pb-6 pt-24 md:pt-28">
+      <div className="relative w-full max-w-lg overflow-y-auto rounded-xl bg-white p-8 shadow-lg dark:bg-[#111827] md:max-h-[calc(100dvh-8rem)]">
         <button
           className="absolute right-3 top-3 text-gray-400 hover:text-red-500"
           onClick={onCancel}
@@ -55,7 +55,7 @@ export function AdminNewsFormModal({
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-xs font-semibold">
-              Judul Artikel
+              Article Title
             </label>
             <Input
               value={title}
@@ -95,10 +95,10 @@ export function AdminNewsFormModal({
               disabled={isSaving || isUploading}
               className="bg-green-600 text-white hover:bg-green-700"
             >
-              {isSaving ? "Menyimpan..." : submitLabel}
+              {isSaving ? "Saving..." : submitLabel}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>
-              Batal
+              Cancel
             </Button>
           </div>
         </form>

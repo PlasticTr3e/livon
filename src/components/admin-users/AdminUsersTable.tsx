@@ -30,6 +30,8 @@ const initialAdminUserActionState: AdminUserActionState = {
 };
 
 export function AdminUsersTable({ users }: AdminUsersTableProps) {
+  const [verifierUserId] = useState(() => getCurrentVerifierUserId());
+
   return (
     <div className="-mx-5 overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-left">
@@ -43,7 +45,11 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
         </thead>
         <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
           {users.map((user) => (
-            <AdminUsersTableRow key={user.id} user={user} />
+            <AdminUsersTableRow
+              key={user.id}
+              user={user}
+              verifierUserId={verifierUserId}
+            />
           ))}
         </tbody>
       </table>
@@ -51,7 +57,13 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
   );
 }
 
-function AdminUsersTableRow({ user }: { user: AdminUser }) {
+function AdminUsersTableRow({
+  user,
+  verifierUserId,
+}: {
+  user: AdminUser;
+  verifierUserId: string;
+}) {
   const toast = useToast();
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [verifyState, verifyAction, isVerifying] = useActionState(
@@ -151,6 +163,11 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
           {status === "Pending" && (
             <form action={verifyAction}>
               <input type="hidden" name="userId" value={user.id} />
+              <input
+                type="hidden"
+                name="verifierUserId"
+                value={verifierUserId}
+              />
               <ActionIconButton
                 disabled={isVerifying}
                 title="Verify user"
@@ -188,6 +205,28 @@ function AdminUsersTableRow({ user }: { user: AdminUser }) {
       </td>
     </tr>
   );
+}
+
+function getCurrentVerifierUserId() {
+  if (typeof window === "undefined") return "";
+
+  const token = localStorage.getItem("livon-token");
+  if (!token) return "";
+
+  try {
+    const [, payload] = token.split(".");
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const paddedPayload = normalizedPayload.padEnd(
+      Math.ceil(normalizedPayload.length / 4) * 4,
+      "=",
+    );
+    const decodedPayload = JSON.parse(atob(paddedPayload)) as {
+      userId?: string;
+    };
+    return decodedPayload.userId || "";
+  } catch {
+    return "";
+  }
 }
 
 function ActionIconButton({
