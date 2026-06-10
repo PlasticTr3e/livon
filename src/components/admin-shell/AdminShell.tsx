@@ -84,6 +84,7 @@ export function AdminShell({ children }: AdminShellProps) {
         userName={userName}
         userRole={userRole}
         onNotificationOpenChange={setIsNotificationOpen}
+        onOpenNotifications={() => router.push("/notifications")}
         onOpenProfile={() => router.push("/profile")}
         onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         onToggleTheme={toggleTheme}

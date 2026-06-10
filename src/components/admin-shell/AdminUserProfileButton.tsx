@@ -1,5 +1,8 @@
 import { cn } from "@/components/ui/primitives";
-import { getUserRoleLabel } from "@/lib/app-shell/user";
+import {
+  getUserHeaderDisplayName,
+  getUserRoleLabel,
+} from "@/lib/app-shell/user";
 
 type AdminUserProfileButtonProps = {
   isActive: boolean;
@@ -14,7 +17,8 @@ export function AdminUserProfileButton({
   userName,
   onClick,
 }: AdminUserProfileButtonProps) {
-  const roleInitial = userName.charAt(0).toUpperCase();
+  const displayName = getUserHeaderDisplayName(userName, role);
+  const roleInitial = displayName.charAt(0).toUpperCase();
 
   return (
     <button
@@ -30,7 +34,7 @@ export function AdminUserProfileButton({
       </div>
       <div className="hidden text-left text-sm md:block">
         <p className="font-semibold leading-tight text-gray-800 dark:text-white">
-          {userName}
+          {displayName}
         </p>
         <p className="text-xs text-green-600 dark:text-green-400">
           {getUserRoleLabel(role)}

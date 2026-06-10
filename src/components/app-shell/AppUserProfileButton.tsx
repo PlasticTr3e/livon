@@ -1,6 +1,7 @@
 import { cn } from "@/components/ui/primitives";
 import {
   getUserAvatarClassName,
+  getUserHeaderDisplayName,
   getUserInitial,
   getUserRoleLabel,
 } from "@/lib/app-shell/user";
@@ -18,6 +19,8 @@ export function AppUserProfileButton({
   userRole,
   onClick,
 }: AppUserProfileButtonProps) {
+  const displayName = getUserHeaderDisplayName(userName, userRole);
+
   return (
     <button
       type="button"
@@ -33,11 +36,11 @@ export function AppUserProfileButton({
           getUserAvatarClassName(userRole),
         )}
       >
-        {getUserInitial(userName)}
+        {getUserInitial(displayName)}
       </div>
       <div className="hidden text-left text-sm md:block">
         <p className="font-semibold leading-tight text-gray-800 dark:text-white">
-          {userName}
+          {displayName}
         </p>
         <p className="text-xs text-green-600 dark:text-green-400">
           {getUserRoleLabel(userRole)}

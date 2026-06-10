@@ -1,17 +1,15 @@
-import { CheckCheck, Trash2 } from "lucide-react";
+import { CheckCheck } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import { getNotificationCategoryLabel } from "@/lib/notifications/notification-format";
 import type { NotificationItem } from "@/lib/notifications/notification-types";
 
 type NotificationCardProps = {
   notification: NotificationItem;
-  onDelete: (notificationId: string) => void;
   onMarkAsRead: (notificationId: string) => void;
 };
 
 export function NotificationCard({
   notification,
-  onDelete,
   onMarkAsRead,
 }: NotificationCardProps) {
   return (
@@ -62,14 +60,6 @@ export function NotificationCard({
                   <CheckCheck className="h-3.5 w-3.5" />
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => onDelete(notification.id)}
-                className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
-                title="Delete notification"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
             </div>
           </div>
         </div>

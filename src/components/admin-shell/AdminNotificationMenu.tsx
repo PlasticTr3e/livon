@@ -12,6 +12,7 @@ type AdminNotificationMenuProps = {
   notifications: AdminNotification[];
   unreadCount: number;
   onOpenChange: (isOpen: boolean) => void;
+  onNavigate: () => void;
 };
 
 export function AdminNotificationMenu({
@@ -20,13 +21,43 @@ export function AdminNotificationMenu({
   notifications,
   unreadCount,
   onOpenChange,
+  onNavigate,
 }: AdminNotificationMenuProps) {
+  const handleNotificationButtonClick = () => {
+    const shouldOpenMenu =
+      typeof window !== "undefined" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+    if (!shouldOpenMenu) {
+      onNavigate();
+      return;
+    }
+
+    onOpenChange(!isOpen);
+  };
+
+  const handleMouseEnter = () => {
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      onOpenChange(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <div className="relative z-[2100]" data-notification-dropdown>
+    <div
+      className="relative z-[2100]"
+      data-notification-dropdown
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <button
         type="button"
-        onClick={() => onOpenChange(!isOpen)}
-        onMouseEnter={() => onOpenChange(true)}
+        onClick={handleNotificationButtonClick}
         className="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800"
       >
         <Bell className="h-5 w-5" />
@@ -36,10 +67,7 @@ export function AdminNotificationMenu({
       </button>
 
       {isOpen && (
-        <div
-          className="absolute right-0 z-[2200] mt-0 w-80 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-[#1F2937]"
-          onMouseLeave={() => onOpenChange(false)}
-        >
+        <div className="absolute right-0 z-[2200] mt-0 w-80 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-[#1F2937]">
           <div className="flex items-center justify-between rounded-t-xl border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50 p-3 dark:border-gray-800 dark:from-slate-800 dark:to-slate-800">
             <p className="text-sm font-bold text-green-800 dark:text-green-300">
               Notifikasi
@@ -71,7 +99,7 @@ export function AdminNotificationMenu({
 function AdminNotificationLoadingState() {
   return (
     <div className="p-3 text-center text-sm text-gray-500 dark:text-white">
-      <LoadingState label="Memuat notifikasi..." variant="inline" />
+      <LoadingState label="Loading notifications..." variant="inline" />
     </div>
   );
 }
