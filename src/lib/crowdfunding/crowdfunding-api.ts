@@ -13,29 +13,7 @@ export async function fetchCrowdfundingProjects(token: string | null) {
 
   if (!response.success || !response.data) return [];
 
-  const detailedProjects = await Promise.all(
-    response.data.map(async (project) => {
-      try {
-        const detailResponse = await apiFetch<CrowdfundingProject>(
-          `/api/projects/${project.id}`,
-          { headers },
-        );
-
-        if (detailResponse.success && detailResponse.data) {
-          return { ...project, ...detailResponse.data };
-        }
-      } catch (error) {
-        console.error(
-          `Failed to fetch details for project ${project.id}:`,
-          error,
-        );
-      }
-
-      return project;
-    }),
-  );
-
-  return detailedProjects;
+  return response.data;
 }
 
 export async function fetchCrowdfundingProject(

@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import Link from "next/link";
 import { HandCoins } from "lucide-react";
 import { Badge, Button, Card } from "@/components/ui/primitives";
@@ -13,10 +14,18 @@ type CrowdfundingCampaignCardProps = {
   project: CrowdfundingProject;
 };
 
-export function CrowdfundingCampaignCard({
+export const CrowdfundingCampaignCard = memo(function CrowdfundingCampaignCard({
   project,
 }: CrowdfundingCampaignCardProps) {
-  const { collected, progress, target } = getCrowdfundingProjectStats(project);
+  const { collected, progress, target } = useMemo(
+    () => getCrowdfundingProjectStats(project),
+    [project],
+  );
+  const collectedLabel = useMemo(
+    () => formatCrowdfundingAmount(collected),
+    [collected],
+  );
+  const targetLabel = useMemo(() => formatCrowdfundingAmount(target), [target]);
 
   return (
     <Card className="group overflow-hidden border-green-100 bg-white transition-all hover:shadow-lg dark:border-slate-800 dark:bg-[#111827]">
@@ -67,13 +76,13 @@ export function CrowdfundingCampaignCard({
               Collected
             </p>
             <p className="text-sm font-black text-green-700 dark:text-green-400">
-              Rp {formatCrowdfundingAmount(collected)}
+              Rp {collectedLabel}
             </p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-400 dark:text-slate-400">Target</p>
             <p className="text-sm font-black text-gray-700 dark:text-slate-100">
-              Rp {formatCrowdfundingAmount(target)}
+              Rp {targetLabel}
             </p>
           </div>
         </div>
@@ -89,4 +98,4 @@ export function CrowdfundingCampaignCard({
       </div>
     </Card>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { HandCoins } from "lucide-react";
 import { LoadingState } from "@/components/shared/LoadingState";
 import type { CrowdfundingProject } from "@/lib/crowdfunding/crowdfunding-types";
@@ -8,7 +9,7 @@ type CrowdfundingCampaignListProps = {
   projects: CrowdfundingProject[];
 };
 
-export function CrowdfundingCampaignList({
+export const CrowdfundingCampaignList = memo(function CrowdfundingCampaignList({
   isLoading,
   projects,
 }: CrowdfundingCampaignListProps) {
@@ -34,4 +35,4 @@ export function CrowdfundingCampaignList({
       ))}
     </div>
   );
-}
+});

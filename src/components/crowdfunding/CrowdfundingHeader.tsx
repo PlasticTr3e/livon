@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { HandCoins, Search } from "lucide-react";
 
 type CrowdfundingHeaderProps = {
@@ -5,7 +6,7 @@ type CrowdfundingHeaderProps = {
   onSearchChange: (query: string) => void;
 };
 
-export function CrowdfundingHeader({
+export const CrowdfundingHeader = memo(function CrowdfundingHeader({
   searchQuery,
   onSearchChange,
 }: CrowdfundingHeaderProps) {
@@ -38,4 +39,4 @@ export function CrowdfundingHeader({
       </div>
     </div>
   );
-}
+});
