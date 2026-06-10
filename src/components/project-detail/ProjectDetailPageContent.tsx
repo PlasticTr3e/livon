@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Button, Badge, Card, cn } from "@/components/ui/primitives";
 import { useUser } from "@/context/UserContext";
 import { isApiSuccess } from "@/lib/api-types";
-import { UpdateProjectStatusDialog } from "@/components/projects/UpdateProjectStatusDialog";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { useToast } from "@/components/shared/AppToaster";
 import { useState, useRef, useEffect } from "react";
@@ -52,8 +51,34 @@ import {
   getUserProfileDisplayName,
 } from "@/lib/app-shell/user";
 import { ProjectImageCarousel } from "./ProjectImageCarousel";
-import { ProjectImageViewer } from "./ProjectImageViewer";
-import { ProjectPdfViewer } from "./ProjectPdfViewer";
+
+const UpdateProjectStatusDialog = dynamic(
+  () =>
+    import("@/components/projects/UpdateProjectStatusDialog").then(
+      (module) => module.UpdateProjectStatusDialog,
+    ),
+  {
+    ssr: false,
+    loading: () => <ProjectModalLoading label="Loading status dialog..." />,
+  },
+);
+
+const ProjectImageViewer = dynamic(
+  () =>
+    import("./ProjectImageViewer").then((module) => module.ProjectImageViewer),
+  {
+    ssr: false,
+    loading: () => <ProjectModalLoading label="Loading image viewer..." />,
+  },
+);
+
+const ProjectPdfViewer = dynamic(
+  () => import("./ProjectPdfViewer").then((module) => module.ProjectPdfViewer),
+  {
+    ssr: false,
+    loading: () => <ProjectModalLoading label="Loading document viewer..." />,
+  },
+);
 
 // ── Local type definitions (no longer from mockData) ──────────────────────────
 interface Comment {
@@ -222,6 +247,18 @@ function formatDurationDays(durationDays?: number) {
   }
 
   return `${durationDays} ${durationDays > 1 ? "Days" : "Day"}`;
+}
+
+function ProjectModalLoading({ label }: { label: string }) {
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <LoadingState
+        label={label}
+        variant="panel"
+        className="min-h-32 w-full max-w-sm rounded-2xl bg-white shadow-2xl dark:bg-[#111827]"
+      />
+    </div>
+  );
 }
 
 function clamp(value: number, min: number, max: number) {
