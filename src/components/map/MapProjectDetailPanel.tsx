@@ -23,7 +23,7 @@ import {
 import type { MapProject, MapVoteChoice } from "@/lib/map/map-types";
 
 const MAP_CATEGORY_BADGE_CLASS =
-  "border border-green-300 bg-green-100 text-green-700 dark:border-green-400/40 dark:bg-green-500/20 dark:text-green-200";
+  "border border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300";
 
 type MapProjectDetailPanelProps = {
   project: MapProject;
