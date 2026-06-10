@@ -33,6 +33,9 @@ export function ProjectImageCarousel({
             <ImageWithFallback
               src={src}
               alt={`${projectName} - Image ${index + 1}`}
+              fill
+              sizes="(min-width: 768px) 1024px, 100vw"
+              priority={index === imageIndex}
               className="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
             />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">

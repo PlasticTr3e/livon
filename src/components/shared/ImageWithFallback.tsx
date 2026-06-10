@@ -36,11 +36,12 @@ export function ImageWithFallback({
       fill={fill}
       width={fill ? undefined : (width ?? 800)}
       height={fill ? undefined : (height ?? 800)}
+      sizes={imageProps.sizes ?? (fill ? "100vw" : undefined)}
       onError={(event) => {
         setImageSrc(fallbackSrc);
         onError?.(event);
       }}
-      unoptimized={imageProps.unoptimized ?? true}
+      unoptimized={imageProps.unoptimized}
     />
   );
 }
