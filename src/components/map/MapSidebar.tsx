@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Search, X } from "lucide-react";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { cn, Button } from "@/components/ui/primitives";
@@ -18,7 +19,7 @@ type MapSidebarProps = {
   onStatusChange: (status: MapStatusFilter) => void;
 };
 
-export function MapSidebar({
+export const MapSidebar = memo(function MapSidebar({
   filterStatus,
   isLoading,
   isOpen,
@@ -92,11 +93,11 @@ export function MapSidebar({
               key={project.id}
               isSelected={selectedProjectId === project.id}
               project={project}
-              onClick={() => onProjectSelect(project)}
+              onSelect={onProjectSelect}
             />
           ))
         )}
       </div>
     </aside>
   );
-}
+});

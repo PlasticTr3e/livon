@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   Activity,
   ChevronRight,
@@ -26,9 +27,9 @@ const MAP_CATEGORY_BADGE_CLASS =
 
 type MapProjectDetailPanelProps = {
   project: MapProject;
-  savingVotes: Record<string, boolean>;
+  currentVote?: MapVoteChoice;
+  isSavingVote?: boolean;
   userRole: string;
-  userVotes: Record<string, MapVoteChoice>;
   onClose: () => void;
   onDonate: (projectId: string) => void;
   onSeeComments: (projectId: string) => void;
@@ -36,11 +37,11 @@ type MapProjectDetailPanelProps = {
   onVote: (projectId: string, voteType: MapVoteChoice) => void;
 };
 
-export function MapProjectDetailPanel({
+export const MapProjectDetailPanel = memo(function MapProjectDetailPanel({
   project,
-  savingVotes,
+  currentVote,
+  isSavingVote,
   userRole,
-  userVotes,
   onClose,
   onDonate,
   onSeeComments,
@@ -59,8 +60,8 @@ export function MapProjectDetailPanel({
         {userRole === "resident" && (
           <MapResidentActions
             project={project}
-            savingVotes={savingVotes}
-            userVotes={userVotes}
+            currentVote={currentVote}
+            isSavingVote={isSavingVote}
             onDonate={onDonate}
             onVote={onVote}
           />
@@ -83,7 +84,7 @@ export function MapProjectDetailPanel({
       </div>
     </div>
   );
-}
+});
 
 function MapProjectDetailImage({
   project,
@@ -221,14 +222,14 @@ function MapProjectFundingProgress({ project }: { project: MapProject }) {
 
 function MapResidentActions({
   project,
-  savingVotes,
-  userVotes,
+  currentVote,
+  isSavingVote,
   onDonate,
   onVote,
 }: {
   project: MapProject;
-  savingVotes: Record<string, boolean>;
-  userVotes: Record<string, MapVoteChoice>;
+  currentVote?: MapVoteChoice;
+  isSavingVote?: boolean;
   onDonate: (projectId: string) => void;
   onVote: (projectId: string, voteType: MapVoteChoice) => void;
 }) {
@@ -244,15 +245,15 @@ function MapResidentActions({
           <div className="flex gap-2">
             <MapVoteButton
               count={project.votes.agree}
-              isActive={userVotes[project.id] === "agree"}
-              isSaving={savingVotes[project.id]}
+              isActive={currentVote === "agree"}
+              isSaving={isSavingVote}
               type="agree"
               onClick={() => onVote(project.id, "agree")}
             />
             <MapVoteButton
               count={project.votes.disagree}
-              isActive={userVotes[project.id] === "disagree"}
-              isSaving={savingVotes[project.id]}
+              isActive={currentVote === "disagree"}
+              isSaving={isSavingVote}
               type="disagree"
               onClick={() => onVote(project.id, "disagree")}
             />

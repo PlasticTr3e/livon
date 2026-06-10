@@ -14,7 +14,7 @@ import type { ProjectMapMarker } from "./project-map-types";
 
 type ProjectMapProps = {
   projects: ProjectMapMarker[];
-  selectedProject: ProjectMapMarker | null;
+  selectedProjectId?: string;
   onProjectSelect: (project: ProjectMapMarker) => void;
 };
 
@@ -93,7 +93,7 @@ function setMarkerScale(marker: L.Marker, scale: number, zIndex: number) {
 
 export default function ProjectMap({
   projects,
-  selectedProject,
+  selectedProjectId,
   onProjectSelect,
 }: ProjectMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -182,10 +182,10 @@ export default function ProjectMap({
 
   useEffect(() => {
     markersByProjectIdRef.current.forEach((marker, projectId) => {
-      const isSelected = selectedProject?.id === projectId;
+      const isSelected = selectedProjectId === projectId;
       setMarkerScale(marker, isSelected ? 1.3 : 1, isSelected ? 2000 : 1000);
     });
-  }, [selectedProject]);
+  }, [selectedProjectId]);
 
   return <div ref={mapContainerRef} className="h-full w-full" />;
 }

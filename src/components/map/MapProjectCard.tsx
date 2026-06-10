@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import { ChevronRight, ThumbsUp } from "lucide-react";
 import { cn, Badge, Button, Card } from "@/components/ui/primitives";
 import {
@@ -12,14 +13,18 @@ const MAP_CATEGORY_BADGE_CLASS =
 type MapProjectCardProps = {
   isSelected: boolean;
   project: MapProject;
-  onClick: () => void;
+  onSelect: (project: MapProject) => void;
 };
 
-export function MapProjectCard({
+export const MapProjectCard = memo(function MapProjectCard({
   isSelected,
   project,
-  onClick,
+  onSelect,
 }: MapProjectCardProps) {
+  const handleClick = useCallback(() => {
+    onSelect(project);
+  }, [onSelect, project]);
+
   return (
     <Card
       className={cn(
@@ -28,7 +33,7 @@ export function MapProjectCard({
           ? "border-green-500 bg-green-50 ring-2 ring-green-200 dark:border-green-600 dark:bg-green-900/20 dark:ring-green-900"
           : "hover:border-green-300 hover:shadow-md dark:hover:border-green-700",
       )}
-      onClick={onClick}
+      onClick={handleClick}
     >
       <div className="mb-2 flex items-start justify-between">
         <h3 className="pr-2 text-sm font-semibold leading-tight text-gray-800 dark:text-white">
@@ -89,4 +94,4 @@ export function MapProjectCard({
       </div>
     </Card>
   );
-}
+});
