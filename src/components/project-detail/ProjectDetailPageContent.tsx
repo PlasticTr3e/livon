@@ -1503,10 +1503,32 @@ export function ProjectDetailPageContent() {
           </div>
 
           <div className="space-y-5">
+            <Card className="p-6 border-slate-100 shadow-sm bg-white dark:bg-[#111827] rounded-2xl">
+              <h2 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2.5 text-sm tracking-tight">
+                <div className="w-8 h-8 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-green-600" />
+                </div>
+                Estimated Duration
+              </h2>
+              <div className="rounded-2xl border border-green-100 bg-green-50/70 p-4 dark:border-green-900/40 dark:bg-green-900/10">
+                <p className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
+                  {formatDurationDays(project.estimatedDurationDays)}
+                </p>
+                <p className="mt-1 text-xs font-medium text-gray-500 dark:text-slate-300">
+                  {["Construction", "Completed"].includes(project.status)
+                    ? "Timeline estimate for the current project work."
+                    : "Available once the project enters construction."}
+                </p>
+              </div>
+            </Card>
+
             <Card className="p-6 border-0 bg-green-600 text-white shadow-lg rounded-2xl dark:bg-green-600">
               <div className="relative z-10">
-                <h3 className="text-xs font-medium text-green-100 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
-                  <DollarSign className="w-3.5 h-3.5" /> Target Fund
+                <h3 className="font-bold text-white mb-5 flex items-center gap-2.5 text-sm tracking-tight">
+                  <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-green-100" />
+                  </div>
+                  Target Fund
                 </h3>
                 <p className="text-2xl md:text-3xl font-bold mb-5 tracking-tight">
                   {formatRupiah(project.budget)}
@@ -1568,8 +1590,11 @@ export function ProjectDetailPageContent() {
                 status={project.status}
               />
               <div className="absolute top-4 left-4 bg-white/90 dark:bg-[#111827]/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-100 dark:border-gray-800 shadow-sm pointer-events-none">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-2">
-                  <MapPin className="w-3 h-3 text-green-600" /> Project Location
+                <p className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm tracking-tight">
+                  <span className="w-7 h-7 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                    <MapPin className="w-3.5 h-3.5 text-green-600" />
+                  </span>
+                  Project Location
                 </p>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none group-hover:from-black/10 transition-all" />
@@ -1578,9 +1603,11 @@ export function ProjectDetailPageContent() {
             {/* Quick Actions Moved to Sidebar */}
             {userRole === "agency" && (
               <Card className="p-8 border-slate-100 shadow-sm bg-white dark:bg-[#111827] rounded-[2rem]">
-                <h2 className="font-black text-slate-900 dark:text-white mb-6 flex items-center gap-2.5 text-[11px] uppercase tracking-[0.2em]">
-                  <TrendingUp className="w-4 h-4 text-green-600" /> Quick
-                  Actions
+                <h2 className="font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2.5 text-sm tracking-tight">
+                  <div className="w-8 h-8 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                  </div>
+                  Quick Actions
                 </h2>
                 <div className="flex flex-col gap-3">
                   <Link
@@ -1609,8 +1636,11 @@ export function ProjectDetailPageContent() {
             {/* Project Documents Section - Moved to Sidebar */}
             <Card className="p-6 border-green-100 rounded-3xl shadow-sm">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="font-black text-gray-900 dark:text-white flex items-center gap-2 uppercase tracking-wider text-xs">
-                  <FileText className="w-4 h-4 text-green-600" /> Documents
+                <h2 className="font-bold text-gray-900 dark:text-white flex items-center gap-2.5 text-sm tracking-tight">
+                  <div className="w-8 h-8 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-green-600" />
+                  </div>
+                  Documents
                   <span className="text-[10px] text-gray-500 font-black bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                     {documents.length}
                   </span>
