@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { HandCoins } from "lucide-react";
 import { LoadingState } from "@/components/shared/LoadingState";
 import type { CrowdfundingProject } from "@/lib/crowdfunding/crowdfunding-types";
@@ -8,7 +9,7 @@ type CrowdfundingCampaignListProps = {
   projects: CrowdfundingProject[];
 };
 
-export function CrowdfundingCampaignList({
+export const CrowdfundingCampaignList = memo(function CrowdfundingCampaignList({
   isLoading,
   projects,
 }: CrowdfundingCampaignListProps) {
@@ -19,8 +20,10 @@ export function CrowdfundingCampaignList({
   if (projects.length === 0) {
     return (
       <div className="py-16 text-center">
-        <HandCoins className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-        <p className="font-medium text-gray-500">No active campaigns found.</p>
+        <HandCoins className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-slate-600" />
+        <p className="font-medium text-gray-500 dark:text-slate-400">
+          No active campaigns found.
+        </p>
       </div>
     );
   }
@@ -32,4 +35,4 @@ export function CrowdfundingCampaignList({
       ))}
     </div>
   );
-}
+});

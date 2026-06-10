@@ -33,6 +33,7 @@ export type MapProject = {
   imageUrl?: string;
   startDate?: string;
   endDate?: string;
+  estimatedDurationDays?: number;
 };
 
 export type ActivityFeedItem = {

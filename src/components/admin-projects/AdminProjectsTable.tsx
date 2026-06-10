@@ -1,3 +1,4 @@
+import { memo, useCallback, type MouseEvent } from "react";
 import Link from "next/link";
 import { Edit2, Trash2 } from "lucide-react";
 import { Card, cn } from "@/components/ui/primitives";
@@ -12,7 +13,7 @@ type AdminProjectsTableProps = {
   onView: (projectId: string) => void;
 };
 
-export function AdminProjectsTable({
+export const AdminProjectsTable = memo(function AdminProjectsTable({
   isLoading,
   projects,
   onDelete,
@@ -66,9 +67,9 @@ export function AdminProjectsTable({
       </div>
     </Card>
   );
-}
+});
 
-function AdminProjectsTableRow({
+const AdminProjectsTableRow = memo(function AdminProjectsTableRow({
   project,
   onDelete,
   onView,
@@ -78,11 +79,23 @@ function AdminProjectsTableRow({
   onView: (projectId: string) => void;
 }) {
   const statusConfig = ADMIN_PROJECT_STATUS_CONFIG[project.status];
+  const handleView = useCallback(() => {
+    onView(project.id);
+  }, [onView, project.id]);
+  const handleDelete = useCallback(() => {
+    onDelete(project.id);
+  }, [onDelete, project.id]);
+  const stopActionPropagation = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      event.stopPropagation();
+    },
+    [],
+  );
 
   return (
     <tr
       className="group cursor-pointer transition-colors hover:bg-green-50/50 dark:hover:bg-green-900/20"
-      onClick={() => onView(project.id)}
+      onClick={handleView}
     >
       <td className="px-8 py-6">
         <div className="flex flex-col">
@@ -119,7 +132,7 @@ function AdminProjectsTableRow({
       <td className="px-8 py-6">
         <div
           className="flex items-center justify-end gap-3"
-          onClick={(event) => event.stopPropagation()}
+          onClick={stopActionPropagation}
         >
           <Link href={`/admin/projects/${project.id}?mode=edit`}>
             <button className="rounded-xl border border-gray-100 bg-white p-2.5 text-green-600 shadow-sm transition-all hover:bg-green-600 hover:text-white dark:border-gray-800 dark:bg-[#1F2937] dark:text-green-400 dark:hover:bg-green-700">
@@ -128,7 +141,7 @@ function AdminProjectsTableRow({
           </Link>
           <button
             type="button"
-            onClick={() => onDelete(project.id)}
+            onClick={handleDelete}
             className="rounded-xl border border-gray-100 bg-white p-2.5 text-red-500 shadow-sm transition-all hover:bg-red-500 hover:text-white dark:border-gray-800 dark:bg-[#1F2937] dark:text-red-400 dark:hover:bg-red-600"
           >
             <Trash2 className="h-4 w-4" />
@@ -137,4 +150,4 @@ function AdminProjectsTableRow({
       </td>
     </tr>
   );
-}
+});

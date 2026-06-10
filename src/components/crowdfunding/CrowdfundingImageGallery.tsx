@@ -29,6 +29,9 @@ export function CrowdfundingImageGallery({
       <ImageWithFallback
         src={images[currentImageIndex]}
         alt={title}
+        fill
+        sizes="(min-width: 768px) 66vw, 100vw"
+        priority
         className="h-full w-full object-cover transition-all duration-500"
       />
       {images.length > 1 && (

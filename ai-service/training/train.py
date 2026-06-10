@@ -33,7 +33,6 @@ from sklearn.metrics import (
 from sklearn.model_selection import ParameterGrid
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import LinearSVC
-import pyarrow
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from training.preprocess import IndonesianPreprocessor

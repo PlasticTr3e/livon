@@ -10,7 +10,6 @@ type NotificationsListProps = {
   filter: NotificationFilter;
   isLoading: boolean;
   notifications: NotificationItem[];
-  onDelete: (notificationId: string) => void;
   onMarkAsRead: (notificationId: string) => void;
 };
 
@@ -18,7 +17,6 @@ export function NotificationsList({
   filter,
   isLoading,
   notifications,
-  onDelete,
   onMarkAsRead,
 }: NotificationsListProps) {
   if (isLoading) {
@@ -48,7 +46,6 @@ export function NotificationsList({
         <NotificationCard
           key={notification.id}
           notification={notification}
-          onDelete={onDelete}
           onMarkAsRead={onMarkAsRead}
         />
       ))}

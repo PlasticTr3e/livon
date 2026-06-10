@@ -2,15 +2,12 @@ import Link from "next/link";
 import type {
   RegisterFormData,
   RegisterFormErrors,
-  RegisterRole,
 } from "@/lib/register/register-types";
-import { RegisterAgencyFields } from "./RegisterAgencyFields";
 import { RegisterBrandMark } from "./RegisterBrandMark";
 import { RegisterDivider } from "./RegisterDivider";
 import { RegisterGoogleButton } from "./RegisterGoogleButton";
 import { RegisterPasswordInput } from "./RegisterPasswordInput";
 import { RegisterResidentFields } from "./RegisterResidentFields";
-import { RegisterRoleSelector } from "./RegisterRoleSelector";
 import { RegisterTextInput } from "./RegisterTextInput";
 
 type RegisterFormPanelProps = {
@@ -20,7 +17,6 @@ type RegisterFormPanelProps = {
   isPasswordVisible: boolean;
   isConfirmPasswordVisible: boolean;
   onFieldChange: (field: keyof RegisterFormData, value: string) => void;
-  onRoleChange: (role: RegisterRole) => void;
   onSubmit: (event: React.FormEvent) => void;
   onTogglePasswordVisibility: () => void;
   onToggleConfirmPasswordVisibility: () => void;
@@ -33,14 +29,10 @@ export function RegisterFormPanel({
   isPasswordVisible,
   isConfirmPasswordVisible,
   onFieldChange,
-  onRoleChange,
   onSubmit,
   onTogglePasswordVisibility,
   onToggleConfirmPasswordVisibility,
 }: RegisterFormPanelProps) {
-  const isResident = formData.role === "WARGA";
-  const isAgency = formData.role === "AGENCY";
-
   return (
     <div className="flex w-full flex-col justify-center overflow-y-auto bg-white px-10 py-10 dark:bg-[#111827] lg:w-[45%]">
       <div className="mx-auto w-full max-w-[340px]">
@@ -100,23 +92,11 @@ export function RegisterFormPanel({
             required
           />
 
-          <RegisterRoleSelector value={formData.role} onChange={onRoleChange} />
-
-          {isResident && (
-            <RegisterResidentFields
-              formData={formData}
-              errors={errors}
-              onFieldChange={onFieldChange}
-            />
-          )}
-
-          {isAgency && (
-            <RegisterAgencyFields
-              formData={formData}
-              errors={errors}
-              onFieldChange={onFieldChange}
-            />
-          )}
+          <RegisterResidentFields
+            formData={formData}
+            errors={errors}
+            onFieldChange={onFieldChange}
+          />
 
           <button
             type="submit"

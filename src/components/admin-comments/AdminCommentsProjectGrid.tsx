@@ -24,7 +24,7 @@ export function AdminCommentsProjectGrid({
   if (isLoading) {
     return (
       <LoadingState
-        label="Memuat proyek..."
+        label="Loading projects..."
         variant="panel"
         className="bg-transparent"
       />

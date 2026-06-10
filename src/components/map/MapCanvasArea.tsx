@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { MapLoadingPlaceholder } from "./MapLoadingPlaceholder";
 import { MapLegend } from "./MapLegend";
@@ -14,30 +15,40 @@ type MapCanvasAreaProps = {
   isLoading: boolean;
   isSidebarOpen: boolean;
   projects: MapProject[];
-  selectedProject: MapProject | null;
+  selectedProjectId?: string;
   onProjectSelect: (project: MapProject) => void;
 };
 
-export function MapCanvasArea({
+export const MapCanvasArea = memo(function MapCanvasArea({
   isLoading,
   isSidebarOpen,
   projects,
-  selectedProject,
+  selectedProjectId,
   onProjectSelect,
 }: MapCanvasAreaProps) {
+  const projectsById = useMemo(
+    () => new Map(projects.map((project) => [project.id, project])),
+    [projects],
+  );
+
+  const handleProjectSelect = useCallback(
+    (project: { id: string }) => {
+      const fullProject = projectsById.get(project.id);
+      if (fullProject) onProjectSelect(fullProject);
+    },
+    [onProjectSelect, projectsById],
+  );
+
   return (
     <div className="relative h-full w-full">
       {!isLoading && (
         <ProjectMap
           projects={projects}
-          selectedProject={selectedProject}
-          onProjectSelect={(project: { id: string }) => {
-            const fullProject = projects.find((item) => item.id === project.id);
-            if (fullProject) onProjectSelect(fullProject);
-          }}
+          selectedProjectId={selectedProjectId}
+          onProjectSelect={handleProjectSelect}
         />
       )}
       <MapLegend isHidden={isSidebarOpen} />
     </div>
   );
-}
+});

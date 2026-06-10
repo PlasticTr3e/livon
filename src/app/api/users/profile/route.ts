@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { ok, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
@@ -58,6 +59,9 @@ const updateProfileSchema = z.object({
   address: z.string().optional(), // For agency
   blockHouse: z.string().optional(), // For citizen
   houseNumber: z.string().optional(), // For citizen
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(6).optional(),
+  confirmPassword: z.string().optional(),
 });
 
 /**
@@ -105,6 +109,47 @@ export async function PUT(req: NextRequest) {
 
     const data = result.data;
     let updatableData;
+
+    const wantsPasswordChange = Boolean(
+      data.currentPassword || data.newPassword || data.confirmPassword,
+    );
+
+    if (wantsPasswordChange) {
+      if (!data.currentPassword || !data.newPassword || !data.confirmPassword) {
+        return badRequest(
+          "Current password, new password, and confirmation are required",
+        );
+      }
+
+      if (data.newPassword !== data.confirmPassword) {
+        return badRequest("New password and confirmation do not match");
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: authUser.userId },
+        select: { passwordHash: true },
+      });
+
+      if (!user?.passwordHash) {
+        return badRequest(
+          "Password changes are not available for this account",
+        );
+      }
+
+      const isCurrentPasswordValid = await bcrypt.compare(
+        data.currentPassword,
+        user.passwordHash,
+      );
+
+      if (!isCurrentPasswordValid) {
+        return badRequest("Current password is incorrect");
+      }
+
+      await prisma.user.update({
+        where: { id: authUser.userId },
+        data: { passwordHash: await bcrypt.hash(data.newPassword, 10) },
+      });
+    }
 
     if (authUser.role === Role.WARGA) {
       updatableData = await prisma.citizenProfile.update({

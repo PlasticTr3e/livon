@@ -11,7 +11,7 @@ import { broadcastNotification } from "@/lib/notifications";
 const registerSchema = z.object({
   email: z.email(),
   password: z.string().min(6),
-  role: z.enum(Role),
+  role: z.literal(Role.WARGA),
 
   fullName: z.string().optional(),
   phone: z.string().optional(),
@@ -19,9 +19,6 @@ const registerSchema = z.object({
   nik: z.string().optional(),
   blockHouse: z.string().optional(),
   houseNumber: z.string().optional(),
-
-  agencyName: z.string().optional(),
-  address: z.string().optional(),
 });
 
 /**
@@ -29,7 +26,7 @@ const registerSchema = z.object({
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
- *     description: Creates a new user with the specified role and profile information. Based on the role, it also creates the corresponding profile (WARGA or AGENCY).
+ *     description: Creates a resident user account and citizen profile.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -51,7 +48,7 @@ const registerSchema = z.object({
  *                 minLength: 6
  *               role:
  *                 type: string
- *                 enum: [WARGA, AGENCY]
+ *                 enum: [WARGA]
  *               fullName:
  *                 type: string
  *               phone:
@@ -119,13 +116,6 @@ export async function POST(req: NextRequest) {
         "WARGA role requires fullName, phone, kkNumber, and nik",
       );
     }
-    if (
-      role === Role.AGENCY &&
-      (!profileData.agencyName || !profileData.phone || !profileData.address)
-    ) {
-      return badRequest("AGENCY role requires agencyName, phone, and address");
-    }
-
     const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
@@ -134,28 +124,16 @@ export async function POST(req: NextRequest) {
         emailVerified: null,
         passwordHash,
         role,
-        ...(role === Role.WARGA
-          ? {
-              citizenProfile: {
-                create: {
-                  fullName: profileData.fullName!,
-                  phone: profileData.phone!,
-                  kkNumber: profileData.kkNumber!,
-                  nik: profileData.nik!,
-                  blockHouse: profileData.blockHouse,
-                  houseNumber: profileData.houseNumber,
-                },
-              },
-            }
-          : {
-              agencyProfile: {
-                create: {
-                  agencyName: profileData.agencyName!,
-                  phone: profileData.phone!,
-                  address: profileData.address!,
-                },
-              },
-            }),
+        citizenProfile: {
+          create: {
+            fullName: profileData.fullName!,
+            phone: profileData.phone!,
+            kkNumber: profileData.kkNumber!,
+            nik: profileData.nik!,
+            blockHouse: profileData.blockHouse,
+            houseNumber: profileData.houseNumber,
+          },
+        },
       },
       select: { id: true, email: true, role: true },
     });

@@ -49,9 +49,27 @@ export async function GET(req: NextRequest) {
         deletedAt: null,
       },
       include: {
-        user: { select: { id: true, email: true, role: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            citizenProfile: { select: { fullName: true } },
+            agencyProfile: { select: { agencyName: true } },
+          },
+        },
         replies: {
-          include: { user: { select: { id: true, email: true, role: true } } },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                citizenProfile: { select: { fullName: true } },
+                agencyProfile: { select: { agencyName: true } },
+              },
+            },
+          },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -133,7 +151,15 @@ export async function POST(req: NextRequest) {
         sentimentScore: sentiment.score,
       },
       include: {
-        user: { select: { id: true, email: true, role: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            citizenProfile: { select: { fullName: true } },
+            agencyProfile: { select: { agencyName: true } },
+          },
+        },
       },
     });
 

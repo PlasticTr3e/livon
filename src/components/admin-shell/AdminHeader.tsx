@@ -16,6 +16,7 @@ type AdminHeaderProps = {
   userName: string;
   userRole: string;
   onNotificationOpenChange: (isOpen: boolean) => void;
+  onOpenNotifications: () => void;
   onOpenProfile: () => void;
   onToggleSidebar: () => void;
   onToggleTheme: () => void;
@@ -31,6 +32,7 @@ export function AdminHeader({
   userName,
   userRole,
   onNotificationOpenChange,
+  onOpenNotifications,
   onOpenProfile,
   onToggleSidebar,
   onToggleTheme,
@@ -51,6 +53,7 @@ export function AdminHeader({
           notifications={notifications}
           unreadCount={unreadCount}
           onOpenChange={onNotificationOpenChange}
+          onNavigate={onOpenNotifications}
         />
         <AdminUserProfileButton
           isActive={pathname === "/profile"}

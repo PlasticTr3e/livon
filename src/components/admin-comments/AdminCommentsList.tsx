@@ -58,7 +58,7 @@ export function AdminCommentsList({
 function AdminCommentsLoadingState() {
   return (
     <LoadingState
-      label="Memuat komentar..."
+      label="Loading comments..."
       variant="panel"
       className="bg-transparent"
     />

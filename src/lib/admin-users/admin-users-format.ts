@@ -69,14 +69,22 @@ export function getAdminUserRoleStyle(role: string) {
 }
 
 export function normalizeAdminUserFilters(searchParams?: {
+  filter?: string;
   search?: string;
   role?: string;
   status?: string;
 }): AdminUserFilters {
+  const legacyRole = searchParams?.role || "ALL";
+  const legacyStatus = searchParams?.status || "ALL";
+
   return {
+    filter:
+      searchParams?.filter ||
+      (legacyRole !== "ALL" ? legacyRole : legacyStatus) ||
+      "ALL",
     search: searchParams?.search?.trim() || "",
-    role: searchParams?.role || "ALL",
-    status: searchParams?.status || "ALL",
+    role: legacyRole,
+    status: legacyStatus,
   };
 }
 
@@ -89,8 +97,7 @@ export function filterAdminUsers(
   return users.filter((user) => {
     const role = getAdminUserRole(user);
     const status = getAdminUserStatus(user);
-    const matchesRole = filters.role === "ALL" || role === filters.role;
-    const matchesStatus = filters.status === "ALL" || status === filters.status;
+    const matchesFilter = getAdminUserFilterMatch(filters.filter, role, status);
     const matchesSearch =
       !normalizedSearch ||
       user.email.toLowerCase().includes(normalizedSearch) ||
@@ -103,6 +110,16 @@ export function filterAdminUsers(
         .includes(normalizedSearch) ||
       user.agencyProfile?.address?.toLowerCase().includes(normalizedSearch);
 
-    return matchesRole && matchesStatus && matchesSearch;
+    return matchesFilter && matchesSearch;
   });
+}
+
+function getAdminUserFilterMatch(
+  filter: string,
+  role: AdminUserRole,
+  status: AdminUserStatus,
+) {
+  if (filter === "ALL") return true;
+  if (filter === "resident" || filter === "agency") return role === filter;
+  return status === filter;
 }

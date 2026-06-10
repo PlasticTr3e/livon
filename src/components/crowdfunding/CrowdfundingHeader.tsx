@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { HandCoins, Search } from "lucide-react";
 
 type CrowdfundingHeaderProps = {
@@ -5,7 +6,7 @@ type CrowdfundingHeaderProps = {
   onSearchChange: (query: string) => void;
 };
 
-export function CrowdfundingHeader({
+export const CrowdfundingHeader = memo(function CrowdfundingHeader({
   searchQuery,
   onSearchChange,
 }: CrowdfundingHeaderProps) {
@@ -20,7 +21,7 @@ export function CrowdfundingHeader({
             Crowdfunding
           </h1>
         </div>
-        <p className="ml-[52px] max-w-md text-sm leading-relaxed text-gray-500 dark:text-white">
+        <p className="ml-[52px] max-w-md text-sm leading-relaxed text-gray-500 dark:text-slate-300">
           Help create a better environment by donating to ongoing community
           projects.
         </p>
@@ -31,11 +32,11 @@ export function CrowdfundingHeader({
         <input
           type="text"
           placeholder="Search campaigns..."
-          className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-4 text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-gray-800 dark:bg-[#111827]"
+          className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-4 text-sm text-gray-900 shadow-sm transition-all placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-slate-800 dark:bg-[#111827] dark:text-white dark:placeholder:text-slate-500"
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
         />
       </div>
     </div>
   );
-}
+});

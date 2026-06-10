@@ -42,13 +42,11 @@ export function normalizeUserRole(role?: string | null): UserRole {
 }
 
 function getDisplayName(user: ApiUserProfile) {
-  return (
-    user.name ||
-    user.citizenProfile?.fullName ||
-    user.agencyProfile?.agencyName ||
-    user.email ||
-    "User"
-  );
+  const profileName =
+    user.citizenProfile?.fullName || user.agencyProfile?.agencyName;
+  const accountName = user.name && !user.name.includes("@") ? user.name : "";
+
+  return profileName || accountName || "User";
 }
 
 export function UserProvider({ children }: { children: ReactNode }) {
@@ -61,12 +59,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const nextRole = normalizeUserRole(role);
     setUserRole(nextRole);
     setIsAuthenticated(true);
-    if (name) {
+    if (name && !name.includes("@")) {
       setUserName(name);
     } else {
       const defaultNames: Record<UserRole, string> = {
-        resident: "Resident User",
-        agency: "Agency User",
+        resident: "Resident",
+        agency: "Agency",
       };
       setUserName(defaultNames[nextRole]);
     }
