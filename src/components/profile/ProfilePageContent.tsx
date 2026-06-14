@@ -70,6 +70,12 @@ export function ProfilePageContent() {
     if (!token || !user) return;
 
     const formData = new FormData(event.currentTarget);
+    const phoneError = validatePhoneNumber(formData);
+    if (phoneError) {
+      toast.error("Validation failed", phoneError);
+      return;
+    }
+
     const passwordError = validatePasswordUpdate(formData);
     if (passwordError) {
       toast.error("Password update failed", passwordError);
@@ -147,6 +153,17 @@ export function ProfilePageContent() {
       </main>
     </div>
   );
+}
+
+function validatePhoneNumber(formData: FormData) {
+  const phone = String(formData.get("phone") || "").trim();
+
+  if (!phone) return "Phone number is required.";
+  if (!/^\d{10,13}$/.test(phone)) {
+    return "Phone number must contain 10 to 13 digits.";
+  }
+
+  return null;
 }
 
 function validatePasswordUpdate(formData: FormData) {

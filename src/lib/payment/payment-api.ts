@@ -1,4 +1,4 @@
-import type { PaymentProject } from "./payment-types";
+import type { MidtransResult, PaymentProject } from "./payment-types";
 
 type ProjectResponse = {
   success?: boolean;
@@ -65,4 +65,28 @@ export async function createDonationPayment({
   }
 
   return result.data.token;
+}
+
+export async function syncDonationPaymentResult(
+  result: Pick<
+    MidtransResult,
+    "order_id" | "transaction_status" | "transaction_id" | "payment_type"
+  >,
+) {
+  const response = await fetch("/api/donations/webhook", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      order_id: result.order_id,
+      transaction_status: result.transaction_status,
+      transaction_id: result.transaction_id,
+      payment_type: result.payment_type,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to sync donation status.");
+  }
 }

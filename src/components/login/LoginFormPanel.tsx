@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { GoogleLoginButton } from "./GoogleLoginButton";
-import { LoginBrandMark } from "./LoginBrandMark";
 import { LoginDivider } from "./LoginDivider";
 import { LoginThemeToggle } from "./LoginThemeToggle";
 import { PasswordInput } from "./PasswordInput";
@@ -32,19 +31,15 @@ export function LoginFormPanel({
   onToggleTheme,
 }: LoginFormPanelProps) {
   return (
-    <div className="relative flex w-full flex-col justify-center bg-white px-10 py-16 dark:bg-[#111827] lg:w-[45%]">
+    <div className="relative flex w-full flex-col justify-center bg-white px-6 py-16 dark:bg-[#111827] sm:px-10 lg:w-[45%]">
       <LoginThemeToggle theme={theme} onToggle={onToggleTheme} />
 
-      <div className="mx-auto w-full max-w-85">
-        <LoginBrandMark className="mb-8 lg:hidden" />
-
+      <div className="mx-auto w-full max-w-[22rem]">
         <h1 className="mb-2 text-[2.2rem] font-extrabold leading-tight text-gray-900 dark:text-white">
           Welcome!
         </h1>
-        <p className="mb-6 text-sm leading-relaxed text-gray-400 dark:text-white">
-          Log in to LIVON and help make your neighborhood
-          <br />
-          even better!
+        <p className="mb-6 max-w-[18rem] text-sm leading-relaxed text-gray-400 dark:text-white sm:max-w-none">
+          Log in to LIVON and help make your neighborhood even better!
         </p>
 
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
