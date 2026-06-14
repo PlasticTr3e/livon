@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { badRequest, notFound } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+
 /**
  * @swagger
  * /api/auth/verify:
@@ -40,6 +42,10 @@ export async function GET(req: NextRequest) {
 
     if (!verificationToken) {
       return badRequest("Invalid or expired token");
+    }
+
+    if (verificationToken.identifier.startsWith("password-reset:")) {
+      return badRequest("Invalid verification token");
     }
 
     if (verificationToken.expires < new Date()) {

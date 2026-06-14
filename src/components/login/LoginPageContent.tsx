@@ -39,6 +39,7 @@ export function LoginPageContent() {
     parseAsString,
   );
   const [verified, setVerified] = useQueryState("verified", parseAsString);
+  const [reset, setReset] = useQueryState("reset", parseAsString);
 
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: "",
@@ -58,8 +59,22 @@ export function LoginPageContent() {
     if (verified === "true") {
       toast.success("Success", LOGIN_SUCCESS_MESSAGES.verified);
       setVerified(null);
+      return;
     }
-  }, [registered, setRegistered, setVerified, toast, verified]);
+
+    if (reset === "true") {
+      toast.success("Success", LOGIN_SUCCESS_MESSAGES.reset);
+      setReset(null);
+    }
+  }, [
+    registered,
+    reset,
+    setRegistered,
+    setReset,
+    setVerified,
+    toast,
+    verified,
+  ]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
