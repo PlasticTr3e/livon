@@ -67,7 +67,7 @@ export function LoginFormPanel({
 
           <div className="-mt-1 text-right">
             <Link
-              href="/forgot-password"
+              href="/auth/forgot-password"
               className="text-xs font-medium text-gray-400 transition-colors hover:text-green-600 dark:text-white dark:hover:text-green-400"
             >
               Forgot password?

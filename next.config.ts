@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  serverExternalPackages: ["@prisma/adapter-pg", "pg", "nodemailer"],
   allowedDevOrigins: ["local-origin.dev", "*.local-origin.dev"],
   images: {
     remotePatterns: [
