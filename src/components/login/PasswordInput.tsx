@@ -1,6 +1,8 @@
 import { Eye, EyeOff } from "lucide-react";
 
 type PasswordInputProps = {
+  name?: string;
+  placeholder?: string;
   value: string;
   isVisible: boolean;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -8,6 +10,8 @@ type PasswordInputProps = {
 };
 
 export function PasswordInput({
+  name = "password",
+  placeholder = "Password",
   value,
   isVisible,
   onChange,
@@ -17,8 +21,8 @@ export function PasswordInput({
     <div className="relative">
       <input
         type={isVisible ? "text" : "password"}
-        name="password"
-        placeholder="Password"
+        name={name}
+        placeholder={placeholder}
         value={value}
         onChange={onChange}
         className="h-12 w-full rounded-full border border-gray-200 bg-slate-50 px-5 pr-12 text-sm text-gray-800 transition-colors placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white dark:placeholder:text-slate-500"
