@@ -55,17 +55,19 @@ export function CrowdfundingDetailPageContent() {
     <div className="flex h-full flex-col overflow-y-auto bg-slate-50 dark:bg-[#0B1120]">
       <CrowdfundingDetailTopBar projectId={project.id} />
 
-      <div className="mx-auto w-full max-w-4xl space-y-6 p-4 md:p-8">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
+        <section className="grid grid-cols-1 gap-0 overflow-hidden rounded-3xl border border-green-100 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111827] lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
           <CrowdfundingImageGallery
             images={getCrowdfundingImages(project)}
             title={project.title}
           />
-          <CrowdfundingProjectOverview
-            project={project}
-            stats={getCrowdfundingProjectStats(project)}
-          />
-        </div>
+          <div className="p-5 sm:p-6 lg:p-8">
+            <CrowdfundingProjectOverview
+              project={project}
+              stats={getCrowdfundingProjectStats(project)}
+            />
+          </div>
+        </section>
 
         <CrowdfundingDonationForm
           project={project}

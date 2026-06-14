@@ -1413,10 +1413,12 @@ export function ProjectDetailPageContent() {
                       : "",
                   )}
                 >
-                  <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                    <MessageSquare className="w-5 h-5 text-green-600" />{" "}
-                    Community Discussion
-                    <span className="text-xs text-gray-500 font-normal bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+                  <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5 mb-4 text-sm sm:gap-2 sm:text-base">
+                    <MessageSquare className="w-4 h-4 shrink-0 text-green-600 sm:w-5 sm:h-5" />{" "}
+                    <span className="min-w-0 whitespace-nowrap">
+                      Community Discussion
+                    </span>
+                    <span className="shrink-0 whitespace-nowrap text-[10px] text-gray-500 font-normal bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full sm:px-2 sm:text-xs">
                       {comments.length} comments
                     </span>
                   </h3>
@@ -1433,7 +1435,7 @@ export function ProjectDetailPageContent() {
                     </div>
                     <div className="flex-1">
                       <textarea
-                        className="w-full p-3 border border-green-200 dark:border-slate-600 rounded-xl bg-green-50 dark:bg-[#111827] focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 text-sm resize-none h-20 text-gray-800 dark:text-white transition-all"
+                        className="w-full p-3 border border-green-200 dark:border-slate-600 rounded-xl bg-green-50 dark:bg-[#111827] focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 text-xs resize-none h-20 text-gray-800 dark:text-white transition-all sm:text-sm"
                         placeholder={`Share your thoughts about this project, ${userName}...`}
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
@@ -1443,12 +1445,12 @@ export function ProjectDetailPageContent() {
                         }}
                       />
                       <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-gray-400">
+                        <span className="text-[11px] text-gray-400 sm:text-xs">
                           Ctrl+Enter to send
                         </span>
                         <Button
                           variant="primary"
-                          className="flex items-center gap-1.5 text-sm px-4 py-2 bg-green-600 hover:bg-green-700"
+                          className="flex items-center gap-1.5 text-xs px-3 py-2 bg-green-600 hover:bg-green-700 sm:text-sm sm:px-4"
                           onClick={handlePostComment}
                           disabled={!newComment.trim() || loading}
                         >
@@ -1469,13 +1471,13 @@ export function ProjectDetailPageContent() {
                           </span>
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-bold text-sm text-gray-800 dark:text-white">
+                          <div className="flex min-w-0 items-center gap-1.5 mb-1 sm:gap-2">
+                            <p className="truncate font-bold text-xs text-gray-800 dark:text-white sm:text-sm">
                               {comment.author}
                             </p>
                             <span
                               className={cn(
-                                "text-[10px] px-1.5 py-0.5 rounded-full font-medium border",
+                                "shrink-0 text-[9px] px-1.5 py-0.5 rounded-full font-medium border sm:text-[10px]",
                                 comment.role?.toLowerCase() === "agency" ||
                                   comment.role?.toUpperCase() === "AGENCY"
                                   ? "bg-blue-100 text-blue-700 border-blue-300"
@@ -1486,11 +1488,11 @@ export function ProjectDetailPageContent() {
                                 ? "Resident"
                                 : "Agency"}
                             </span>
-                            <span className="text-xs text-gray-400 dark:text-white">
+                            <span className="shrink-0 text-[10px] text-gray-400 dark:text-white sm:text-xs">
                               {comment.timestamp}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-700 dark:text-white leading-relaxed">
+                          <p className="text-xs text-gray-700 dark:text-white leading-relaxed sm:text-sm">
                             {comment.text}
                           </p>
                         </div>

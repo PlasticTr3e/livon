@@ -1,4 +1,3 @@
-import { Target, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/primitives";
 import {
   formatCrowdfundingAmount,
@@ -19,35 +18,33 @@ export function CrowdfundingProjectOverview({
   stats,
 }: CrowdfundingProjectOverviewProps) {
   return (
-    <div className="space-y-4 md:col-span-3">
+    <div className="flex h-full flex-col justify-center space-y-5">
       <div>
         <Badge className="mb-2 border-yellow-300 bg-yellow-100 text-yellow-700">
           {getCampaignStatusLabel(project)}
         </Badge>
-        <h1 className="text-2xl font-black leading-tight text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-black leading-tight text-gray-900 dark:text-white md:text-3xl">
           {project.title}
         </h1>
       </div>
-      <p className="line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-slate-300">
+      <p className="max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-slate-300">
         {project.description}
       </p>
 
-      <div className="grid grid-cols-2 gap-3">
-        <CrowdfundingStatCard
-          icon={TrendingUp}
-          label="Collected"
-          value={`Rp ${formatCrowdfundingAmount(stats.collected)}`}
-          tone="green"
-        />
-        <CrowdfundingStatCard
-          icon={Target}
-          label="Target"
-          value={`Rp ${formatCrowdfundingAmount(stats.target)}`}
-          tone="yellow"
-        />
-      </div>
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-[#0B1120]">
+        <div className="mb-4 grid grid-cols-2 gap-4">
+          <CrowdfundingStatCard
+            label="Collected"
+            value={`Rp ${formatCrowdfundingAmount(stats.collected)}`}
+            valueClassName="text-green-700 dark:text-green-400"
+          />
+          <CrowdfundingStatCard
+            label="Target"
+            value={`Rp ${formatCrowdfundingAmount(stats.target)}`}
+            valueClassName="text-gray-900 dark:text-white"
+          />
+        </div>
 
-      <div>
         <div className="mb-1.5 flex justify-between text-sm font-semibold">
           <span className="text-gray-600 dark:text-slate-300">
             Funding Progress
@@ -66,34 +63,24 @@ export function CrowdfundingProjectOverview({
 }
 
 function CrowdfundingStatCard({
-  icon: Icon,
   label,
-  tone,
   value,
+  valueClassName,
 }: {
-  icon: React.ElementType;
   label: string;
-  tone: "green" | "yellow";
   value: string;
+  valueClassName: string;
 }) {
-  const toneClass =
-    tone === "green"
-      ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-      : "border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400";
-
   return (
-    <div
-      className={`flex items-center justify-between rounded-xl border p-3 ${toneClass}`}
-    >
-      <div className="text-left">
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wider">
-          {label}
-        </p>
-        <p className="text-sm font-black">{value}</p>
-      </div>
-      <div className="rounded-md border border-current/20 bg-white p-1.5 shadow-sm dark:bg-current/10">
-        <Icon className="h-4 w-4" />
-      </div>
+    <div className="min-w-0">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
+        {label}
+      </p>
+      <p
+        className={`truncate text-sm font-black sm:text-base ${valueClassName}`}
+      >
+        {value}
+      </p>
     </div>
   );
 }

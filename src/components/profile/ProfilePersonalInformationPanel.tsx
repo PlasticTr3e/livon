@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Eye, EyeOff, Save } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import type { ProfileRole, UserWithProfile } from "@/lib/profile/profile-types";
 import { ProfileSectionHeader } from "./ProfileSectionHeader";
@@ -34,30 +34,21 @@ export function ProfilePersonalInformationPanel({
         description="Manage your account details and preferences."
       />
 
-      <form onSubmit={onSubmit} className="space-y-5">
+      <form onSubmit={onSubmit} className="space-y-5" noValidate>
         {userRole === "agency" ? (
           <AgencyProfileFields user={user} />
         ) : (
           <ResidentProfileFields user={user} />
         )}
 
-        <ProfileField label="Account Status">
-          <div className="flex h-12 items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-5">
-            <CheckCircle2 className="h-4 w-4 text-green-700" />
-            <span className="text-sm font-semibold text-green-700">
-              Verified
-            </span>
-          </div>
-        </ProfileField>
-
         <PasswordFields />
 
         <button
           type="submit"
           disabled={isSaving}
-          className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-green-600 text-sm font-semibold text-white transition-all hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
+          className="mt-1 flex h-12 w-full items-center justify-center rounded-xl bg-green-600 text-sm font-semibold text-white transition-all hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          <Save className="h-4 w-4" /> {isSaving ? "Saving..." : "Save"}
+          {isSaving ? "Saving..." : "Save"}
         </button>
       </form>
     </div>
@@ -141,6 +132,8 @@ function AgencyProfileFields({ user }: { user: UserWithProfile }) {
         <input
           name="phone"
           defaultValue={user.agencyProfile?.phone || ""}
+          inputMode="numeric"
+          maxLength={13}
           className={inputClassName}
         />
       </ProfileField>
@@ -148,7 +141,8 @@ function AgencyProfileFields({ user }: { user: UserWithProfile }) {
         <input
           name="address"
           defaultValue={user.agencyProfile?.address || ""}
-          className={inputClassName}
+          readOnly
+          className={readOnlyInputClassName}
         />
       </ProfileField>
     </>
@@ -177,6 +171,8 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
         <input
           name="phone"
           defaultValue={user.citizenProfile?.phone || user.phone || ""}
+          inputMode="numeric"
+          maxLength={13}
           className={inputClassName}
         />
       </ProfileField>
@@ -203,7 +199,8 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
             defaultValue={
               user.citizenProfile?.blockHouse || user.blokRumah || ""
             }
-            className={inputClassName}
+            readOnly
+            className={readOnlyInputClassName}
           />
         </ProfileField>
         <ProfileField className="w-32" label="House Number">
@@ -212,7 +209,8 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
             defaultValue={
               user.citizenProfile?.houseNumber || user.noRumah || ""
             }
-            className={inputClassName}
+            readOnly
+            className={readOnlyInputClassName}
           />
         </ProfileField>
       </div>

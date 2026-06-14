@@ -25,15 +25,16 @@ export function CrowdfundingImageGallery({
   }
 
   return (
-    <div className="group relative h-64 w-full overflow-hidden rounded-2xl shadow-md md:col-span-2 md:h-[340px]">
+    <div className="group relative h-64 w-full overflow-hidden bg-slate-100 dark:bg-slate-900 sm:h-80 lg:h-full lg:min-h-[24rem]">
       <ImageWithFallback
         src={images[currentImageIndex]}
         alt={title}
         fill
-        sizes="(min-width: 768px) 66vw, 100vw"
+        sizes="(min-width: 1024px) 40vw, 100vw"
         priority
         className="h-full w-full object-cover transition-all duration-500"
       />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
       {images.length > 1 && (
         <>
           <button

@@ -217,26 +217,53 @@ function EditProjectContent() {
     setProjectPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const getProjectValidationError = () => {
+    if (!formData.title.trim()) return "Project title is required";
+    if (formData.title.trim().length < 5) {
+      return "Project title must be at least 5 characters";
+    }
+    if (!formData.description.trim()) return "Description is required";
+    if (formData.description.trim().length < 10) {
+      return "Description must be at least 10 characters";
+    }
+    if (!formData.budgetTarget || parseFloat(formData.budgetTarget) <= 0) {
+      return "Budget is required and must be a positive number";
+    }
+    if (!formData.categoryId) return "Category is required";
+    if (!formData.startDate) return "Start date is required";
+    if (!formData.status) return "Project status is required";
+    if (
+      !Number.isFinite(formData.latitude) ||
+      !Number.isFinite(formData.longitude)
+    ) {
+      return "Project location is required";
+    }
+    if (projectPhotos.length === 0) {
+      return "At least one project photo is required";
+    }
+    if (!formData.documentUrl || formData.documentUrl.length === 0) {
+      return "At least one supporting document is required";
+    }
+    if (
+      formData.status === "BERJALAN" &&
+      (!formData.estimatedDurationDays ||
+        parseInt(formData.estimatedDurationDays) <= 0)
+    ) {
+      return "Estimated duration is required for construction projects";
+    }
+
+    return null;
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     setError(null);
 
-    // Client-side validation for required fields
-    if (!formData.title || formData.title.length < 5) {
-      const errorMessage = "Title must be at least 5 characters";
+    const validationError = getProjectValidationError();
+    if (validationError) {
+      const errorMessage = validationError;
       setError(errorMessage);
-      setIsSaving(false);
-      return;
-    }
-    if (!formData.description || formData.description.length < 10) {
-      const errorMessage = "Description must be at least 10 characters";
-      setError(errorMessage);
-      setIsSaving(false);
-      return;
-    }
-    if (!formData.budgetTarget || parseFloat(formData.budgetTarget) <= 0) {
-      const errorMessage = "Budget is required and must be a positive number";
-      setError(errorMessage);
+      toast.error("Validation failed", errorMessage);
       setIsSaving(false);
       return;
     }
@@ -306,6 +333,26 @@ function EditProjectContent() {
     }
   };
 
+  const saveButtonLabel = isSaving
+    ? "Saving..."
+    : isCreate
+      ? "Publish Project"
+      : "Save Changes";
+
+  const saveButton = (className?: string) => (
+    <Button
+      variant="primary"
+      onClick={handleSave}
+      disabled={isSaving}
+      className={cn(
+        "h-10 bg-green-600 font-bold hover:bg-green-700",
+        className,
+      )}
+    >
+      {saveButtonLabel}
+    </Button>
+  );
+
   if (isLoading) {
     return (
       <LoadingState
@@ -340,28 +387,10 @@ function EditProjectContent() {
                 : `Managing details for "${formData.title}"`}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="primary"
-              onClick={handleSave}
-              disabled={isSaving}
-              className="h-10 px-8 bg-green-600 hover:bg-green-700 rounded-xl font-bold"
-            >
-              {isSaving
-                ? "Saving..."
-                : isCreate
-                  ? "Publish Project"
-                  : "Save Changes"}
-            </Button>
+          <div className="hidden items-center gap-3 md:flex">
+            {saveButton("rounded-xl px-8")}
           </div>
         </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm font-bold flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />
-            {error}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
@@ -771,6 +800,10 @@ function EditProjectContent() {
               </div>
             </Card>
           </div>
+        </div>
+
+        <div className="md:hidden">
+          {saveButton("h-12 w-full rounded-2xl shadow-lg shadow-green-900/10")}
         </div>
       </div>
     </div>
