@@ -24,16 +24,8 @@ export function AdminNotificationMenu({
   onNavigate,
 }: AdminNotificationMenuProps) {
   const handleNotificationButtonClick = () => {
-    const shouldOpenMenu =
-      typeof window !== "undefined" &&
-      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-
-    if (!shouldOpenMenu) {
-      onNavigate();
-      return;
-    }
-
-    onOpenChange(!isOpen);
+    onOpenChange(false);
+    onNavigate();
   };
 
   const handleMouseEnter = () => {

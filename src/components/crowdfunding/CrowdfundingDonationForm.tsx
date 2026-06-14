@@ -36,10 +36,10 @@ export function CrowdfundingDonationForm({
   }
 
   return (
-    <Card className="relative overflow-hidden border-2 border-green-200 p-6 shadow-md">
+    <Card className="relative overflow-hidden border border-green-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#111827] sm:p-6">
       {!canDonate && <DonationUnavailableOverlay project={project} />}
 
-      <h2 className="mb-5 flex items-center gap-2 font-black text-gray-900 dark:text-white">
+      <h2 className="mb-5 flex items-center gap-2 text-lg font-black text-gray-900 dark:text-white">
         <HandCoins className="h-5 w-5 text-green-600" /> Donation Amount
       </h2>
       <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-gray-700 dark:text-white">

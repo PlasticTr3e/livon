@@ -7,6 +7,7 @@ import {
   createDonationPayment,
   fetchPaymentProject,
   getStoredPaymentToken,
+  syncDonationPaymentResult,
 } from "@/lib/payment/payment-api";
 import { getPaymentReceiptTime } from "@/lib/payment/payment-format";
 import type {
@@ -73,6 +74,25 @@ export function PaymentPageContent() {
     if (id) loadProject();
   }, [id, toast]);
 
+  useEffect(() => {
+    if (!isFromMidtransSuccess || !searchParams.get("order_id")) return;
+
+    async function syncRedirectPaymentResult() {
+      try {
+        await syncDonationPaymentResult({
+          order_id: searchParams.get("order_id") || "",
+          transaction_status: searchParams.get("transaction_status") || "",
+          transaction_id: searchParams.get("transaction_id") || "",
+          payment_type: searchParams.get("payment_type") || "",
+        });
+      } catch (error) {
+        console.error("Failed to sync redirected payment:", error);
+      }
+    }
+
+    syncRedirectPaymentResult();
+  }, [isFromMidtransSuccess, searchParams]);
+
   async function handleConfirmPayment() {
     setIsProcessing(true);
 
@@ -93,7 +113,9 @@ export function PaymentPageContent() {
       });
 
       window.snap.pay(snapToken, {
-        onSuccess: handlePaymentSuccess,
+        onSuccess: (result) => {
+          void handlePaymentSuccess(result);
+        },
         onPending: () => {
           toast.info(
             "Waiting for payment",
@@ -123,13 +145,26 @@ export function PaymentPageContent() {
     }
   }
 
-  function handlePaymentSuccess(result: MidtransResult) {
-    setReceipt({
-      orderId: result.order_id,
-      time: getPaymentReceiptTime(),
-    });
-    setStep("success");
-    toast.success("Success", "Payment completed successfully.");
+  async function handlePaymentSuccess(result: MidtransResult) {
+    setIsProcessing(true);
+
+    try {
+      await syncDonationPaymentResult(result);
+      setReceipt({
+        orderId: result.order_id,
+        time: getPaymentReceiptTime(),
+      });
+      setStep("success");
+      toast.success("Success", "Payment completed successfully.");
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        "Payment sync failed",
+        "Payment succeeded, but funding has not been updated yet.",
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   }
 
   if (isLoadingProject) {
