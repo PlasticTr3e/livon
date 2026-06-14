@@ -10,11 +10,11 @@ type ProjectPdfViewerProps = {
 export function ProjectPdfViewer({ url, onClose }: ProjectPdfViewerProps) {
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-black/80 px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+5.5rem)] backdrop-blur-sm sm:items-center sm:p-4 md:p-10"
+      className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-black/80 px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+5.5rem)] backdrop-blur-sm md:px-10 md:pb-10 md:pt-[calc(env(safe-area-inset-top)+6rem)]"
       onClick={onClose}
     >
       <div
-        className="relative flex max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-7rem)] min-h-[360px] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#111827] sm:h-[88dvh] sm:min-h-0 sm:max-h-none"
+        className="relative flex max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-7rem)] min-h-[360px] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#111827] md:h-[calc(100dvh-env(safe-area-inset-top)-8.5rem)] md:min-h-0 md:max-h-none"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-[#0B1120] sm:px-6 sm:py-4">
