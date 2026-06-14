@@ -91,7 +91,7 @@ export function AppShell({ children }: AppShellProps) {
   );
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-slate-50 font-sans dark:bg-[#0B1120]">
+    <div className="flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-slate-50 font-sans dark:bg-[#0B1120]">
       <AppHeader
         pathname={pathname}
         homeHref={getHomeHref(userRole)}
@@ -110,7 +110,7 @@ export function AppShell({ children }: AppShellProps) {
         onOpenProfile={() => router.push("/profile")}
       />
 
-      <main className="relative flex flex-1 flex-col overflow-hidden pb-16 md:pb-0">
+      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
       </main>
 

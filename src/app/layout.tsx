@@ -1,5 +1,5 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { UserProvider } from "../context/UserContext";
 import { ThemeProvider } from "../context/ThemeContext";
@@ -9,6 +9,12 @@ import { AppToasterProvider } from "@/components/shared/AppToaster";
 export const metadata: Metadata = {
   title: "Livon",
   description: "Livon civic platform",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 type RootLayoutProps = {
