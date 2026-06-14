@@ -26,6 +26,14 @@ export async function fetchAdminNewsItems() {
   }));
 }
 
+export async function fetchAdminNewsItem(newsId: string) {
+  const response = await fetch(`/api/news/${newsId}`);
+  if (!response.ok) throw new Error("Failed to load news.");
+
+  const data = await response.json();
+  return data.data as AdminNewsWithExtras;
+}
+
 export async function createAdminNews(values: AdminNewsFormValues) {
   const token = localStorage.getItem("livon-token");
   const response = await fetch("/api/news", {
