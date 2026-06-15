@@ -30,7 +30,7 @@ from sklearn.metrics import (
     confusion_matrix,
     roc_auc_score,
 )
-from sklearn.model_selection import ParameterGrid
+from sklearn.model_selection import ParameterGrid, train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import LinearSVC
 
@@ -39,7 +39,7 @@ from training.preprocess import IndonesianPreprocessor
 
 ROOT_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR  = os.path.join(ROOT_DIR, "smsa-ind-classification", "data")
-MODEL_DIR = os.path.join(ROOT_DIR, "models")
+MODEL_DIR = os.path.join(ROOT_DIR, "app", "models")
 
 os.makedirs(MODEL_DIR, exist_ok=True)
 
@@ -57,7 +57,7 @@ PARAM_GRID: list[dict] = list(ParameterGrid({
 TFIDF_BASE: dict = {
     "max_features": 30_000,
     "sublinear_tf": True,
-    "min_df": 2,
+    "min_df": 1,
 }
 
 SVM_BASE: dict = {
@@ -71,11 +71,38 @@ def load_domain_data() -> pd.DataFrame:
     if not os.path.exists(path):
         raise FileNotFoundError(
             f"domain_specific.csv not found in {DATA_DIR}. "
-            "run data/generate_domain_data.py first."
+            "run training/generate_domain_data.py first."
         )
     df = pd.read_csv(path)
     print(f"  domain data: {len(df):>6} rows")
     return df
+
+
+def split_domain_data(domain_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    domain_df = apply_label_map(domain_df)
+    train_df, temp_df = train_test_split(
+        domain_df,
+        test_size=0.4,
+        random_state=42,
+        stratify=domain_df["labels"],
+    )
+    val_df, test_df = train_test_split(
+        temp_df,
+        test_size=0.5,
+        random_state=42,
+        stratify=temp_df["labels"],
+    )
+
+    print("  parquet splits not found; using domain_specific.csv fallback")
+    print(f"  {'train':>10}: {len(train_df):>6} rows")
+    print(f"  {'validation':>10}: {len(val_df):>6} rows")
+    print(f"  {'test':>10}: {len(test_df):>6} rows")
+    return (
+        train_df.reset_index(drop=True),
+        val_df.reset_index(drop=True),
+        test_df.reset_index(drop=True),
+    )
+
 
 def load_splits() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     print("loading dataset...")
@@ -86,7 +113,7 @@ def load_splits() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
             if f.startswith(split) and f.endswith(".parquet")
         ]
         if not matches:
-            raise FileNotFoundError(f"no parquet file for split '{split}' in {DATA_DIR}")
+            return split_domain_data(load_domain_data())
 
         path = os.path.join(DATA_DIR, matches[0])
         splits[split] = pd.read_parquet(path)
@@ -118,6 +145,11 @@ def apply_label_map(df: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna(subset=["labels"])
     return df
 
+
+def calibration_cv(labels) -> int:
+    min_class_count = int(pd.Series(labels).value_counts().min())
+    return max(2, min(5, min_class_count))
+
 def benchmark_preprocessing(
     train_df: pd.DataFrame,
     val_df: pd.DataFrame,
@@ -141,7 +173,9 @@ def benchmark_preprocessing(
         y_val   = encoder.transform(val_df["labels"])
 
         model = CalibratedClassifierCV(
-            LinearSVC(C=1.0, **SVM_BASE), cv=5, method="sigmoid"
+            LinearSVC(C=1.0, **SVM_BASE),
+            cv=calibration_cv(y_train),
+            method="sigmoid",
         )
         model.fit(X_train, y_train)
 
@@ -150,7 +184,7 @@ def benchmark_preprocessing(
         print(f"  [{label}] val accuracy: {acc:.4f}")
 
     best = max(results, key=results.get)
-    print(f"\n  → best config: {'with' if best else 'without'} stemming "
+    print(f"\n  -> best config: {'with' if best else 'without'} stemming "
           f"({results[best]:.4f})")
     return best
 
@@ -162,7 +196,7 @@ def grid_search(
 ) -> tuple[float, dict, list[str], list[str]]:
 
     print("\n" + "=" * 60)
-    print(f"grid search — {len(PARAM_GRID)} configs")
+    print(f"grid search - {len(PARAM_GRID)} configs")
     print("=" * 60)
 
     preprocessor = IndonesianPreprocessor(use_stemming=use_stemming)
@@ -185,12 +219,14 @@ def grid_search(
         X_val   = vectorizer.transform(val_texts)
 
         model = CalibratedClassifierCV(
-            LinearSVC(C=params["C"], **SVM_BASE), cv=5, method="sigmoid"
+            LinearSVC(C=params["C"], **SVM_BASE),
+            cv=calibration_cv(y_train),
+            method="sigmoid",
         )
         model.fit(X_train, y_train)
         acc = accuracy_score(y_val, model.predict(X_val))
 
-        marker = " ←" if acc > best_acc else ""
+        marker = " <-" if acc > best_acc else ""
         print(f"  [{i:>2}/{len(PARAM_GRID)}] C={params['C']:<5} "
               f"ngram={str(params['ngram_range']):<8} val_acc={acc:.4f}{marker}")
 
@@ -242,7 +278,9 @@ def train_model(X_train, y_train, best_params: dict) -> CalibratedClassifierCV:
     start = time.time()
 
     model = CalibratedClassifierCV(
-        LinearSVC(C=best_params["C"], **SVM_BASE), cv=5, method="sigmoid"
+        LinearSVC(C=best_params["C"], **SVM_BASE),
+        cv=calibration_cv(y_train),
+        method="sigmoid",
     )
     model.fit(X_train, y_train)
     print(f"  done in {time.time() - start:.1f}s")
@@ -263,7 +301,7 @@ def evaluate(
 
     lines: list[str] = [
         "=" * 60,
-        "livon ai — training report (v2)",
+        "livon ai - training report (v2)",
         "=" * 60,
         f"model        : linearsvc (calibrated, cv=5)",
         f"dataset      : smsa-ind-classification",
@@ -317,7 +355,7 @@ def evaluate(
     report_path = os.path.join(MODEL_DIR, "training_report.txt")
     with open(report_path, "w") as f:
         f.write("\n".join(lines))
-    print(f"\nreport saved → {report_path}")
+    print(f"\nreport saved -> {report_path}")
 
     return results
 
@@ -327,17 +365,19 @@ def save_artifacts(
     model: CalibratedClassifierCV,
     vectorizer: TfidfVectorizer,
     encoder: LabelEncoder,
+    use_stemming: bool,
 ) -> None:
     artifacts = {
-        "svm_model.pkl":     model,
-        "tfidf_vect.pkl":    vectorizer,
-        "label_encoder.pkl": encoder,
+        "svm_model.pkl":              model,
+        "tfidf_vect.pkl":             vectorizer,
+        "label_encoder.pkl":          encoder,
+        "preprocessing_config.pkl":   {"use_stemming": use_stemming},
     }
     print("\nsaving artifacts...")
     for filename, obj in artifacts.items():
         path = os.path.join(MODEL_DIR, filename)
         joblib.dump(obj, path)
-        print(f"  ✓ {filename}")
+        print(f"  saved {filename}")
 
 
 def sanity_check(
@@ -351,6 +391,12 @@ def sanity_check(
         "jalanan di blok A sudah rusak parah, tolong segera perbaiki!",
         "terima kasih sudah memperbaiki trotoar, warga sangat senang",
         "pengerjaan sedang berlangsung minggu ini",
+        "ga guna jelek",
+        "ganggu banget ga berguna",
+        "ini terlalu menghabiskan anggaran",
+        "sangat dibutuhkan",
+        "bagus tolong kembangkan",
+        "b aja",
     ]
     print("\nsanity check:")
     for text in samples:
@@ -363,7 +409,7 @@ def sanity_check(
 
 def main() -> None:
     print("=" * 60)
-    print("livon ai — training pipeline v2")
+    print("livon ai - training pipeline v2")
     print("=" * 60)
 
     # load
@@ -389,15 +435,20 @@ def main() -> None:
     preprocessor = IndonesianPreprocessor(use_stemming=use_stemming)
     test_texts   = preprocessor.transform_batch(test_df["texts"].tolist())
 
+    final_train_texts = train_texts + val_texts
+    y_final_train = encoder.transform(
+        pd.concat([train_df["labels"], val_df["labels"]], ignore_index=True)
+    )
+
     vectorizer = TfidfVectorizer(**TFIDF_BASE, ngram_range=best_params["ngram_range"])
-    X_train = vectorizer.fit_transform(train_texts)
+    X_train = vectorizer.fit_transform(final_train_texts)
     X_val   = vectorizer.transform(val_texts)
     X_test  = vectorizer.transform(test_texts)
 
-    model   = train_model(X_train, y_train, best_params)
+    model   = train_model(X_train, y_final_train, best_params)
     results = evaluate(model, X_val, y_val, X_test, y_test, encoder, best_params, use_stemming)
 
-    save_artifacts(model, vectorizer, encoder)
+    save_artifacts(model, vectorizer, encoder, use_stemming)
     sanity_check(model, vectorizer, encoder, use_stemming)
 
     print("\n" + "=" * 60)
