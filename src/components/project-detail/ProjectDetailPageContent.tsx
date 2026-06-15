@@ -1050,15 +1050,17 @@ export function ProjectDetailPageContent() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             <Card className="p-6 border-green-100">
-              <h2 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-green-600" /> Project
-                Description
+              <h2 className="font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-3 text-lg tracking-tight">
+                <div className="w-10 h-10 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-green-600" />
+                </div>
+                Project Description
               </h2>
               <p className="text-gray-700 dark:text-white leading-relaxed">
                 {project.description}
               </p>
               <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800">
-                <h3 className="font-bold text-gray-800 dark:text-white mb-5 flex items-center gap-2 text-sm">
+                <h3 className="font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2.5 text-sm tracking-tight">
                   <Clock className="w-4 h-4 text-green-600" /> Development
                   Stages
                 </h3>
@@ -1413,10 +1415,12 @@ export function ProjectDetailPageContent() {
                       : "",
                   )}
                 >
-                  <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5 mb-4 text-sm sm:gap-2 sm:text-base">
-                    <MessageSquare className="w-4 h-4 shrink-0 text-green-600 sm:w-5 sm:h-5" />{" "}
-                    <span className="min-w-0 whitespace-nowrap">
-                      Community Discussion
+                  <h3 className="font-bold text-gray-900 dark:text-white flex items-center justify-between gap-3 mb-4 text-lg tracking-tight">
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <MessageSquare className="w-5 h-5 shrink-0 text-green-600" />{" "}
+                      <span className="min-w-0 whitespace-nowrap">
+                        Community Discussion
+                      </span>
                     </span>
                     <span className="shrink-0 whitespace-nowrap text-[10px] text-gray-500 font-normal bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full sm:px-2 sm:text-xs">
                       {comments.length} comments

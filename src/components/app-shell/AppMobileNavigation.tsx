@@ -12,7 +12,7 @@ export function AppMobileNavigation({
   pathname,
 }: AppMobileNavigationProps) {
   return (
-    <nav className="fixed bottom-0 z-50 flex h-16 w-full items-center justify-around border-t border-gray-200 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:border-gray-800 dark:bg-[#111827] md:hidden">
+    <nav className="fixed bottom-0 z-50 flex h-[calc(4rem+env(safe-area-inset-bottom))] w-full items-center justify-around border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:border-gray-800 dark:bg-[#111827] md:hidden">
       {navLinks.map((link) => {
         const isActive = pathname.startsWith(link.href);
 

@@ -1,11 +1,13 @@
 import { Upload } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
+import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 
 type AdminNewsImageDropzoneProps = {
   file: File | null;
   inputId: string;
   isDragging: boolean;
   isUploading?: boolean;
+  previewUrl?: string;
   onDragLeave: (event: React.DragEvent) => void;
   onDragOver: (event: React.DragEvent) => void;
   onDrop: (event: React.DragEvent) => void;
@@ -17,6 +19,7 @@ export function AdminNewsImageDropzone({
   inputId,
   isDragging,
   isUploading,
+  previewUrl,
   onDragLeave,
   onDragOver,
   onDrop,
@@ -42,13 +45,29 @@ export function AdminNewsImageDropzone({
         className="hidden"
         onChange={(event) => onFileChange(event.target.files?.[0] || null)}
       />
-      <Upload className="mx-auto mb-2 h-8 w-8 text-gray-400" />
+      {previewUrl ? (
+        <div className="mx-auto mb-3 h-20 w-28 overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-[#111827]">
+          <ImageWithFallback
+            src={previewUrl}
+            alt="Thumbnail preview"
+            width={112}
+            height={80}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ) : (
+        <Upload className="mx-auto mb-2 h-8 w-8 text-gray-400" />
+      )}
       <p className="text-sm font-semibold text-gray-500 dark:text-white">
-        {file ? file.name : "Klik atau Drag & Drop gambar di sini"}
+        {file
+          ? file.name
+          : previewUrl
+            ? "Click or drag to replace thumbnail"
+            : "Click or drag image here"}
       </p>
       {isUploading && (
         <p className="mt-2 animate-pulse text-xs text-green-500">
-          Mengunggah...
+          Uploading...
         </p>
       )}
     </div>
