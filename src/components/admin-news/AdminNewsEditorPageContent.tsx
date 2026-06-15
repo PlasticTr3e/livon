@@ -57,11 +57,12 @@ export function AdminNewsEditorPageContent({
 
   useEffect(() => {
     if (isCreate || !newsId) return;
+    const editingNewsId = newsId;
 
     async function loadNews() {
       try {
         setIsLoading(true);
-        const news = await fetchAdminNewsItem(newsId);
+        const news = await fetchAdminNewsItem(editingNewsId);
         const articleContent = splitAdminNewsContent(news.content);
 
         setFormData({
