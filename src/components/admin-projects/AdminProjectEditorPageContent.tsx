@@ -66,7 +66,8 @@ function EditProjectContent() {
   >([]);
   const [projectPhotos, setProjectPhotos] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [isLoading, setIsLoading] = useState(!isCreate);
   const [error, setError] = useState<string | null>(null);
 
@@ -182,39 +183,56 @@ function EditProjectContent() {
       return;
     }
 
-    setIsUploading(true);
+    setIsUploadingPhoto(true);
     const token = localStorage.getItem("livon-token");
 
     try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
-
-        if (!res.ok) throw new Error("Upload failed");
-        const json = await res.json();
-        return json.data.url;
-      });
+      const uploadPromises = Array.from(files).map((file) =>
+        uploadProjectFile(file, token),
+      );
 
       const newUrls = await Promise.all(uploadPromises);
       setProjectPhotos((prev) => [...prev, ...newUrls]);
     } catch (err) {
-      console.error(err);
-      toast.error("Upload failed", "Failed to upload one or more photos.");
+      toast.error(
+        "Upload failed",
+        err instanceof Error
+          ? err.message
+          : "Failed to upload one or more photos.",
+      );
     } finally {
-      setIsUploading(false);
+      setIsUploadingPhoto(false);
     }
   };
 
   const removePhoto = (index: number) => {
     setProjectPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadProjectFile = async (file: File, token: string | null) => {
+    if (!token) throw new Error("User session not found");
+
+    const uploadFormData = new FormData();
+    uploadFormData.append("file", file);
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: uploadFormData,
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (!res.ok || !json?.success) {
+      throw new Error(json?.message || "Upload failed");
+    }
+
+    const uploadedUrl = json.data?.url;
+    if (!uploadedUrl) throw new Error("Uploaded file URL was not returned");
+
+    return uploadedUrl as string;
   };
 
   const getProjectValidationError = () => {
@@ -345,7 +363,7 @@ function EditProjectContent() {
       onClick={handleSave}
       disabled={isSaving}
       className={cn(
-        "h-10 bg-green-600 font-bold hover:bg-green-700",
+        "inline-flex items-center justify-center bg-green-600 font-bold hover:bg-green-700",
         className,
       )}
     >
@@ -388,14 +406,14 @@ function EditProjectContent() {
             </p>
           </div>
           <div className="hidden items-center gap-3 md:flex">
-            {saveButton("rounded-xl px-8")}
+            {saveButton("h-11 rounded-xl px-6 text-xs")}
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Card className="p-6 border-green-100 shadow-sm space-y-6 bg-white rounded-2xl">
-              <h3 className="font-bold text-gray-800 flex items-center gap-2 border-b border-gray-50 pb-4">
+              <h3 className="flex items-center gap-2 border-b border-gray-50 pb-4 text-sm font-black text-gray-900 dark:text-white">
                 <FileText className="w-4 h-4 text-green-600" />
                 Project Information
               </h3>
@@ -493,7 +511,7 @@ function EditProjectContent() {
 
             <Card className="p-6 border-green-100 shadow-sm rounded-2xl bg-white">
               <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-4">
-                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
                   <ImageIcon className="w-4 h-4 text-green-600" />
                   Project Gallery
                 </h3>
@@ -515,6 +533,7 @@ function EditProjectContent() {
                       className="object-cover"
                     />
                     <button
+                      type="button"
                       onClick={() => removePhoto(index)}
                       className="absolute top-1.5 right-1.5 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                     >
@@ -523,7 +542,7 @@ function EditProjectContent() {
                   </div>
                 ))}
 
-                {isUploading && (
+                {isUploadingPhoto && (
                   <div className="aspect-video rounded-xl border-2 border-dashed border-purple-200 bg-purple-50 flex flex-col items-center justify-center gap-2 animate-pulse">
                     <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                     <span className="text-[9px] font-black text-purple-500 uppercase">
@@ -532,8 +551,9 @@ function EditProjectContent() {
                   </div>
                 )}
 
-                {projectPhotos.length < 3 && !isUploading && (
+                {projectPhotos.length < 3 && !isUploadingPhoto && (
                   <button
+                    type="button"
                     onClick={() =>
                       document.getElementById("photo-upload")?.click()
                     }
@@ -558,7 +578,7 @@ function EditProjectContent() {
 
             <Card className="p-6 border-green-100 shadow-sm rounded-2xl bg-white">
               <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-4">
-                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
                   <FileText className="w-4 h-4 text-green-600" />
                   Supporting Documents
                 </h3>
@@ -583,6 +603,7 @@ function EditProjectContent() {
                         </span>
                       </div>
                       <button
+                        type="button"
                         onClick={() => {
                           const newDocs = formData.documentUrl.filter(
                             (_: string, i: number) => i !== index,
@@ -604,7 +625,17 @@ function EditProjectContent() {
                   </div>
                 )}
 
+                {isUploadingDocument && (
+                  <div className="rounded-xl border-2 border-dashed border-purple-200 bg-purple-50 p-4 flex flex-col items-center justify-center gap-2 animate-pulse">
+                    <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[9px] font-black text-purple-500 uppercase">
+                      Uploading...
+                    </span>
+                  </div>
+                )}
+
                 <button
+                  type="button"
                   onClick={() => document.getElementById("doc-upload")?.click()}
                   className="w-full h-11 border border-green-200 border-dashed rounded-xl flex items-center justify-center gap-2 text-green-600 font-bold text-[11px] hover:bg-green-50 transition-all mt-2"
                 >
@@ -617,26 +648,16 @@ function EditProjectContent() {
                   multiple
                   className="hidden"
                   onChange={async (e) => {
+                    const input = e.currentTarget;
                     const files = e.target.files;
                     if (!files || files.length === 0) return;
 
-                    setIsUploading(true);
+                    setIsUploadingDocument(true);
                     const token = localStorage.getItem("livon-token");
 
                     try {
-                      const uploadPromises = Array.from(files).map(
-                        async (file) => {
-                          const formData = new FormData();
-                          formData.append("file", file);
-                          const res = await fetch("/api/upload", {
-                            method: "POST",
-                            headers: { Authorization: `Bearer ${token}` },
-                            body: formData,
-                          });
-                          if (!res.ok) throw new Error("Doc upload failed");
-                          const json = await res.json();
-                          return json.data.url;
-                        },
+                      const uploadPromises = Array.from(files).map((file) =>
+                        uploadProjectFile(file, token),
                       );
 
                       const newUrls = await Promise.all(uploadPromises);
@@ -645,10 +666,15 @@ function EditProjectContent() {
                         ...newUrls,
                       ]);
                     } catch (err) {
-                      console.error(err);
-                      toast.error("Upload failed", "Document upload failed.");
+                      toast.error(
+                        "Upload failed",
+                        err instanceof Error
+                          ? err.message
+                          : "Document upload failed.",
+                      );
                     } finally {
-                      setIsUploading(false);
+                      setIsUploadingDocument(false);
+                      input.value = "";
                     }
                   }}
                 />
@@ -658,7 +684,7 @@ function EditProjectContent() {
 
           <div className="space-y-6">
             <Card className="p-6 border-green-100 shadow-sm rounded-2xl bg-white">
-              <h3 className="font-bold text-gray-800 flex items-center gap-2 border-b border-gray-50 pb-4 mb-4">
+              <h3 className="mb-4 flex items-center gap-2 border-b border-gray-50 pb-4 text-sm font-black text-gray-900 dark:text-white">
                 <Activity className="w-4 h-4 text-green-600" />
                 Project Status
               </h3>
@@ -717,6 +743,7 @@ function EditProjectContent() {
                   };
                   return (
                     <button
+                      type="button"
                       key={s}
                       onClick={() => handleInput("status", s)}
                       className={cn(
@@ -756,7 +783,7 @@ function EditProjectContent() {
             </Card>
 
             <Card className="p-6 border-green-100 shadow-sm rounded-2xl bg-white overflow-hidden">
-              <h3 className="font-bold text-gray-800 flex items-center gap-2 border-b border-gray-50 pb-4 mb-4">
+              <h3 className="mb-4 flex items-center gap-2 border-b border-gray-50 pb-4 text-sm font-black text-gray-900 dark:text-white">
                 <MapPin className="w-4 h-4 text-green-600" />
                 Project Location
               </h3>
@@ -803,7 +830,7 @@ function EditProjectContent() {
         </div>
 
         <div className="md:hidden">
-          {saveButton("h-12 w-full rounded-2xl shadow-lg shadow-green-900/10")}
+          {saveButton("h-12 w-full rounded-2xl text-sm")}
         </div>
       </div>
     </div>

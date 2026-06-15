@@ -1,5 +1,5 @@
-import { AdminNewsCreatePageContent } from "@/components/admin-news/AdminNewsCreatePageContent";
+import { AdminNewsEditorPageContent } from "@/components/admin-news/AdminNewsEditorPageContent";
 
 export default function CreateArticlePage() {
-  return <AdminNewsCreatePageContent />;
+  return <AdminNewsEditorPageContent mode="create" />;
 }

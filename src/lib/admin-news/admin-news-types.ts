@@ -21,11 +21,3 @@ export type AdminNewsFormValues = {
   content: string;
   thumbnailUrl: string;
 };
-
-export type AdminArticleFormData = {
-  title: string;
-  category: string;
-  content: string;
-  status: string;
-  featuredImage: string;
-};
