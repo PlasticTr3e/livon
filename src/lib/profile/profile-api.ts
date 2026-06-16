@@ -107,10 +107,18 @@ async function fetchResidentActivities(token: string) {
 
     if (!response.ok) return [];
 
-    const json = await response.json();
-    if (!json.success || !json.data) return [];
+    const json = (await response.json()) as {
+      success: boolean;
+      data: Parameters<typeof transformToProfileActivity>[0][];
+    };
+    if (!json.success || !Array.isArray(json.data)) return [];
 
-    return json.data.slice(0, 20).map(transformToProfileActivity);
+    const allowedTypes = ["VOTE", "COMMENT", "DONATION"];
+
+    return json.data
+      .filter((activity) => allowedTypes.includes(activity.type))
+      .slice(0, 20)
+      .map(transformToProfileActivity);
   } catch (error) {
     console.error("Error fetching activities:", error);
     return [];
