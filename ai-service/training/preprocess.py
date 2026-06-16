@@ -46,7 +46,7 @@ class IndonesianPreprocessor:
         self._stopwords: set[str] = {
             "yang", "di", "ke", "dari", "dan", "atau", "ini", "itu",
             "dengan", "pada", "untuk", "adalah", "dalam", "oleh", "juga",
-            "sebagai", "telah", "akan", "sudah", "ada", "tidak", "bisa",
+            "sebagai", "telah", "akan", "sudah", "ada", "bisa",
             "saya", "kamu", "kami", "mereka", "kita", "dia", "ia",
             "nya", "pun", "lah", "kah", "tah",
         }

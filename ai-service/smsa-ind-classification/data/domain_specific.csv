@@ -1,0 +1,40 @@
+texts,labels
+ga guna jelek,negative
+gak guna jelek,negative
+tidak berguna dan jelek,negative
+proyek ini ga penting banget masih banyak kebutuhan lain,negative
+proyek ini tidak penting dibanding jalan rusak,negative
+buat apa proyek begini kalau warga tidak butuh,negative
+ini terlalu menghabiskan anggaran,negative
+anggaran habis buat proyek yang tidak jelas manfaatnya,negative
+ganggu banget ga berguna,negative
+pembangunan ini malah mengganggu aktivitas warga,negative
+mending anggarannya buat yang lebih penting,negative
+uang rakyat habis buat proyek yang ga jelas manfaatnya,negative
+pembangunan saluran air belum memadai dan masih banjir,negative
+jalan masih rusak parah tapi malah bangun proyek lain,negative
+kualitas pekerjaannya jelek dan cepat rusak lagi,negative
+sangat dibutuhkan,positive
+ini sangat dibutuhkan warga,positive
+untuk sekarang urgent jadi sangat dibutuhkan,positive
+bagus tolong kembangkan,positive
+bagus nih buat orang orang ibadah,positive
+bagus ya prioritaskan,positive
+proyek yang bagus,positive
+kerja bagus lanjutkan,positive
+keren,positive
+alhamdulillah sudah saatnya ini jalan dibangun,positive
+pembangunan saluran air yang memadai akan sangat membantu warga,positive
+semoga proyek ini benar benar bermanfaat,positive
+lanjutkan program yang bermanfaat untuk warga,positive
+terima kasih sudah memprioritaskan kebutuhan warga,positive
+semoga aja beneran,neutral
+b aja,neutral
+biasa aja,neutral
+buat proyek yang penting dikit dong,neutral
+apakah proyek ini sudah masuk anggaran tahun ini,neutral
+kapan proyek ini mulai dikerjakan,neutral
+berapa biaya pembangunan proyek ini,neutral
+saya ingin tahu jadwal pengerjaan proyek,neutral
+pembangunan sedang dalam tahap perencanaan,neutral
+informasi proyek akan diumumkan minggu depan,neutral
