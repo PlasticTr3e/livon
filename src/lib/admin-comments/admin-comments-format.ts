@@ -13,30 +13,30 @@ import type {
 } from "@/lib/admin-comments/admin-comments-types";
 import { getUserProfileDisplayName } from "@/lib/app-shell/user";
 
-const POSITIVE_WORDS = [
-  "bagus",
-  "setuju",
-  "mendukung",
-  "alhamdulillah",
-  "terima kasih",
-  "bermanfaat",
-  "selesai",
-  "jernih",
-  "hebat",
-  "mantap",
-];
+// const POSITIVE_WORDS = [
+//   "bagus",
+//   "setuju",
+//   "mendukung",
+//   "alhamdulillah",
+//   "terima kasih",
+//   "bermanfaat",
+//   "selesai",
+//   "jernih",
+//   "hebat",
+//   "mantap",
+// ];
 
-const NEGATIVE_WORDS = [
-  "berbahaya",
-  "hilang",
-  "rusak",
-  "masalah",
-  "kecewa",
-  "tidak",
-  "waste",
-  "dangerous",
-  "jelek",
-];
+// const NEGATIVE_WORDS = [
+//   "berbahaya",
+//   "hilang",
+//   "rusak",
+//   "masalah",
+//   "kecewa",
+//   "tidak",
+//   "waste",
+//   "dangerous",
+//   "jelek",
+// ];
 
 export function formatAdminCommentDateTime(dateString: string) {
   return new Date(dateString).toLocaleString("en-GB", {
@@ -68,37 +68,29 @@ export function formatAdminCommentTime(dateString: string) {
 export function analyzeAdminCommentSentiment(
   text: string,
   score?: number,
+  label?: string,
 ): AdminCommentSentiment {
+  const normalizedLabel = label?.toUpperCase();
+
+  if (normalizedLabel === "POSITIF" || normalizedLabel === "POSITIVE") {
+    return "Positive";
+  }
+
+  if (normalizedLabel === "NEGATIF" || normalizedLabel === "NEGATIVE") {
+    return "Negative";
+  }
+
+  if (normalizedLabel === "NETRAL" || normalizedLabel === "NEUTRAL") {
+    return "Neutral";
+  }
+
   if (score !== null && score !== undefined) {
     if (score > 0.5) return "Positive";
     if (score < -0.5) return "Negative";
     return "Neutral";
   }
 
-  const normalizedText = text.toLowerCase();
-
-  if (POSITIVE_WORDS.some((word) => normalizedText.includes(word))) {
-    return "Positive";
-  }
-
-  if (NEGATIVE_WORDS.some((word) => normalizedText.includes(word))) {
-    return "Negative";
-  }
-
   return "Neutral";
-}
-
-export function getAdminCommentSentimentReason(
-  sentiment: AdminCommentSentiment,
-) {
-  switch (sentiment) {
-    case "Positive":
-      return "Komentar ini mengandung apresiasi atau dukungan yang membangun atmosfer positif bagi komunitas.";
-    case "Negative":
-      return "Komentar ini terdeteksi mengandung keluhan atau sentimen negatif yang mungkin perlu ditinjau lebih lanjut.";
-    default:
-      return "Komentar ini bersifat informatif atau berisi pernyataan umum tanpa indikasi emosi yang kuat.";
-  }
 }
 
 export function getAdminCommentSentimentClass(
@@ -143,6 +135,7 @@ export function mapAdminComment(
   const sentiment = analyzeAdminCommentSentiment(
     comment.text,
     comment.sentimentScore,
+    comment.sentimentLabel,
   );
 
   return {
