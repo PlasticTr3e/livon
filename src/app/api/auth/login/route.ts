@@ -68,6 +68,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (user.deletedAt !== null) {
+      return badRequest("This account has been deleted.");
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
       return badRequest("Invalid credentials");
