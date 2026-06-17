@@ -17,6 +17,7 @@ export type AdminUser = {
   citizenProfile?: {
     fullName: string | null;
     blockHouse: string | null;
+    houseNumber: string | null;
     isVerified: boolean;
     phone: string | null;
     nik: string | null;

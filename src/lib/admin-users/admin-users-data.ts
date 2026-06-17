@@ -25,6 +25,7 @@ export async function getAdminUsersPageData(
         select: {
           fullName: true,
           blockHouse: true,
+          houseNumber: true,
           isVerified: true,
           phone: true,
           nik: true,

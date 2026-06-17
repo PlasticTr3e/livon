@@ -39,7 +39,14 @@ export function getAdminUserDisplayName(user: AdminUser) {
 }
 
 export function getAdminUserAddress(user: AdminUser) {
-  return user.citizenProfile?.blockHouse || user.agencyProfile?.address || "-";
+  if (user.citizenProfile) {
+    return formatResidentAddress(
+      user.citizenProfile.blockHouse,
+      user.citizenProfile.houseNumber,
+    );
+  }
+
+  return user.agencyProfile?.address || "-";
 }
 
 export function getAdminUserPhone(user: AdminUser) {
@@ -122,4 +129,15 @@ function getAdminUserFilterMatch(
   if (filter === "ALL") return true;
   if (filter === "resident" || filter === "agency") return role === filter;
   return status === filter;
+}
+
+function formatResidentAddress(
+  blockHouse?: string | null,
+  houseNumber?: string | null,
+) {
+  const addressParts = [blockHouse, houseNumber]
+    .map((part) => part?.trim())
+    .filter(Boolean);
+
+  return addressParts.length > 0 ? addressParts.join(" ") : "-";
 }
