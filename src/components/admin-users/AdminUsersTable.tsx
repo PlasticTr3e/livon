@@ -151,15 +151,19 @@ const AdminUsersTableRow = memo(function AdminUsersTableRow({
           </button>
 
           {isDetailsOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-[calc(env(safe-area-inset-top)+5rem)] sm:p-6">
               <button
                 type="button"
                 aria-label="Close user details"
                 className="absolute inset-0 bg-black/40"
                 onClick={closeDetails}
               />
-              <div className="relative z-10">
-                <AdminUserDetailsDialog role={role} user={user} />
+              <div className="relative z-10 w-full max-w-2xl">
+                <AdminUserDetailsDialog
+                  onClose={closeDetails}
+                  role={role}
+                  user={user}
+                />
               </div>
             </div>
           )}
