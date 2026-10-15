@@ -114,7 +114,6 @@ async function fetchResidentActivities(token: string) {
     if (!json.success || !Array.isArray(json.data)) return [];
 
     const allowedTypes = ["VOTE", "COMMENT", "DONATION"];
-
     return json.data
       .filter((activity) => allowedTypes.includes(activity.type))
       .slice(0, 20)
