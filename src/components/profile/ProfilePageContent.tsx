@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import {
   fetchProfileActivities,
   fetchProfileUser,
@@ -58,7 +57,6 @@ export function ProfilePageContent() {
   }, []);
 
   async function handleLogout() {
-    await supabase.auth.signOut();
     localStorage.removeItem("livon-token");
     window.location.href = "/auth/login";
   }
