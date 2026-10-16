@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { invalidate } from "@/lib/cache";
 import { ok, badRequest, internalError, notFound } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { Role } from "@/generated/prisma/enums";
@@ -51,7 +52,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser) return badRequest("Unauthorized: Invalid or missing token");
     if (authUser.role !== Role.AGENCY)
       return badRequest("Forbidden: Only Agencies can verify citizens");
@@ -89,6 +90,7 @@ export async function PATCH(
       },
     });
 
+    await invalidate("dashboard");
     return ok(`Citizen verification status updated to ${isVerified}`, {
       data: updatedCitizen,
     });

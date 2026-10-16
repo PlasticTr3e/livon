@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { cached } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
 import { ok, badRequest } from "@/lib/api-response";
 import { Role, SentimentLabel, ProjectStatus } from "@/generated/prisma/enums";
@@ -99,7 +100,7 @@ import { Role, SentimentLabel, ProjectStatus } from "@/generated/prisma/enums";
  */
 export async function GET(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
@@ -107,82 +108,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const projects = await prisma.project.findMany({
-      where: {
-        deletedAt: null,
-        status: {
-          in: [
-            ProjectStatus.USULAN,
-            ProjectStatus.BERJALAN,
-            ProjectStatus.DISETUJUI,
-          ],
-        },
-      },
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        priorityScore: true,
-        _count: {
-          select: { votes: true },
-        },
-        comments: {
-          select: {
-            sentimentLabel: true,
-            sentimentScore: true,
-          },
-          where: {
-            deletedAt: null,
-            sentimentLabel: { not: null },
-          },
-        },
-      },
-      orderBy: {
-        priorityScore: "desc",
-      },
-    });
-
-    const projectsWithAnalytics = projects.map((project) => {
-      let positiveCount = 0;
-      let negativeCount = 0;
-      let neutralCount = 0;
-      let totalSentimentScore = 0;
-
-      project.comments.forEach((comment) => {
-        if (comment.sentimentLabel === SentimentLabel.POSITIF) positiveCount++;
-        else if (comment.sentimentLabel === SentimentLabel.NEGATIF)
-          negativeCount++;
-        else if (comment.sentimentLabel === SentimentLabel.NETRAL)
-          neutralCount++;
-
-        if (comment.sentimentScore) {
-          totalSentimentScore += comment.sentimentScore;
-        }
-      });
-
-      const totalCommentsWithSentiment = project.comments.length;
-      const averageSentimentScore =
-        totalCommentsWithSentiment > 0
-          ? totalSentimentScore / totalCommentsWithSentiment
-          : 0;
-
-      return {
-        id: project.id,
-        title: project.title,
-        status: project.status,
-        urbanPriorityScore: project.priorityScore ?? 0,
-        totalVotes: project._count.votes,
-        sentimentAnalytics: {
-          totalAnalyzed: totalCommentsWithSentiment,
-          distribution: {
-            positive: positiveCount,
-            negative: negativeCount,
-            neutral: neutralCount,
-          },
-          averageScore: Number(averageSentimentScore.toFixed(2)),
-        },
-      };
-    });
+    const projectsWithAnalytics = await cached("priority", "all", 300, () =>
+      loadPriorityProjects(),
+    );
 
     return ok("Project priority retrived", {
       data: projectsWithAnalytics,
@@ -191,4 +119,82 @@ export async function GET(req: NextRequest) {
     console.error("[PROJECT_PRIORITY_GET]", error);
     return badRequest("Error occure when try to get project priority", error);
   }
+}
+
+async function loadPriorityProjects() {
+  const projects = await prisma.project.findMany({
+    where: {
+      deletedAt: null,
+      status: {
+        in: [
+          ProjectStatus.USULAN,
+          ProjectStatus.BERJALAN,
+          ProjectStatus.DISETUJUI,
+        ],
+      },
+    },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priorityScore: true,
+      _count: {
+        select: { votes: true },
+      },
+      comments: {
+        select: {
+          sentimentLabel: true,
+          sentimentScore: true,
+        },
+        where: {
+          deletedAt: null,
+          sentimentLabel: { not: null },
+        },
+      },
+    },
+    orderBy: {
+      priorityScore: "desc",
+    },
+  });
+
+  return projects.map((project) => {
+    let positiveCount = 0;
+    let negativeCount = 0;
+    let neutralCount = 0;
+    let totalSentimentScore = 0;
+
+    project.comments.forEach((comment) => {
+      if (comment.sentimentLabel === SentimentLabel.POSITIF) positiveCount++;
+      else if (comment.sentimentLabel === SentimentLabel.NEGATIF)
+        negativeCount++;
+      else if (comment.sentimentLabel === SentimentLabel.NETRAL) neutralCount++;
+
+      if (comment.sentimentScore) {
+        totalSentimentScore += comment.sentimentScore;
+      }
+    });
+
+    const totalCommentsWithSentiment = project.comments.length;
+    const averageSentimentScore =
+      totalCommentsWithSentiment > 0
+        ? totalSentimentScore / totalCommentsWithSentiment
+        : 0;
+
+    return {
+      id: project.id,
+      title: project.title,
+      status: project.status,
+      urbanPriorityScore: project.priorityScore ?? 0,
+      totalVotes: project._count.votes,
+      sentimentAnalytics: {
+        totalAnalyzed: totalCommentsWithSentiment,
+        distribution: {
+          positive: positiveCount,
+          negative: negativeCount,
+          neutral: neutralCount,
+        },
+        averageScore: Number(averageSentimentScore.toFixed(2)),
+      },
+    };
+  });
 }

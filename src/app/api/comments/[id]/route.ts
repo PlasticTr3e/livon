@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { invalidate } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
 import { ok, badRequest, notFound } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
@@ -58,7 +59,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
 
     if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
@@ -90,6 +91,7 @@ export async function DELETE(
       },
     });
 
+    await invalidate("projects", "priority", "news");
     return ok("Comment has been successfully moderated (soft-deleted).");
   } catch (error) {
     console.error("[COMMENT_MODERATION_DELETE]", error);

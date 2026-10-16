@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { invalidate } from "@/lib/cache";
 import {
   created,
   badRequest,
@@ -65,7 +66,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Agencies can post updates");
     }
@@ -94,6 +95,7 @@ export async function POST(
       },
     });
 
+    await invalidate("projects");
     return created("Project update log added successfully", {
       data: projectUpdate,
     });

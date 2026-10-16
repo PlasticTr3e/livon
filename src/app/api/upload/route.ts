@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getAuthUser } from "@/lib/auth";
+import { RATE_LIMITS, rateLimit } from "@/lib/rate-limit";
 import { ok, badRequest, internalError } from "@/lib/api-response";
 import { detectFileType, newUploadKey, putObject } from "@/lib/storage";
 
@@ -38,10 +39,13 @@ const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_MB || 10) * 1024 * 1024;
  */
 export async function POST(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser) {
       return badRequest("Unauthorized: You must be logged in to upload files.");
     }
+
+    const limited = await rateLimit(RATE_LIMITS.upload, authUser.userId);
+    if (limited) return limited;
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;

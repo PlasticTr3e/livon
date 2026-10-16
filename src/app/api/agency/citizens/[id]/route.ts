@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getAuthUser } from "@/lib/auth";
+import { invalidate } from "@/lib/cache";
+import { getAuthUser, revokeAllUserTokens } from "@/lib/auth";
 import { ok, badRequest, notFound } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
 
@@ -56,7 +57,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
@@ -157,7 +158,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
@@ -198,6 +199,8 @@ export async function PUT(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...safeUpdatedData } = updatedUser;
 
+    if (body.role) await revokeAllUserTokens(id);
+    await invalidate("dashboard");
     return ok("Citizen updated successfully", { data: safeUpdatedData });
   } catch (error) {
     console.error("[AGENCY_CITIZEN_PUT]", error);
@@ -248,7 +251,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
@@ -274,6 +277,8 @@ export async function DELETE(
       },
     });
 
+    await revokeAllUserTokens(id);
+    await invalidate("dashboard");
     return ok("Citizen account has been successfully deleted (soft-delete)");
   } catch (error: unknown) {
     console.error("[AGENCY_CITIZEN_DELETE]", error);

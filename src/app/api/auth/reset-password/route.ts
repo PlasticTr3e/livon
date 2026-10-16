@@ -3,6 +3,8 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { ok, badRequest, internalError } from "@/lib/api-response";
+import { RATE_LIMITS, getClientIp, rateLimit } from "@/lib/rate-limit";
+import { revokeAllUserTokens } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -50,6 +52,12 @@ const resetPasswordSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(
+      RATE_LIMITS.resetPassword,
+      getClientIp(req),
+    );
+    if (limited) return limited;
+
     const body = await req.json();
     const result = resetPasswordSchema.safeParse(body);
 
@@ -79,10 +87,11 @@ export async function POST(req: NextRequest) {
     const email = resetToken.identifier.replace("password-reset:", "");
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await prisma.user.update({
+    const user = await prisma.user.update({
       where: { email },
       data: { passwordHash },
     });
+    await revokeAllUserTokens(user.id);
 
     await prisma.verificationToken.delete({
       where: { token },

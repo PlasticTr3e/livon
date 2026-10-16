@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { cached } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
 import { ok, badRequest } from "@/lib/api-response";
 import { Role, DonationStatus } from "@/generated/prisma/enums";
@@ -65,7 +66,7 @@ import { Role, DonationStatus } from "@/generated/prisma/enums";
  */
 export async function GET(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
@@ -73,37 +74,34 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const [totalWargaAktif, totalProyek, totalPartisipasi, donasiAgregat] =
-      await Promise.all([
-        prisma.citizenProfile.count({
-          where: { isVerified: true },
-        }),
-        prisma.project.count({
-          where: { deletedAt: null },
-        }),
-        prisma.vote.count(),
-        prisma.donation.aggregate({
-          _sum: {
-            amount: true,
-          },
-          where: {
-            status: DonationStatus.SUCCESS,
-          },
-        }),
-      ]);
+    const metrics = await cached("dashboard", "agency", 60, async () => {
+      const [totalWargaAktif, totalProyek, totalPartisipasi, donasiAgregat] =
+        await Promise.all([
+          prisma.citizenProfile.count({
+            where: { isVerified: true },
+          }),
+          prisma.project.count({
+            where: { deletedAt: null },
+          }),
+          prisma.vote.count(),
+          prisma.donation.aggregate({
+            _sum: {
+              amount: true,
+            },
+            where: {
+              status: DonationStatus.SUCCESS,
+            },
+          }),
+        ]);
 
-    const totalDana = donasiAgregat._sum.amount
-      ? Number(donasiAgregat._sum.amount)
-      : 0;
+      const totalDana = donasiAgregat._sum.amount
+        ? Number(donasiAgregat._sum.amount)
+        : 0;
 
-    return ok("Berhasil mengambil data agregat dashboard", {
-      data: {
-        totalWargaAktif,
-        totalProyek,
-        totalPartisipasi,
-        totalDana,
-      },
+      return { totalWargaAktif, totalProyek, totalPartisipasi, totalDana };
     });
+
+    return ok("Berhasil mengambil data agregat dashboard", { data: metrics });
   } catch (error) {
     console.error("[AGENCY_DASHBOARD_GET]", error);
     return badRequest("Gagal mengambil metrik dashboard.", error);

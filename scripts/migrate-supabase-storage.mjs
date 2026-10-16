@@ -59,7 +59,9 @@ async function listObjects(bucket, prefix = "") {
       },
     );
     if (!res.ok) {
-      throw new Error(`List ${bucket}/${prefix} failed: ${res.status} ${await res.text()}`);
+      throw new Error(
+        `List ${bucket}/${prefix} failed: ${res.status} ${await res.text()}`,
+      );
     }
     const entries = await res.json();
     for (const entry of entries) {
@@ -103,7 +105,8 @@ async function copyBucket(bucket) {
       `${SUPABASE_URL}/storage/v1/object/${bucket}/${encodedPath}`,
       { headers: supabaseHeaders },
     );
-    if (!res.ok) throw new Error(`Download ${bucket}/${path} failed: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`Download ${bucket}/${path} failed: ${res.status}`);
 
     await s3.send(
       new PutObjectCommand({
@@ -111,7 +114,9 @@ async function copyBucket(bucket) {
         Key: key,
         Body: Buffer.from(await res.arrayBuffer()),
         ContentType:
-          contentType || res.headers.get("content-type") || "application/octet-stream",
+          contentType ||
+          res.headers.get("content-type") ||
+          "application/octet-stream",
         CacheControl: "public, max-age=31536000, immutable",
       }),
     );
@@ -150,7 +155,10 @@ async function rewriteUrls() {
           `SELECT count(*)::int AS n FROM ${table} WHERE ${matches}`,
           [URL_PATTERN],
         );
-        if (rows[0].n) console.log(`${table_name}.${column_name}: ${rows[0].n} rows to rewrite`);
+        if (rows[0].n)
+          console.log(
+            `${table_name}.${column_name}: ${rows[0].n} rows to rewrite`,
+          );
         continue;
       }
 
@@ -161,7 +169,8 @@ async function rewriteUrls() {
         `UPDATE ${table} SET ${column} = ${newValue} WHERE ${matches}`,
         [URL_PATTERN, URL_REPLACEMENT],
       );
-      if (rowCount) console.log(`${table_name}.${column_name}: ${rowCount} rows rewritten`);
+      if (rowCount)
+        console.log(`${table_name}.${column_name}: ${rowCount} rows rewritten`);
     }
     await client.query(DRY_RUN ? "ROLLBACK" : "COMMIT");
   } catch (error) {
@@ -174,4 +183,6 @@ async function rewriteUrls() {
 
 for (const bucket of SOURCE_BUCKETS) await copyBucket(bucket);
 await rewriteUrls();
-console.log(DRY_RUN ? "Dry run finished, nothing was written." : "Migration finished.");
+console.log(
+  DRY_RUN ? "Dry run finished, nothing was written." : "Migration finished.",
+);

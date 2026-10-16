@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { created, badRequest, internalError } from "@/lib/api-response";
+import { RATE_LIMITS, getClientIp, rateLimit } from "@/lib/rate-limit";
 import { Role } from "@/generated/prisma/enums";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
@@ -91,6 +92,9 @@ const registerSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(RATE_LIMITS.register, getClientIp(req));
+    if (limited) return limited;
+
     const body = await req.json();
     const result = registerSchema.safeParse(body);
 
