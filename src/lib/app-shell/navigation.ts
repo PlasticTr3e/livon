@@ -1,5 +1,11 @@
 import type { LucideIcon } from "lucide-react";
-import { HandCoins, Map, Newspaper, Settings } from "lucide-react";
+import {
+  HandCoins,
+  Map,
+  MessagesSquare,
+  Newspaper,
+  Settings,
+} from "lucide-react";
 
 export type AppNavLink = {
   name: string;
@@ -11,6 +17,7 @@ const residentNavLinks: AppNavLink[] = [
   { name: "Map & Projects", href: "/map", icon: Map },
   { name: "Crowdfunding", href: "/crowdfunding", icon: HandCoins },
   { name: "News", href: "/news", icon: Newspaper },
+  { name: "Komunitas", href: "/komunitas", icon: MessagesSquare },
 ];
 
 const agencyNavLinks: AppNavLink[] = [

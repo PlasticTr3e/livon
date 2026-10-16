@@ -5,6 +5,7 @@ import {
   HandCoins,
   Map,
   MessageSquare,
+  MessagesSquare,
   Newspaper,
   Settings,
   Users,
@@ -23,6 +24,7 @@ export const adminSidebarLinks: AdminNavigationLink[] = [
   { name: "Projects", href: "/admin/projects", icon: FolderKanban },
   { name: "Crowdfunding", href: "/admin/crowdfunding", icon: DollarSign },
   { name: "Comments", href: "/admin/comments", icon: MessageSquare },
+  { name: "Komunitas", href: "/admin/komunitas", icon: MessagesSquare },
   { name: "News", href: "/admin/news", icon: Newspaper },
   { name: "Users", href: "/admin/users", icon: Users },
 ];
@@ -42,6 +44,12 @@ export const adminTopNavigationLinks: AdminNavigationLink[] = [
     matchPrefix: "/crowdfunding",
   },
   { name: "News", href: "/news", icon: Newspaper, matchPrefix: "/news" },
+  {
+    name: "Komunitas",
+    href: "/komunitas",
+    icon: MessagesSquare,
+    matchPrefix: "/komunitas",
+  },
 ];
 
 export function isAdminTopNavigationActive(
