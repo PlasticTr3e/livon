@@ -309,17 +309,10 @@ function analyzeCommentLocally(text: string): AiSentimentResult {
 async function predictCommentSentiment(
   text: string,
 ): Promise<AiSentimentResult> {
-  const aiUrl =
-    process.env.NEXT_PUBLIC_AI_SERVICE_URL || "http://localhost:8000";
-  const aiKey = process.env.NEXT_PUBLIC_AI_SERVICE_API_KEY || "";
-
   try {
-    const response = await fetch(`${aiUrl}/api/predict`, {
+    const response = await fetch("/api/sentiment", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${aiKey}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
     });
 

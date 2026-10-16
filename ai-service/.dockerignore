@@ -1,0 +1,4 @@
+.venv
+**/__pycache__
+smsa-ind-classification
+.env

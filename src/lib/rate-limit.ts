@@ -17,6 +17,7 @@ export const RATE_LIMITS = {
   comment: { name: "comment", limit: 10, windowSeconds: 60 },
   vote: { name: "vote", limit: 30, windowSeconds: 60 },
   donation: { name: "donation", limit: 10, windowSeconds: 600 },
+  sentiment: { name: "sentiment", limit: 120, windowSeconds: 60 },
 } satisfies Record<string, RateLimitRule>;
 
 // Nginx overwrites X-Real-IP, so it can be trusted; the app port is not exposed directly.
