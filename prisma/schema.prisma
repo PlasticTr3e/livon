@@ -30,6 +30,11 @@ model User {
   projects       Project[]       @relation("AgencyProjects")
   votes          Vote[]
 
+  communityPosts        CommunityPost[]
+  communityPostLikes    CommunityPostLike[]
+  communityComments     CommunityComment[]
+  communityCommentLikes CommunityCommentLike[]
+
   @@map("users")
 }
 
@@ -280,4 +285,84 @@ enum DonationStatus {
   PENDING
   SUCCESS
   FAILED
+}
+
+model CommunityPost {
+  id          String                @id @default(uuid())
+  userId      String                @map("user_id")
+  content     String                @db.Text
+  images      String[]              @default([])
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+  deletedAt   DateTime?             @map("deleted_at")
+
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threadItems CommunityThreadItem[]
+  likes       CommunityPostLike[]
+  comments    CommunityComment[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("community_posts")
+}
+
+model CommunityThreadItem {
+  id        String        @id @default(uuid())
+  postId    String        @map("post_id")
+  order     Int           @default(0)
+  text      String        @db.Text
+  imageUrl  String?       @map("image_url")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, order])
+  @@map("community_thread_items")
+}
+
+model CommunityPostLike {
+  id        String        @id @default(uuid())
+  postId    String        @map("post_id")
+  userId    String        @map("user_id")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("community_post_likes")
+}
+
+model CommunityComment {
+  id        String                 @id @default(uuid())
+  postId    String                 @map("post_id")
+  userId    String                 @map("user_id")
+  parentId  String?                @map("parent_id")
+  content   String                 @db.Text
+  createdAt DateTime               @default(now()) @map("created_at")
+  updatedAt DateTime               @updatedAt @map("updated_at")
+  deletedAt DateTime?              @map("deleted_at")
+
+  post      CommunityPost          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    CommunityComment?      @relation("ThreadedCommunityComments", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   CommunityComment[]     @relation("ThreadedCommunityComments")
+  likes     CommunityCommentLike[]
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+  @@map("community_comments")
+}
+
+model CommunityCommentLike {
+  id        String           @id @default(uuid())
+  commentId String           @map("comment_id")
+  userId    String           @map("user_id")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  comment   CommunityComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("community_comment_likes")
 }

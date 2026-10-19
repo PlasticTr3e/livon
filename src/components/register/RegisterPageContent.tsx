@@ -8,6 +8,8 @@ import {
   createRegisterFormData,
   createRegisterPayload,
   hasRegisterErrors,
+  isRegisterSubmitDisabled,
+  validateRegisterField,
   validateRegisterForm,
 } from "@/lib/register/register-form";
 import { REGISTER_HERO_IMAGES } from "@/lib/register/register-copy";
@@ -36,6 +38,8 @@ export function RegisterPageContent() {
     useState(false);
   const [activeHeroImageIndex, setActiveHeroImageIndex] = useState(0);
 
+  const isSubmitDisabled = isRegisterSubmitDisabled(formData, errors);
+
   useEffect(() => {
     const interval = window.setInterval(() => {
       setActiveHeroImageIndex(
@@ -47,11 +51,27 @@ export function RegisterPageContent() {
   }, []);
 
   function handleFieldChange(field: keyof RegisterFormData, value: string) {
-    setFormData((currentData) => ({ ...currentData, [field]: value }));
+    const nextFormData = { ...formData, [field]: value };
+    setFormData(nextFormData);
+
+    const fieldError = validateRegisterField(field, value, nextFormData);
+    setErrors((prevErrors) => {
+      const nextErrors = { ...prevErrors };
+      if (fieldError) {
+        nextErrors[field] = fieldError;
+      } else {
+        delete nextErrors[field];
+      }
+      return nextErrors;
+    });
   }
 
   async function handleRegister(event: React.FormEvent) {
     event.preventDefault();
+
+    if (isSubmitDisabled) {
+      return;
+    }
 
     const validationErrors = validateRegisterForm(formData);
     setErrors(validationErrors);
@@ -92,6 +112,7 @@ export function RegisterPageContent() {
         prefilledEmail={prefilledEmail}
         isPasswordVisible={isPasswordVisible}
         isConfirmPasswordVisible={isConfirmPasswordVisible}
+        isSubmitDisabled={isSubmitDisabled}
         onFieldChange={handleFieldChange}
         onSubmit={handleRegister}
         onTogglePasswordVisibility={() =>

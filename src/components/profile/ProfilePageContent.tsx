@@ -17,6 +17,7 @@ import type {
   ProfileTab,
   UserWithProfile,
 } from "@/lib/profile/profile-types";
+import { useUser } from "@/context/UserContext";
 import { useToast } from "@/components/shared/AppToaster";
 import { cn } from "@/components/ui/primitives";
 import { ProfileActivityPanel } from "./ProfileActivityPanel";
@@ -25,6 +26,7 @@ import { ProfileSidebar } from "./ProfileSidebar";
 
 export function ProfilePageContent() {
   const toast = useToast();
+  const { logout } = useUser();
   const [user, setUser] = useState<UserWithProfile | null>(null);
   const [activities, setActivities] = useState<ProfileActivityItem[]>([]);
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
@@ -58,7 +60,15 @@ export function ProfilePageContent() {
   }, []);
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    try {
+      if (typeof supabase?.auth?.signOut === "function") {
+        await supabase.auth.signOut();
+      }
+    } catch (error) {
+      console.warn("Failed to sign out from Supabase session:", error);
+    }
+
+    logout();
     localStorage.removeItem("livon-token");
     window.location.href = "/auth/login";
   }
@@ -177,9 +187,6 @@ function validatePasswordUpdate(formData: FormData) {
   if (!hasPasswordInput) return null;
   if (!currentPassword || !newPassword || !confirmPassword) {
     return "Current password, new password, and confirmation are required.";
-  }
-  if (newPassword.length < 6) {
-    return "Password must be at least 6 characters.";
   }
   if (newPassword !== confirmPassword) {
     return "Passwords do not match.";
