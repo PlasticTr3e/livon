@@ -25,7 +25,7 @@ import { Role } from "@/generated/prisma/enums";
  */
 export async function GET(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser) return badRequest("Unauthorized: Invalid or missing token");
 
     const user = await prisma.user.findUnique({
@@ -99,7 +99,7 @@ const updateProfileSchema = z.object({
  */
 export async function PUT(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser) return badRequest("Unauthorized: Invalid or missing token");
 
     const body = await req.json();

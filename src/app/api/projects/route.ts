@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { cached, invalidate } from "@/lib/cache";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { ProjectStatus, Role } from "@/generated/prisma/enums";
@@ -48,18 +49,22 @@ export async function GET(req: NextRequest) {
     const minLng = searchParams.get("minLng");
     const maxLng = searchParams.get("maxLng");
 
-    let projects;
+    const cacheKey =
+      minLat && maxLat && minLng && maxLng
+        ? `list:${minLat}:${maxLat}:${minLng}:${maxLng}`
+        : "list:all";
 
-    if (minLat && maxLat && minLng && maxLng) {
-      projects = await prisma.$queryRaw`
+    const projects = await cached("projects", cacheKey, 60, async () => {
+      if (minLat && maxLat && minLng && maxLng) {
+        return prisma.$queryRaw`
         SELECT id, title, description, status, latitude, longitude, "budgetTarget", "currentFunding", "estimatedDurationDays", "imageUrls"
         FROM projects
         WHERE latitude BETWEEN ${parseFloat(minLat)} AND ${parseFloat(maxLat)}
           AND longitude BETWEEN ${parseFloat(minLng)} AND ${parseFloat(maxLng)}
           AND "deletedAt" IS NULL
       `;
-    } else {
-      projects = await prisma.project.findMany({
+      }
+      return prisma.project.findMany({
         where: { deletedAt: null },
         select: {
           id: true,
@@ -74,7 +79,7 @@ export async function GET(req: NextRequest) {
           longitude: true,
         },
       });
-    }
+    });
 
     return ok("Projects retrieved successfully", { data: projects });
   } catch (error) {
@@ -147,7 +152,7 @@ const createProjectSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Agencies can create projects");
     }
@@ -193,6 +198,7 @@ export async function POST(req: NextRequest) {
       projectId: project.id,
     });
 
+    await invalidate("projects", "priority", "dashboard");
     return created("Project created successfully", { data: project });
   } catch (error) {
     console.error("POST Project Error:", error);

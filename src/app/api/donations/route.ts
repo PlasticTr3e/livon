@@ -9,6 +9,7 @@ import {
   notFound,
 } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
+import { RATE_LIMITS, rateLimit } from "@/lib/rate-limit";
 import { DonationStatus, Role } from "@/generated/prisma/enums";
 import { snap } from "@/lib/midtrans";
 
@@ -55,11 +56,14 @@ const donationSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
 
     if (!authUser || authUser.role !== Role.WARGA) {
       return badRequest("Forbidden: Only Citizens can donate");
     }
+
+    const limited = await rateLimit(RATE_LIMITS.donation, authUser.userId);
+    if (limited) return limited;
 
     const body = await req.json();
     const result = donationSchema.safeParse(body);
@@ -124,7 +128,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden");
     }

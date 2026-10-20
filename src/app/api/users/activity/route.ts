@@ -104,7 +104,7 @@ type ActivityItem = {
  */
 export async function GET(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser) {
       return badRequest("Unauthorized: Invalid or missing token");
     }

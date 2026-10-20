@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import { treeifyError, z } from "zod";
 import prisma from "@/lib/prisma";
+import { invalidate } from "@/lib/cache";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
+import { RATE_LIMITS, rateLimit } from "@/lib/rate-limit";
 import { analyzeSentiment } from "@/services/sentiment";
 
 /**
@@ -129,9 +131,12 @@ const commentSchema = z
  */
 export async function POST(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser)
       return badRequest("Unauthorized: You must be logged in to comment");
+
+    const limited = await rateLimit(RATE_LIMITS.comment, authUser.userId);
+    if (limited) return limited;
 
     const body: unknown = await req.json();
     const result = commentSchema.safeParse(body);
@@ -183,6 +188,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    await invalidate("projects", "priority", "news");
     return created("Comment created successfully", { data: newComment });
   } catch (error: unknown) {
     console.error("POST Comment Error:", error);

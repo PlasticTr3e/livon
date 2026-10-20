@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import z from "zod";
 import prisma from "@/lib/prisma";
+import { cached, invalidate } from "@/lib/cache";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { Role } from "@/generated/prisma/enums";
@@ -39,24 +40,30 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const skip = (page - 1) * limit;
 
-    const [news, totalCount] = await Promise.all([
-      prisma.news.findMany({
-        where: { deletedAt: null },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-        include: {
-          author: {
-            select: {
-              agencyProfile: {
-                select: { agencyName: true, isVerified: true },
+    const [news, totalCount] = await cached(
+      "news",
+      `list:${page}:${limit}`,
+      300,
+      () =>
+        Promise.all([
+          prisma.news.findMany({
+            where: { deletedAt: null },
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: limit,
+            include: {
+              author: {
+                select: {
+                  agencyProfile: {
+                    select: { agencyName: true, isVerified: true },
+                  },
+                },
               },
             },
-          },
-        },
-      }),
-      prisma.news.count({ where: { deletedAt: null } }),
-    ]);
+          }),
+          prisma.news.count({ where: { deletedAt: null } }),
+        ]),
+    );
 
     return ok("News retrived successfully", {
       data: {
@@ -115,7 +122,7 @@ const createNewsSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Agencies can publish news");
     }
@@ -145,6 +152,7 @@ export async function POST(req: NextRequest) {
       referenceId: newsItem.id,
     });
 
+    await invalidate("news");
     return created("News published successfully", { data: newsItem });
   } catch (error) {
     console.error("POST News Error", error);

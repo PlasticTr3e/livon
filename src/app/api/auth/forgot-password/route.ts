@@ -5,6 +5,7 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 import prisma from "@/lib/prisma";
 import { ok, badRequest, internalError } from "@/lib/api-response";
+import { RATE_LIMITS, getClientIp, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -42,6 +43,12 @@ const forgotPasswordSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(
+      RATE_LIMITS.forgotPassword,
+      getClientIp(req),
+    );
+    if (limited) return limited;
+
     const body = await req.json();
     const result = forgotPasswordSchema.safeParse(body);
 

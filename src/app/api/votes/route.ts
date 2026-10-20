@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
+import { invalidate } from "@/lib/cache";
 import { VoteType, Role } from "@/generated/prisma/enums";
 import { getAuthUser } from "@/lib/auth";
+import { RATE_LIMITS, rateLimit } from "@/lib/rate-limit";
 import {
   badRequest,
   created,
@@ -57,10 +59,13 @@ const voteSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const authUser = getAuthUser(request);
+    const authUser = await getAuthUser(request);
     if (!authUser || authUser.role !== Role.WARGA) {
       return badRequest("Forbidden: Only Citizens (WARGA) can vote");
     }
+
+    const limited = await rateLimit(RATE_LIMITS.vote, authUser.userId);
+    if (limited) return limited;
 
     const body = await request.json();
 
@@ -104,6 +109,8 @@ export async function POST(request: NextRequest) {
           where: { id: existingVote.id },
         });
 
+        await invalidate("projects", "priority", "dashboard");
+
         return ok(`Successfully removed ${type.toLowerCase()} (Toggle Off).`, {
           action: "DELETED",
         });
@@ -112,6 +119,8 @@ export async function POST(request: NextRequest) {
           where: { id: existingVote.id },
           data: { type: type },
         });
+
+        await invalidate("projects", "priority");
 
         return ok(`Successfully changed vote to ${type.toLowerCase()}.`, {
           action: "UPDATED",
@@ -127,6 +136,8 @@ export async function POST(request: NextRequest) {
         type,
       },
     });
+
+    await invalidate("projects", "priority", "dashboard");
 
     return created(`Successfully added new ${type.toLowerCase()}.`, {
       action: "CREATED",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { logoutSession } from "@/lib/auth-client";
 import {
   fetchProfileActivities,
   fetchProfileUser,
@@ -17,7 +17,6 @@ import type {
   ProfileTab,
   UserWithProfile,
 } from "@/lib/profile/profile-types";
-import { useUser } from "@/context/UserContext";
 import { useToast } from "@/components/shared/AppToaster";
 import { cn } from "@/components/ui/primitives";
 import { ProfileActivityPanel } from "./ProfileActivityPanel";
@@ -26,7 +25,6 @@ import { ProfileSidebar } from "./ProfileSidebar";
 
 export function ProfilePageContent() {
   const toast = useToast();
-  const { logout } = useUser();
   const [user, setUser] = useState<UserWithProfile | null>(null);
   const [activities, setActivities] = useState<ProfileActivityItem[]>([]);
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
@@ -60,16 +58,7 @@ export function ProfilePageContent() {
   }, []);
 
   async function handleLogout() {
-    try {
-      if (typeof supabase?.auth?.signOut === "function") {
-        await supabase.auth.signOut();
-      }
-    } catch (error) {
-      console.warn("Failed to sign out from Supabase session:", error);
-    }
-
-    logout();
-    localStorage.removeItem("livon-token");
+    await logoutSession();
     window.location.href = "/auth/login";
   }
 

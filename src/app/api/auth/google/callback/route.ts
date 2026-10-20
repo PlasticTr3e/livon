@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import jwt from "jsonwebtoken";
+import { signAuthToken } from "@/lib/auth";
 
 /**
  * @swagger
@@ -85,11 +85,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const jwtToken = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "7d" },
-    );
+    const jwtToken = signAuthToken(user, "7d");
 
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/success?token=${jwtToken}`,

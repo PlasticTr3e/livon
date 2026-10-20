@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
+import { invalidate } from "@/lib/cache";
 import { DonationStatus } from "@/generated/prisma/enums";
 import { internalError, notFound, ok } from "@/lib/api-response";
 
@@ -141,6 +142,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    await invalidate("projects", "dashboard");
     return ok("Webhook acknowledged");
   } catch (error) {
     console.error(error);

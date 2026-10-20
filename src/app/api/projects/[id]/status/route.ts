@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { invalidate } from "@/lib/cache";
 import { ok, badRequest, internalError, notFound } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { ProjectStatus, Role } from "@/generated/prisma/enums";
@@ -52,7 +53,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Agencies can update project status");
     }
@@ -100,6 +101,7 @@ export async function PATCH(
       }
     }
 
+    await invalidate("projects", "priority");
     return ok(`Project status updated to ${result.data.status}`, {
       data: updatedProject,
     });
