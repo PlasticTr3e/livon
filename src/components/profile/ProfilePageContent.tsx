@@ -177,9 +177,6 @@ function validatePasswordUpdate(formData: FormData) {
   if (!currentPassword || !newPassword || !confirmPassword) {
     return "Current password, new password, and confirmation are required.";
   }
-  if (newPassword.length < 6) {
-    return "Password must be at least 6 characters.";
-  }
   if (newPassword !== confirmPassword) {
     return "Passwords do not match.";
   }

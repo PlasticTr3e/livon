@@ -16,6 +16,7 @@ type RegisterFormPanelProps = {
   prefilledEmail: string;
   isPasswordVisible: boolean;
   isConfirmPasswordVisible: boolean;
+  isSubmitDisabled?: boolean;
   onFieldChange: (field: keyof RegisterFormData, value: string) => void;
   onSubmit: (event: React.FormEvent) => void;
   onTogglePasswordVisibility: () => void;
@@ -28,6 +29,7 @@ export function RegisterFormPanel({
   prefilledEmail,
   isPasswordVisible,
   isConfirmPasswordVisible,
+  isSubmitDisabled = false,
   onFieldChange,
   onSubmit,
   onTogglePasswordVisibility,
@@ -100,7 +102,8 @@ export function RegisterFormPanel({
 
           <button
             type="submit"
-            className="mt-1 h-12 w-full rounded-full bg-green-600 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700"
+            disabled={isSubmitDisabled}
+            className="mt-1 h-12 w-full rounded-full bg-green-600 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Register
           </button>

@@ -11,7 +11,7 @@ import { broadcastNotification } from "@/lib/notifications";
 
 const registerSchema = z.object({
   email: z.email(),
-  password: z.string().min(6),
+  password: z.string().min(1),
   role: z.literal(Role.WARGA),
 
   fullName: z.string().optional(),
