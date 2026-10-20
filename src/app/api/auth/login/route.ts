@@ -1,16 +1,15 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import prisma from "@/lib/prisma";
 import { ok, badRequest, internalError } from "@/lib/api-response";
+import { signAuthToken } from "@/lib/auth";
+import { RATE_LIMITS, getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.email(),
   password: z.string(),
 });
-
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_dev_key";
 
 /**
  * @swagger
@@ -44,6 +43,9 @@ const JWT_SECRET = process.env.JWT_SECRET || "fallback_dev_key";
  */
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(RATE_LIMITS.login, getClientIp(req));
+    if (limited) return limited;
+
     const body = await req.json();
     const result = loginSchema.safeParse(body);
 
@@ -76,15 +78,7 @@ export async function POST(req: NextRequest) {
       return badRequest("Invalid credentials");
     }
 
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      JWT_SECRET,
-      { expiresIn: "1d" },
-    );
+    const token = signAuthToken(user, "1d");
 
     return ok("Login successful", {
       data: {

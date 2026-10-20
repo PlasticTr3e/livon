@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { cached, invalidate } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
 import { ok, created, badRequest } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
@@ -43,11 +44,13 @@ import { Role } from "@/generated/prisma/enums";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(req: NextRequest) {
   try {
-    const categories = await prisma.projectCategory.findMany({
-      orderBy: {
-        name: "asc",
-      },
-    });
+    const categories = await cached("categories", "all", 3600, () =>
+      prisma.projectCategory.findMany({
+        orderBy: {
+          name: "asc",
+        },
+      }),
+    );
 
     return ok("Project categories retrieved successfully", {
       data: categories,
@@ -112,7 +115,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
 
     if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
@@ -152,6 +155,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await invalidate("categories");
     return created("Project category created successfully", {
       data: newCategory,
     });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { cached, invalidate } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
 import { ok, badRequest, notFound } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
@@ -78,28 +79,30 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const news = await prisma.news.findFirst({
-      where: {
-        id,
-        deletedAt: null,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            email: true,
-            agencyProfile: {
-              select: {
-                agencyName: true,
+    const news = await cached("news", `detail:${id}`, 300, () =>
+      prisma.news.findFirst({
+        where: {
+          id,
+          deletedAt: null,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              email: true,
+              agencyProfile: {
+                select: {
+                  agencyName: true,
+                },
               },
             },
           },
+          _count: {
+            select: { comments: true },
+          },
         },
-        _count: {
-          select: { comments: true },
-        },
-      },
-    });
+      }),
+    );
 
     if (!news) {
       return notFound("Berita atau pengumuman tidak ditemukan.");
@@ -180,7 +183,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         {
@@ -225,6 +228,7 @@ export async function PUT(
       },
     });
 
+    await invalidate("news");
     return ok("Berita berhasil diperbarui", { data: updatedNews });
   } catch (error: unknown) {
     console.error("[NEWS_UPDATE_PUT]", error);
@@ -278,7 +282,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access." },
@@ -306,6 +310,7 @@ export async function DELETE(
       },
     });
 
+    await invalidate("news");
     return ok("Berita berhasil dihapus (ditarik dari penayangan).");
   } catch (error) {
     console.error("[NEWS_DELETE]", error);

@@ -7,6 +7,7 @@ import React, {
   useState,
   ReactNode,
 } from "react";
+import { logoutSession } from "@/lib/auth-client";
 
 export type UserRole = "resident" | "agency";
 
@@ -108,7 +109,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [login]);
 
   const logout = () => {
-    localStorage.removeItem("livon-token");
+    void logoutSession();
     setIsAuthenticated(false);
     setUserRole("resident");
     setUserName("User");

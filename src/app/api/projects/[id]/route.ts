@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
+import { cached, invalidate } from "@/lib/cache";
 import { ok, internalError, notFound, badRequest } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { Role } from "@/generated/prisma/enums";
@@ -34,25 +35,27 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const project = await prisma.project.findUnique({
-      where: { id, deletedAt: null },
-      include: {
-        category: true,
-        agency: {
-          select: {
-            agencyProfile: {
-              select: { agencyName: true, isVerified: true },
+    const project = await cached("projects", `detail:${id}`, 300, () =>
+      prisma.project.findUnique({
+        where: { id, deletedAt: null },
+        include: {
+          category: true,
+          agency: {
+            select: {
+              agencyProfile: {
+                select: { agencyName: true, isVerified: true },
+              },
             },
           },
+          updates: {
+            orderBy: { createdAt: "desc" },
+          },
+          _count: {
+            select: { votes: true, comments: true },
+          },
         },
-        updates: {
-          orderBy: { createdAt: "desc" },
-        },
-        _count: {
-          select: { votes: true, comments: true },
-        },
-      },
-    });
+      }),
+    );
 
     if (!project) return notFound("Project not found");
 
@@ -110,7 +113,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Agencies update project");
     }
@@ -194,6 +197,7 @@ export async function PATCH(
       });
     }
 
+    await invalidate("projects", "priority", "dashboard");
     return ok("Project updated successfully", { data: project });
   } catch (error: unknown) {
     console.error("PATCH Project Error:", error);
@@ -233,7 +237,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Agencies delete projects");
     }
@@ -252,6 +256,7 @@ export async function DELETE(
         deletedAt: new Date(),
       },
     });
+    await invalidate("projects", "priority", "dashboard");
     return ok("Project soft deleted successfully", { data: project });
   } catch (error) {
     if (

@@ -50,7 +50,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser) {
       return badRequest("Unauthorized: Invalid or missing token");
     }

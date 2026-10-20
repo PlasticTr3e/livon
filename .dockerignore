@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.github
+.husky
+.vscode
+.env*
+ai-service
+deploy
+docs
+src/generated
+lint-results.txt
+*.md
+docker-compose*.yml
+Dockerfile
