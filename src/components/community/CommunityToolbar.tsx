@@ -20,8 +20,8 @@ export function CommunityToolbar({
           type="search"
           inputMode="search"
           enterKeyHint="search"
-          aria-label="Cari postingan atau pengguna"
-          placeholder="Cari postingan atau pengguna..."
+          aria-label="Search posts or people"
+          placeholder="Search posts or people..."
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
           className="h-11 w-full appearance-none rounded-xl border border-gray-200 bg-white pl-10 pr-10 text-base text-gray-900 shadow-sm transition-all placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-gray-800 dark:bg-[#111827] dark:text-white sm:text-sm [&::-webkit-search-cancel-button]:hidden"
@@ -29,7 +29,7 @@ export function CommunityToolbar({
         {searchQuery && (
           <button
             type="button"
-            aria-label="Hapus pencarian"
+            aria-label="Clear search"
             onClick={() => onSearchChange("")}
             className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-slate-100 hover:text-gray-700 dark:hover:bg-slate-800 dark:hover:text-white"
           >
@@ -44,7 +44,7 @@ export function CommunityToolbar({
         className="hidden h-11 shrink-0 items-center gap-2 rounded-xl px-5 text-sm font-bold sm:flex"
       >
         <Plus className="h-4 w-4" />
-        <span>Buat aspirasi</span>
+        <span>Create post</span>
       </Button>
     </div>
   );

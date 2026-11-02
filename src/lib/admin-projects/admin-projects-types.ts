@@ -9,7 +9,6 @@ export type AdminProjectSummary = {
   name: string;
   status: AdminProjectStatus;
   budget: string;
-  votes: number;
   date: string;
   category: string;
 };

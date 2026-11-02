@@ -47,8 +47,7 @@ export function AdminProjectsToolbar({
           >
             <option value="All">All Status</option>
             <option value="USULAN">Planning</option>
-            <option value="DISETUJUI">Funding</option>
-            <option value="BERJALAN">Construction</option>
+            <option value="BERJALAN">Under Construction</option>
             <option value="SELESAI">Completed</option>
           </select>
           <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-green-600">

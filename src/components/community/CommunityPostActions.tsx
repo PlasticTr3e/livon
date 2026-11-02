@@ -7,8 +7,8 @@ import { CommunityDeleteButton } from "./CommunityDeleteButton";
 type CommunityPostActionsProps = {
   post: CommunityPost;
   onComment: () => void;
-  onDelete?: () => void;
-  onToggleLike: () => void;
+  onDelete?: () => void | Promise<unknown>;
+  onToggleLike: () => void | Promise<unknown>;
 };
 
 export function CommunityPostActions({
@@ -22,20 +22,20 @@ export function CommunityPostActions({
       <CommunityActionButton
         icon={Heart}
         tone="like"
-        label={post.isLiked ? "Batal menyukai postingan" : "Sukai postingan"}
+        label={post.isLiked ? "Unlike post" : "Like post"}
         count={post.likeCount}
         isActive={post.isLiked}
         onClick={onToggleLike}
       />
       <CommunityActionButton
         icon={MessageCircle}
-        label="Komentari postingan"
+        label="Comment on post"
         count={getCommunityCommentCount(post)}
         onClick={onComment}
       />
       {onDelete && (
         <div className="ml-auto">
-          <CommunityDeleteButton label="Hapus postingan" onConfirm={onDelete} />
+          <CommunityDeleteButton label="Delete post" onConfirm={onDelete} />
         </div>
       )}
     </div>

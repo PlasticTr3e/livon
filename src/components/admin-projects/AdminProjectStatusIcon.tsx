@@ -1,4 +1,4 @@
-import { Banknote, CheckCircle2, FileText, HardHat } from "lucide-react";
+import { CheckCircle2, FileText, HardHat } from "lucide-react";
 import type { AdminProjectStatus } from "@/lib/admin-projects/admin-projects-types";
 
 export function AdminProjectStatusIcon({
@@ -10,7 +10,7 @@ export function AdminProjectStatusIcon({
 }) {
   switch (status) {
     case "DISETUJUI":
-      return <Banknote className={className} />;
+      return <FileText className={className} />;
     case "BERJALAN":
       return <HardHat className={className} />;
     case "SELESAI":

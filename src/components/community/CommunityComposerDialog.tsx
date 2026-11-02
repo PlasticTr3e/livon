@@ -21,7 +21,7 @@ type CommunityComposerDialogProps = {
   author: CommunityAuthor;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubmit: (items: CommunityDraftItem[]) => void;
+  onSubmit: (items: CommunityDraftItem[]) => Promise<boolean>;
 };
 
 const EMPTY_DRAFT: CommunityDraftItem[] = [
@@ -34,6 +34,8 @@ export function CommunityComposerDialog({
   onOpenChange,
   onSubmit,
 }: CommunityComposerDialogProps) {
+  const submitting = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const firstTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [items, setItems] = useState<CommunityDraftItem[]>(EMPTY_DRAFT);
 
@@ -44,6 +46,7 @@ export function CommunityComposerDialog({
     Boolean(lastItem.text.trim() || lastItem.image);
 
   function handleOpenChange(nextIsOpen: boolean) {
+    if (submitting.current) return;
     if (!nextIsOpen) {
       items.forEach((item) => revokeCommunityDraftImage(item.image));
       setItems(EMPTY_DRAFT);
@@ -51,13 +54,20 @@ export function CommunityComposerDialog({
     onOpenChange(nextIsOpen);
   }
 
-  function handleSubmit() {
-    if (!canSubmit) return;
-
-    // Attached images stay alive: the published post keeps using their URLs.
-    onSubmit(items);
-    setItems(EMPTY_DRAFT);
-    onOpenChange(false);
+  async function handleSubmit() {
+    if (!canSubmit || submitting.current) return;
+    submitting.current = true;
+    setIsSubmitting(true);
+    try {
+      const saved = await onSubmit(items);
+      if (!saved) return;
+      items.forEach((item) => revokeCommunityDraftImage(item.image));
+      setItems(EMPTY_DRAFT);
+      onOpenChange(false);
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
+    }
   }
 
   function handleTextChange(itemId: string, text: string) {
@@ -66,10 +76,16 @@ export function CommunityComposerDialog({
     );
   }
 
-  function handleImageChange(itemId: string, image: string | null) {
+  function handleImageChange(
+    itemId: string,
+    image: string | null,
+    imageFile: File | null = null,
+  ) {
     revokeItemImage(itemId);
     setItems((current) =>
-      current.map((item) => (item.id === itemId ? { ...item, image } : item)),
+      current.map((item) =>
+        item.id === itemId ? { ...item, image, imageFile } : item,
+      ),
     );
   }
 
@@ -94,6 +110,7 @@ export function CommunityComposerDialog({
         >
           <Dialog.Content
             aria-describedby={undefined}
+            aria-busy={isSubmitting}
             onOpenAutoFocus={(event) => {
               event.preventDefault();
               firstTextareaRef.current?.focus();
@@ -109,59 +126,64 @@ export function CommunityComposerDialog({
             />
 
             <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-gray-100 px-4 py-3 dark:border-gray-800 sm:px-5">
-              <Dialog.Close className="-ml-2 justify-self-start rounded-lg px-2 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                Batal
+              <Dialog.Close
+                disabled={isSubmitting}
+                className="-ml-2 justify-self-start rounded-lg px-2 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              >
+                Cancel
               </Dialog.Close>
               <Dialog.Title className="text-sm font-black text-gray-900 dark:text-white">
-                Aspirasi baru
+                New post
               </Dialog.Title>
               <Button
                 variant="primary"
                 onClick={handleSubmit}
-                disabled={!canSubmit}
+                disabled={!canSubmit || isSubmitting}
                 className="justify-self-end rounded-full px-5 py-1.5 text-sm font-bold disabled:cursor-not-allowed"
               >
-                Kirim
+                {isSubmitting ? "Posting..." : "Send"}
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-5">
-              {items.map((item, index) => (
-                <CommunityComposerThreadItem
-                  key={item.id}
-                  author={author}
-                  isFirst={index === 0}
-                  item={item}
-                  textareaRef={index === 0 ? firstTextareaRef : undefined}
-                  onImageChange={handleImageChange}
-                  onRemove={index > 0 ? handleRemoveItem : undefined}
-                  onTextChange={handleTextChange}
-                />
-              ))}
+            <fieldset disabled={isSubmitting} className="contents">
+              <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-5">
+                {items.map((item, index) => (
+                  <CommunityComposerThreadItem
+                    key={item.id}
+                    author={author}
+                    isFirst={index === 0}
+                    item={item}
+                    textareaRef={index === 0 ? firstTextareaRef : undefined}
+                    onImageChange={handleImageChange}
+                    onRemove={index > 0 ? handleRemoveItem : undefined}
+                    onTextChange={handleTextChange}
+                  />
+                ))}
 
-              {items.length < MAX_COMMUNITY_DRAFT_ITEMS && (
-                <button
-                  type="button"
-                  disabled={!canAddItem}
-                  onClick={() =>
-                    setItems((current) => [
-                      ...current,
-                      { id: createCommunityId(), text: "", image: null },
-                    ])
-                  }
-                  className="group flex w-full items-center gap-3 rounded-lg py-1 text-left text-sm text-gray-500 transition-colors hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:text-white"
-                >
-                  <span className="flex w-10 shrink-0 justify-center">
-                    <CommunityAvatar
-                      author={author}
-                      size="xs"
-                      className="opacity-60 transition-opacity group-hover:opacity-100"
-                    />
-                  </span>
-                  Tambah ke postingan
-                </button>
-              )}
-            </div>
+                {items.length < MAX_COMMUNITY_DRAFT_ITEMS && (
+                  <button
+                    type="button"
+                    disabled={!canAddItem}
+                    onClick={() =>
+                      setItems((current) => [
+                        ...current,
+                        { id: createCommunityId(), text: "", image: null },
+                      ])
+                    }
+                    className="group flex w-full items-center gap-3 rounded-lg py-1 text-left text-sm text-gray-500 transition-colors hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:text-white"
+                  >
+                    <span className="flex w-10 shrink-0 justify-center">
+                      <CommunityAvatar
+                        author={author}
+                        size="xs"
+                        className="opacity-60 transition-opacity group-hover:opacity-100"
+                      />
+                    </span>
+                    Add to post
+                  </button>
+                )}
+              </div>
+            </fieldset>
           </Dialog.Content>
         </Dialog.Overlay>
       </Dialog.Portal>

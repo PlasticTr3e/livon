@@ -1,5 +1,5 @@
 import { memo, useCallback } from "react";
-import { ChevronRight, ThumbsUp } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn, Badge, Button, Card } from "@/components/ui/primitives";
 import {
   getMapProgressColorValue,
@@ -55,7 +55,7 @@ export const MapProjectCard = memo(function MapProjectCard({
 
       <div className="mb-2">
         <div className="mb-1 flex justify-between text-[10px] text-gray-500 dark:text-white">
-          <span>Progress</span>
+          <span>Stage progress</span>
           <span className="font-semibold text-gray-700 dark:text-white">
             {project.progress}%
           </span>
@@ -80,9 +80,6 @@ export const MapProjectCard = memo(function MapProjectCard({
             )}
           >
             {project.category}
-          </span>
-          <span className="flex items-center gap-0.5">
-            <ThumbsUp className="h-3 w-3" /> {project.votes.agree}
           </span>
         </div>
         <Button

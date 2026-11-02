@@ -1,5 +1,5 @@
-import { AdminCrowdfundingPageContent } from "@/components/admin-crowdfunding/AdminCrowdfundingPageContent";
+import { CrowdfundingComingSoon } from "@/components/crowdfunding/CrowdfundingComingSoon";
 
 export default function CrowdfundingMonitorPage() {
-  return <AdminCrowdfundingPageContent />;
+  return <CrowdfundingComingSoon backHref="/admin/projects" />;
 }

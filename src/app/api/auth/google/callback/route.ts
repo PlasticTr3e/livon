@@ -26,12 +26,14 @@ import { signAuthToken } from "@/lib/auth";
  *         description: Redirects to the client app either with user token (success), register view (new user), or login page (error/unverified).
  */
 export async function GET(req: NextRequest) {
+  const appUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ).replace(/\/+$/, "");
+  const redirectUri = new URL("/api/auth/google/callback", appUrl).toString();
   const code = req.nextUrl.searchParams.get("code");
 
   if (!code) {
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=OAuthFailed`,
-    );
+    return NextResponse.redirect(`${appUrl}/auth/login?error=OAuthFailed`);
   }
 
   try {
@@ -42,7 +44,7 @@ export async function GET(req: NextRequest) {
         code,
         client_id: process.env.GOOGLE_CLIENT_ID!,
         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirect_uri: "https://livon-one.vercel.app/api/auth/google/callback",
+        redirect_uri: redirectUri,
         grant_type: "authorization_code",
       }),
     });
@@ -70,9 +72,7 @@ export async function GET(req: NextRequest) {
         name: googleUser.name || "",
         picture: googleUser.picture || "",
       });
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/auth/register?${qs.toString()}`,
-      );
+      return NextResponse.redirect(`${appUrl}/auth/register?${qs.toString()}`);
     }
 
     const isWargaVerified = user.citizenProfile?.isVerified === true;
@@ -80,20 +80,16 @@ export async function GET(req: NextRequest) {
     const isAdmin = user.role === "ADMIN" || user.role === "DEVELOPER";
 
     if (!isWargaVerified && !isAgencyVerified && !isAdmin) {
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?registered=true`,
-      );
+      return NextResponse.redirect(`${appUrl}/auth/login?registered=true`);
     }
 
     const jwtToken = signAuthToken(user, "7d");
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/success?token=${jwtToken}`,
+      `${appUrl}/api/auth/google/success?token=${jwtToken}`,
     );
   } catch (error) {
     console.error("OAuth Error:", error);
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=OAuthFailed`,
-    );
+    return NextResponse.redirect(`${appUrl}/auth/login?error=OAuthFailed`);
   }
 }

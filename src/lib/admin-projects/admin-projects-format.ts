@@ -1,3 +1,4 @@
+import { getProjectStage } from "@/lib/project-lifecycle";
 import type {
   AdminProjectStatus,
   AdminProjectStatusConfig,
@@ -5,7 +6,6 @@ import type {
 
 export const ADMIN_PROJECT_STATUSES: AdminProjectStatus[] = [
   "USULAN",
-  "DISETUJUI",
   "BERJALAN",
   "SELESAI",
 ];
@@ -23,15 +23,15 @@ export const ADMIN_PROJECT_STATUS_CONFIG: Record<
     border: "border-blue-100",
   },
   DISETUJUI: {
-    label: "Funding",
-    style: "bg-yellow-50 text-yellow-700 border-yellow-100",
-    dot: "bg-yellow-600",
-    iconBg: "bg-yellow-50",
-    iconColor: "text-yellow-600",
-    border: "border-yellow-100",
+    label: "Planning",
+    style: "bg-blue-50 text-blue-600 border-blue-100",
+    dot: "bg-blue-500",
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-600",
+    border: "border-blue-100",
   },
   BERJALAN: {
-    label: "Construction",
+    label: "Under Construction",
     style: "bg-orange-50 text-orange-700 border-orange-100",
     dot: "bg-orange-600",
     iconBg: "bg-orange-50",
@@ -55,9 +55,7 @@ export function isAdminProjectStatus(
 }
 
 export function getAdminProjectStatusLabel(status: string) {
-  return isAdminProjectStatus(status)
-    ? ADMIN_PROJECT_STATUS_CONFIG[status].label
-    : "Planning";
+  return getProjectStage(status);
 }
 
 export function formatAdminProjectBudget(value?: number | string | null) {
