@@ -1,5 +1,5 @@
-import { CrowdfundingDetailPageContent } from "@/components/crowdfunding/CrowdfundingDetailPageContent";
+import { CrowdfundingComingSoon } from "@/components/crowdfunding/CrowdfundingComingSoon";
 
 export default function CrowdfundingPage() {
-  return <CrowdfundingDetailPageContent />;
+  return <CrowdfundingComingSoon />;
 }
