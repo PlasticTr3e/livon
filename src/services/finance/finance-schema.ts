@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FundType, TransactionType } from "@/generated/prisma/enums";
+import { FundType } from "@/generated/prisma/enums";
 
 export const createExpenseSchema = z.object({
   title: z
@@ -17,9 +17,20 @@ export const createExpenseSchema = z.object({
     .number({ message: "Nominal pengeluaran harus berupa angka" })
     .positive("Nominal pengeluaran harus berupa angka positif")
     .min(1, "Nominal pengeluaran minimal Rp 1"),
-  fundType: z.nativeEnum(FundType, {
-    message: "Jenis dana tidak valid. Pilihan: IPL atau DONASI",
-  }),
+  fundType: z.preprocess(
+    (val) => {
+      if (typeof val === "string") {
+        const u = val.toUpperCase();
+        if (u === "DONATION") return FundType.DONASI;
+        if (u === "DONASI") return FundType.DONASI;
+        if (u === "IPL") return FundType.IPL;
+      }
+      return val;
+    },
+    z.nativeEnum(FundType, {
+      message: "Jenis dana tidak valid. Pilihan: IPL atau DONASI (DONATION)",
+    }),
+  ),
   category: z
     .string()
     .trim()
@@ -34,8 +45,8 @@ export const createExpenseSchema = z.object({
 });
 
 export const transactionQuerySchema = z.object({
-  fundType: z.union([z.nativeEnum(FundType), z.literal("ALL")]).optional(),
-  type: z.union([z.nativeEnum(TransactionType), z.literal("ALL")]).optional(),
+  fundType: z.string().trim().optional(),
+  type: z.string().trim().optional(),
   category: z.string().trim().optional(),
   search: z.string().trim().optional(),
   startDate: z.coerce.date().optional(),

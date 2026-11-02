@@ -21,6 +21,13 @@ export interface KpiCardsSummary {
   donationBalance: number;
   monthlyExpense: number;
   residentBill: ResidentBillSummary | null;
+
+  // Naming aliases to ensure 100% frontend compatibility with Indonesian variables
+  saldoIpl: number;
+  saldoDonasi: number;
+  pengeluaranBulanIni: number;
+  statusTagihan: ResidentBillSummary | null;
+
   overview?: {
     totalIncomeThisMonth: number;
     totalExpenseThisMonth: number;

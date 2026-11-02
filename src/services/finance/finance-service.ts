@@ -125,6 +125,10 @@ export async function getFinanceSummary(
     donationBalance,
     monthlyExpense,
     residentBill,
+    saldoIpl: iplBalance,
+    saldoDonasi: donationBalance,
+    pengeluaranBulanIni: monthlyExpense,
+    statusTagihan: residentBill,
     overview: {
       totalIncomeThisMonth: monthlyIncome,
       totalExpenseThisMonth: monthlyExpense,
@@ -136,7 +140,8 @@ export async function getFinanceSummary(
 
 /**
  * Retrieves paginated financial transactions for citizen transparency table
- * Supports filtering by fundType (IPL / DONASI), type (PEMASUKAN / PENGELUARAN), search, and dates.
+ * Supports filtering by ?type=IPL or ?type=DONATION (or ?fundType=IPL/DONASI),
+ * transaction type (PEMASUKAN / PENGELUARAN), search, category, and dates.
  */
 export async function getFinanceTransactions(
   query: TransactionQueryInput,
@@ -148,12 +153,37 @@ export async function getFinanceTransactions(
     deletedAt: null,
   };
 
-  if (fundType && fundType !== "ALL") {
-    whereClause.fundType = fundType;
+  const rawType = (type || "").trim().toUpperCase();
+  const rawFundType = (fundType || "").trim().toUpperCase();
+
+  let resolvedFundType: FundType | undefined;
+  let resolvedTransactionType: TransactionType | undefined;
+
+  // 1. Resolve fund type filter (IPL vs DONATION/DONASI)
+  if (rawType === "IPL" || rawFundType === "IPL") {
+    resolvedFundType = FundType.IPL;
+  } else if (
+    rawType === "DONATION" ||
+    rawType === "DONASI" ||
+    rawFundType === "DONATION" ||
+    rawFundType === "DONASI"
+  ) {
+    resolvedFundType = FundType.DONASI;
   }
 
-  if (type && type !== "ALL") {
-    whereClause.type = type;
+  // 2. Resolve transaction type filter (PEMASUKAN vs PENGELUARAN)
+  if (rawType === "PEMASUKAN" || rawType === "INCOME") {
+    resolvedTransactionType = TransactionType.PEMASUKAN;
+  } else if (rawType === "PENGELUARAN" || rawType === "EXPENSE") {
+    resolvedTransactionType = TransactionType.PENGELUARAN;
+  }
+
+  if (resolvedFundType) {
+    whereClause.fundType = resolvedFundType;
+  }
+
+  if (resolvedTransactionType) {
+    whereClause.type = resolvedTransactionType;
   }
 
   if (category) {
