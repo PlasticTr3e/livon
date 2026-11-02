@@ -1,14 +1,4 @@
-export type PaymentStep = "confirm" | "success";
-
-export type PaymentProject = {
-  id: string;
-  name: string;
-};
-
-export type PaymentReceipt = {
-  orderId: string;
-  time: string;
-};
+/** Types for the Midtrans Snap popup loaded by `MidtransSnapScript`. */
 
 export type MidtransResult = {
   status_code: string;

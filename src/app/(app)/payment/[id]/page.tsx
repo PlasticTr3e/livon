@@ -1,23 +1,29 @@
-import { Suspense } from "react";
-import Script from "next/script";
-import { PaymentPageContent } from "@/components/payment/PaymentPageContent";
-import { LoadingState } from "@/components/shared/LoadingState";
+import { notFound } from "next/navigation";
+import { CheckoutPageContent } from "@/components/payment/CheckoutPageContent";
+import { MidtransSnapScript } from "@/components/payment/MidtransSnapScript";
+import { getCheckoutKindFromSlug } from "@/lib/payment/billing";
+import { parseDonationCheckoutQuery } from "@/lib/payment/checkout-query";
 
-export default function PaymentPage() {
+type PaymentPageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+/** `/payment/ipl` and `/payment/donasi`: IPL & community donation checkout. */
+export default async function PaymentPage({
+  params,
+  searchParams,
+}: PaymentPageProps) {
+  const kind = getCheckoutKindFromSlug((await params).id);
+  if (!kind) notFound();
+
+  const donation =
+    kind === "donation" ? parseDonationCheckoutQuery(await searchParams) : null;
+
   return (
     <>
-      <Script
-        src="https://app.sandbox.midtrans.com/snap/snap.js"
-        data-client-key="Mid-client-hathFuuCoigDRQ3Q"
-        strategy="lazyOnload"
-      />
-      <Suspense
-        fallback={
-          <LoadingState label="Loading payment..." className="h-full" />
-        }
-      >
-        <PaymentPageContent />
-      </Suspense>
+      <MidtransSnapScript />
+      <CheckoutPageContent kind={kind} donation={donation} />
     </>
   );
 }
