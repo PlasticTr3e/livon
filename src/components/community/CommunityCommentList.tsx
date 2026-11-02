@@ -8,9 +8,9 @@ import styles from "./community.module.css";
 type CommunityCommentListProps = {
   canModerate: boolean;
   comments: CommunityComment[];
-  onDelete: (target: CommunityCommentTarget) => void;
+  onDelete: (target: CommunityCommentTarget) => void | Promise<unknown>;
   onReply: (comment: CommunityComment) => void;
-  onToggleLike: (target: CommunityCommentTarget) => void;
+  onToggleLike: (target: CommunityCommentTarget) => void | Promise<unknown>;
 };
 
 export function CommunityCommentList({
@@ -23,7 +23,7 @@ export function CommunityCommentList({
   if (comments.length === 0) {
     return (
       <p className="px-4 py-8 text-center text-sm text-gray-400">
-        Belum ada komentar. Jadilah yang pertama!
+        No comments yet. Be the first to comment!
       </p>
     );
   }

@@ -1,9 +1,6 @@
-export type ProjectMapStatus =
-  | "Planning"
-  | "Funding"
-  | "Construction"
-  | "Under Construction"
-  | "Completed";
+import type { ProjectStage } from "@/lib/project-lifecycle";
+
+export type ProjectMapStatus = ProjectStage;
 
 export type ProjectMapMarker = {
   id: string;

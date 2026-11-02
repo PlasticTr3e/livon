@@ -45,16 +45,18 @@ export function AdminProjectsPageContent() {
                 const d = detailJson.data;
                 if (!d) return null;
 
-                const status = isAdminProjectStatus(d.status)
-                  ? d.status
-                  : "USULAN";
+                const status =
+                  d.status === "DISETUJUI"
+                    ? "USULAN"
+                    : isAdminProjectStatus(d.status)
+                      ? d.status
+                      : "USULAN";
 
                 return {
                   id: d.id,
                   name: d.title,
                   status,
                   budget: formatAdminProjectBudget(d.budgetTarget),
-                  votes: d._count?.votes || 0,
                   date: formatAdminProjectDate(d.createdAt),
                   category: d.category?.name || "Uncategorized",
                 };

@@ -13,7 +13,6 @@ import {
   Image as ImageIcon,
   FileText,
   Plus,
-  Banknote,
   HardHat,
   CheckCircle2,
 } from "lucide-react";
@@ -689,17 +688,15 @@ function EditProjectContent() {
                 Project Status
               </h3>
               <div className="flex flex-col gap-2">
-                {["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"].map((s) => {
-                  const isActive = formData.status === s;
+                {["USULAN", "BERJALAN", "SELESAI"].map((s) => {
+                  const isActive =
+                    formData.status === s ||
+                    (s === "USULAN" && formData.status === "DISETUJUI");
                   const getStyle = (status: string) => {
                     switch (status) {
                       case "USULAN":
                         return isActive
                           ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
-                          : "border-gray-100 bg-gray-50 text-gray-400";
-                      case "DISETUJUI":
-                        return isActive
-                          ? "border-yellow-500 bg-yellow-50 text-yellow-700 shadow-sm"
                           : "border-gray-100 bg-gray-50 text-gray-400";
                       case "BERJALAN":
                         return isActive
@@ -717,8 +714,6 @@ function EditProjectContent() {
                     switch (status) {
                       case "USULAN":
                         return <FileText className="w-4 h-4" />;
-                      case "DISETUJUI":
-                        return <Banknote className="w-4 h-4" />;
                       case "BERJALAN":
                         return <HardHat className="w-4 h-4" />;
                       case "SELESAI":
@@ -731,8 +726,6 @@ function EditProjectContent() {
                     switch (status) {
                       case "USULAN":
                         return "bg-blue-500";
-                      case "DISETUJUI":
-                        return "bg-yellow-500";
                       case "BERJALAN":
                         return "bg-orange-500";
                       case "SELESAI":
@@ -762,11 +755,9 @@ function EditProjectContent() {
                       <div className="flex-1 text-left">
                         {s === "USULAN"
                           ? "Planning"
-                          : s === "DISETUJUI"
-                            ? "Funding"
-                            : s === "BERJALAN"
-                              ? "Construction"
-                              : "Completed"}
+                          : s === "BERJALAN"
+                            ? "Under Construction"
+                            : "Completed"}
                       </div>
                       <div
                         className={cn(

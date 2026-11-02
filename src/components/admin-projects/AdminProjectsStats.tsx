@@ -16,7 +16,7 @@ export function AdminProjectsStats({
   projects,
 }: AdminProjectsStatsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {ADMIN_PROJECT_STATUSES.map((status) => {
         const count = projects.filter(
           (project) => project.status === status,

@@ -19,7 +19,7 @@ export function getProjectStatusLabel(status?: string) {
 export function getProjectStatusBadgeClass(status?: string) {
   switch (status?.toUpperCase()) {
     case "DISETUJUI":
-      return "bg-yellow-50 text-yellow-700";
+      return "bg-blue-50 text-blue-700";
     case "BERJALAN":
       return "bg-orange-50 text-orange-700";
     case "SELESAI":
@@ -31,7 +31,6 @@ export function getProjectStatusBadgeClass(status?: string) {
 
 export function formatDashboardStats(metrics: AdminDashboardMetrics) {
   return [
-    `Rp ${metrics.totalDana.toLocaleString("id-ID")}`,
     metrics.totalProyek.toString(),
     metrics.totalWargaAktif.toString(),
     metrics.totalPartisipasi.toString(),

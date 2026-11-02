@@ -6,10 +6,10 @@ type CommunityFeedProps = {
   canModerate: boolean;
   isSearching: boolean;
   posts: CommunityPost[];
-  onDeletePost: (postId: string) => void;
+  onDeletePost: (postId: string) => void | Promise<unknown>;
   onOpenImage: (post: CommunityPost, index: number) => void;
   onOpenPost: (postId: string) => void;
-  onToggleLike: (postId: string) => void;
+  onToggleLike: (postId: string) => void | Promise<unknown>;
 };
 
 export function CommunityFeed({
@@ -29,8 +29,8 @@ export function CommunityFeed({
         <EmptyIcon className="h-12 w-12 opacity-20" />
         <p className="text-sm font-medium">
           {isSearching
-            ? "Tidak ada postingan yang cocok dengan pencarian Anda."
-            : "Belum ada postingan. Jadilah yang pertama menyampaikan aspirasi."}
+            ? "No posts match your search."
+            : "No posts yet. Be the first to share your ideas."}
         </p>
       </div>
     );

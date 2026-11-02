@@ -8,6 +8,7 @@ import { CommunityAvatar } from "./CommunityAvatar";
 
 type CommunityCommentComposerProps = {
   currentUser: CommunityAuthor;
+  isSubmitting?: boolean;
   inputRef: Ref<HTMLInputElement>;
   replyTarget: CommunityReplyTarget | null;
   value: string;
@@ -18,6 +19,7 @@ type CommunityCommentComposerProps = {
 
 export function CommunityCommentComposer({
   currentUser,
+  isSubmitting = false,
   inputRef,
   replyTarget,
   value,
@@ -31,15 +33,16 @@ export function CommunityCommentComposer({
         {replyTarget && (
           <div className="mb-2 flex items-center justify-between gap-2 pl-11 text-xs text-gray-500 dark:text-gray-400">
             <p className="truncate">
-              Membalas{" "}
+              Replying to{" "}
               <span className="font-semibold text-gray-800 dark:text-white">
                 {replyTarget.authorName}
               </span>
             </p>
             <button
               type="button"
-              aria-label="Batal membalas"
+              aria-label="Cancel reply"
               onClick={onCancelReply}
+              disabled={isSubmitting}
               className="-my-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-slate-100 hover:text-gray-800 dark:hover:bg-slate-800 dark:hover:text-white"
             >
               <X className="h-3.5 w-3.5" />
@@ -58,20 +61,21 @@ export function CommunityCommentComposer({
           <input
             ref={inputRef}
             type="text"
+            maxLength={2000}
+            disabled={isSubmitting}
             enterKeyHint="send"
             autoComplete="off"
-            aria-label={replyTarget ? "Tulis balasan" : "Tulis komentar"}
-            placeholder={
-              replyTarget ? "Tulis balasan..." : "Tambahkan komentar..."
-            }
+            aria-label={replyTarget ? "Write a reply" : "Write a comment"}
+            placeholder={replyTarget ? "Write a reply..." : "Add a comment..."}
             value={value}
             onChange={(event) => onChange(event.target.value)}
             className="h-11 min-w-0 flex-1 rounded-full border border-transparent bg-slate-100 px-4 text-base text-gray-900 transition-all placeholder:text-gray-400 focus:border-green-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500/20 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-900 sm:text-sm"
           />
           <button
             type="submit"
-            aria-label="Kirim"
-            disabled={!value.trim()}
+            aria-label="Send"
+            disabled={!value.trim() || isSubmitting}
+            aria-busy={isSubmitting}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-600 text-white transition duration-150 hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 active:scale-95 disabled:bg-slate-200 disabled:text-gray-400 disabled:active:scale-100 dark:disabled:bg-slate-800 dark:disabled:text-gray-600"
           >
             <Send className="h-[18px] w-[18px]" />

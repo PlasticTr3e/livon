@@ -13,10 +13,14 @@ import { NextResponse } from "next/server";
  *         description: Redirects to the Google authentication page.
  */
 export async function GET() {
+  const appUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ).replace(/\/+$/, "");
+  const redirectUri = new URL("/api/auth/google/callback", appUrl).toString();
   const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
 
   const options = {
-    redirect_uri: "https://livon-one.vercel.app/api/auth/google/callback",
+    redirect_uri: redirectUri,
     client_id: process.env.GOOGLE_CLIENT_ID as string,
     access_type: "offline",
     response_type: "code",

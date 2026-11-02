@@ -1,16 +1,6 @@
-import {
-  getMapProjectProgress,
-  getVoteDelta,
-  mapStatusToUI,
-} from "./map-format";
+import { getMapProjectProgress, mapStatusToUI } from "./map-format";
 import { getUserProfileDisplayName } from "@/lib/app-shell/user";
-import type {
-  ActivityFeedItem,
-  MapComment,
-  MapProject,
-  MapVoteAction,
-  MapVoteChoice,
-} from "./map-types";
+import type { MapComment, MapProject } from "./map-types";
 
 type ApiMapComment = {
   id: string | number;
@@ -38,7 +28,6 @@ type ApiProjectDetail = {
   category?: { name?: string | null } | null;
   budgetTarget?: number | string | null;
   currentFunding?: number | string | null;
-  _count?: { votes?: number };
   imageUrls?: string[];
   imageUrl?: string | string[];
   images?: { url?: string | null }[];
@@ -72,64 +61,6 @@ export async function fetchMapProjects(
   );
 }
 
-export async function fetchCurrentUserVotes(token: string | null) {
-  if (!token) return {};
-
-  const response = await fetch("/api/users/activity?limit=1000", {
-    headers: getAuthorizedHeaders(token),
-  });
-  const json = await response.json();
-  const activityItems: ActivityFeedItem[] = Array.isArray(json.data?.data)
-    ? json.data.data
-    : Array.isArray(json.data)
-      ? json.data
-      : [];
-
-  return activityItems.reduce<Record<string, MapVoteChoice>>((acc, item) => {
-    if (item.type !== "VOTE" || !item.targetId) return acc;
-    if (item.action?.toLowerCase().startsWith("upvoted")) {
-      acc[item.targetId] = "agree";
-    } else if (item.action?.toLowerCase().startsWith("downvoted")) {
-      acc[item.targetId] = "disagree";
-    }
-    return acc;
-  }, {});
-}
-
-export async function submitMapProjectVote({
-  currentVote,
-  projectId,
-  token,
-  voteType,
-}: {
-  currentVote?: MapVoteChoice;
-  projectId: string;
-  token: string;
-  voteType: MapVoteChoice;
-}) {
-  const response = await fetch("/api/votes", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      projectId,
-      type: voteType === "agree" ? "UPVOTE" : "DOWNVOTE",
-    }),
-  });
-
-  const responseData = await response.json().catch(() => null);
-  if (!response.ok) throw new Error("Gagal menyimpan vote");
-
-  const action = getVoteAction(response.status, responseData?.action, {
-    currentVote,
-    voteType,
-  });
-
-  return getVoteDelta(action, voteType, currentVote);
-}
-
 async function fetchMapProject(
   projectId: string,
   headers: Record<string, string>,
@@ -149,7 +80,6 @@ async function fetchMapProject(
       progress: getMapProjectProgress(detail.status),
       budget: Number(detail.budgetTarget) || 0,
       fundsCollected: Number(detail.currentFunding) || 0,
-      votes: { agree: detail._count?.votes || 0, disagree: 0 },
       comments: await fetchMapProjectComments(detail.id, headers),
       lat: detail.latitude,
       lng: detail.longitude,
@@ -227,25 +157,4 @@ function getProjectImageUrl(project: ApiProjectDetail) {
   }
 
   return project.images?.[0]?.url || fallbackProjectImage;
-}
-
-function getVoteAction(
-  status: number,
-  apiAction: unknown,
-  {
-    currentVote,
-    voteType,
-  }: {
-    currentVote?: MapVoteChoice;
-    voteType: MapVoteChoice;
-  },
-): MapVoteAction {
-  if (["CREATED", "UPDATED", "DELETED"].includes(String(apiAction))) {
-    return apiAction as MapVoteAction;
-  }
-
-  if (status === 201) return "CREATED";
-  if (currentVote === voteType) return "DELETED";
-  if (currentVote) return "UPDATED";
-  return "CREATED";
 }

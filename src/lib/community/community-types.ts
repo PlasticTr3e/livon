@@ -45,6 +45,7 @@ export type CommunityDraftItem = {
   id: string;
   text: string;
   image: string | null;
+  imageFile?: File | null;
 };
 
 export type CommunityLightboxState = {

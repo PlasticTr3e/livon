@@ -1,14 +1,8 @@
-export type MapProjectStatus =
-  | "Planning"
-  | "Funding"
-  | "Construction"
-  | "Completed";
+import type { ProjectStage } from "@/lib/project-lifecycle";
+
+export type MapProjectStatus = ProjectStage;
 
 export type MapStatusFilter = "All" | MapProjectStatus;
-
-export type MapVoteChoice = "agree" | "disagree";
-
-export type MapVoteAction = "CREATED" | "UPDATED" | "DELETED";
 
 export type MapComment = {
   id: string;
@@ -26,7 +20,6 @@ export type MapProject = {
   progress: number;
   budget: number;
   fundsCollected: number;
-  votes: { agree: number; disagree: number };
   comments: MapComment[];
   lat: number;
   lng: number;
@@ -34,16 +27,4 @@ export type MapProject = {
   startDate?: string;
   endDate?: string;
   estimatedDurationDays?: number;
-};
-
-export type ActivityFeedItem = {
-  type?: string;
-  action?: string;
-  targetId?: string | null;
-};
-
-export type VoteDelta = {
-  nextVote: MapVoteChoice | null;
-  agreeDelta: number;
-  disagreeDelta: number;
 };

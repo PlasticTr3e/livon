@@ -22,15 +22,17 @@ export function AdminDesktopNavigation({
           <Link
             key={link.name}
             href={link.href}
+            aria-label={link.name}
+            title={link.name}
             className={cn(
-              "flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+              "flex min-h-11 min-w-11 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-all xl:space-x-2 xl:px-4",
               isActive
                 ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm shadow-green-200 dark:shadow-green-900"
                 : "text-gray-500 hover:bg-slate-100 hover:text-green-700 dark:text-white dark:hover:bg-slate-800 dark:hover:text-green-400",
             )}
           >
             <Icon className="h-4 w-4" />
-            <span>{link.name}</span>
+            <span className="hidden xl:inline">{link.name}</span>
           </Link>
         );
       })}

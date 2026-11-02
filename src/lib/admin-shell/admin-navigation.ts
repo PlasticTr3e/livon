@@ -1,4 +1,5 @@
 import {
+  Cctv,
   BarChart2,
   DollarSign,
   FolderKanban,
@@ -22,9 +23,8 @@ export type AdminNavigationLink = {
 export const adminSidebarLinks: AdminNavigationLink[] = [
   { name: "Dashboard", href: "/admin/dashboard", icon: BarChart2 },
   { name: "Projects", href: "/admin/projects", icon: FolderKanban },
-  { name: "Crowdfunding", href: "/admin/crowdfunding", icon: DollarSign },
+  { name: "Community Funds", href: "/admin/crowdfunding", icon: DollarSign },
   { name: "Comments", href: "/admin/comments", icon: MessageSquare },
-  { name: "Komunitas", href: "/admin/komunitas", icon: MessagesSquare },
   { name: "News", href: "/admin/news", icon: Newspaper },
   { name: "Users", href: "/admin/users", icon: Users },
 ];
@@ -38,18 +38,19 @@ export const adminTopNavigationLinks: AdminNavigationLink[] = [
   },
   { name: "Map & Projects", href: "/map", icon: Map, matchPrefix: "/map" },
   {
-    name: "Crowdfunding",
+    name: "Community Funds",
     href: "/crowdfunding",
     icon: HandCoins,
     matchPrefix: "/crowdfunding",
   },
   { name: "News", href: "/news", icon: Newspaper, matchPrefix: "/news" },
   {
-    name: "Komunitas",
+    name: "Community",
     href: "/komunitas",
     icon: MessagesSquare,
     matchPrefix: "/komunitas",
   },
+  { name: "CCTV", href: "/cctv", icon: Cctv, matchPrefix: "/cctv" },
 ];
 
 export function isAdminTopNavigationActive(

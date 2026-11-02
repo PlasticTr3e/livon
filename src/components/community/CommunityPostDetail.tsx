@@ -21,14 +21,16 @@ type CommunityPostDetailProps = {
   canModerate: boolean;
   currentUser: CommunityAuthor;
   post: CommunityPost;
-  onAddComment: (content: string) => void;
-  onAddReply: (commentId: string, content: string) => void;
+  onAddComment: (content: string) => Promise<boolean>;
+  onAddReply: (commentId: string, content: string) => Promise<boolean>;
   onBack: () => void;
-  onDeleteComment: (target: CommunityCommentTarget) => void;
-  onDeletePost: () => void;
+  onDeleteComment: (target: CommunityCommentTarget) => Promise<boolean>;
+  onDeletePost: () => void | Promise<unknown>;
   onOpenImage: (index: number) => void;
-  onToggleCommentLike: (target: CommunityCommentTarget) => void;
-  onToggleLike: () => void;
+  onToggleCommentLike: (
+    target: CommunityCommentTarget,
+  ) => void | Promise<unknown>;
+  onToggleLike: () => void | Promise<unknown>;
 };
 
 export function CommunityPostDetail({
@@ -44,6 +46,8 @@ export function CommunityPostDetail({
   onToggleCommentLike,
   onToggleLike,
 }: CommunityPostDetailProps) {
+  const submitting = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listEndRef = useRef<HTMLDivElement>(null);
   const [commentText, setCommentText] = useState("");
@@ -53,6 +57,7 @@ export function CommunityPostDetail({
   const commentCount = getCommunityCommentCount(post);
 
   function handleReply(comment: CommunityComment) {
+    if (submitting.current) return;
     setReplyTarget({
       commentId: comment.id,
       authorName: comment.author.name,
@@ -60,32 +65,41 @@ export function CommunityPostDetail({
     inputRef.current?.focus();
   }
 
-  function handleDeleteComment(target: CommunityCommentTarget) {
-    if (!target.replyId && target.commentId === replyTarget?.commentId) {
+  async function handleDeleteComment(target: CommunityCommentTarget) {
+    const deleted = await onDeleteComment(target);
+    if (
+      deleted &&
+      !target.replyId &&
+      target.commentId === replyTarget?.commentId
+    ) {
       setReplyTarget(null);
     }
-    onDeleteComment(target);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const content = commentText.trim();
-    if (!content) return;
-
-    if (replyTarget) {
-      onAddReply(replyTarget.commentId, content);
-    } else {
-      onAddComment(content);
-      // Wait for the new comment to render before bringing it into view.
-      window.requestAnimationFrame(() =>
-        listEndRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "end",
-        }),
-      );
+    if (!content || submitting.current) return;
+    submitting.current = true;
+    setIsSubmitting(true);
+    try {
+      const saved = replyTarget
+        ? await onAddReply(replyTarget.commentId, content)
+        : await onAddComment(content);
+      if (!saved) return;
+      setCommentText("");
+      setReplyTarget(null);
+      if (!replyTarget) {
+        window.requestAnimationFrame(() =>
+          listEndRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+          }),
+        );
+      }
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
     }
-
-    setCommentText("");
-    setReplyTarget(null);
   }
 
   return (
@@ -108,7 +122,7 @@ export function CommunityPostDetail({
 
           <section className="border-t border-gray-100 dark:border-gray-800">
             <h2 className="px-4 pt-4 text-xs font-bold uppercase tracking-wider text-gray-400">
-              Komentar{commentCount > 0 && ` · ${commentCount}`}
+              Comments{commentCount > 0 && ` · ${commentCount}`}
             </h2>
             <CommunityCommentList
               canModerate={canModerate}
@@ -124,6 +138,7 @@ export function CommunityPostDetail({
 
       <CommunityCommentComposer
         currentUser={currentUser}
+        isSubmitting={isSubmitting}
         inputRef={inputRef}
         replyTarget={replyTarget}
         value={commentText}

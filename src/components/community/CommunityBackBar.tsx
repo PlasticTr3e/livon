@@ -13,7 +13,7 @@ export function CommunityBackBar({ onBack }: CommunityBackBarProps) {
         className="-my-1 flex items-center rounded-md py-1 text-green-600 transition-colors hover:text-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 dark:text-green-400"
       >
         <ArrowLeft className="mr-2 h-5 w-5" />
-        <span className="text-sm font-medium">Kembali ke Komunitas</span>
+        <span className="text-sm font-medium">Back to Community</span>
       </button>
     </div>
   );

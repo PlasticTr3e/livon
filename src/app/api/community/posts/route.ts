@@ -46,7 +46,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     const { searchParams } = new URL(req.url);
 
     const query = postQuerySchema.parse({
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser) {
       return badRequest("Unauthorized: You must be logged in to create a post");
     }

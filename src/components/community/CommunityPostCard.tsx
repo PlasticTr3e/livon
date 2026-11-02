@@ -5,10 +5,10 @@ import { CommunityPostContent } from "./CommunityPostContent";
 
 type CommunityPostCardProps = {
   post: CommunityPost;
-  onDelete?: () => void;
+  onDelete?: () => void | Promise<unknown>;
   onOpen: () => void;
   onOpenImage: (index: number) => void;
-  onToggleLike: () => void;
+  onToggleLike: () => void | Promise<unknown>;
 };
 
 export function CommunityPostCard({

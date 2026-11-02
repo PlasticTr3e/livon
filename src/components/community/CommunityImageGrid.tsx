@@ -48,7 +48,7 @@ export function CommunityImageGrid({
             key={`${image}-${index}`}
             type="button"
             onClick={() => onOpenImage(index)}
-            aria-label={`Lihat foto ${index + 1} dari ${images.length}`}
+            aria-label={`View photo ${index + 1} of ${images.length}`}
             className={cn(
               "group relative min-h-0 overflow-hidden bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-500 dark:bg-slate-800",
               getTileClassName(visibleImages.length, index),
