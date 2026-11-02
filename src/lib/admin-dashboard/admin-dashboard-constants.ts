@@ -16,15 +16,14 @@ export const EMPTY_DASHBOARD_METRICS = {
 
 export const PROJECT_STATUS_LABELS: Record<string, string> = {
   USULAN: "Planning",
-  DISETUJUI: "Funding",
-  BERJALAN: "Construction",
+  DISETUJUI: "Planning",
+  BERJALAN: "Under Construction",
   SELESAI: "Completed",
 };
 
 export const PROJECT_STATUS_COLORS: Record<string, string> = {
   Planning: "#3b82f6",
-  Funding: "#eab308",
-  Construction: "#f97316",
+  "Under Construction": "#f97316",
   Completed: "#22c55e",
 };
 
@@ -47,7 +46,7 @@ export const ADMIN_DASHBOARD_ACTIONS = [
   },
   {
     icon: DollarSign,
-    label: "Check Donations",
+    label: "Community Funds",
     href: "/admin/crowdfunding",
     color: "text-yellow-600",
     hover: "hover:bg-gray-50 dark:hover:bg-[#111827]",
@@ -72,13 +71,6 @@ export const ADMIN_DASHBOARD_ACTIONS = [
 ];
 
 export const ADMIN_DASHBOARD_STAT_STYLES = [
-  {
-    title: "Total Funds Collected",
-    icon: DollarSign,
-    wrapperClass: "border-green-100",
-    iconBg: "bg-green-50",
-    iconColor: "text-green-600",
-  },
   {
     title: "Total Projects",
     icon: FolderGit2,

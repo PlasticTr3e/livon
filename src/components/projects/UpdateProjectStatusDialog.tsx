@@ -1,4 +1,8 @@
 "use client";
+import {
+  PROJECT_STAGES,
+  PROJECT_STAGE_API_STATUS,
+} from "@/lib/project-lifecycle";
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, CalendarClock, CheckCircle, X } from "lucide-react";
@@ -15,23 +19,13 @@ type UpdateProjectStatusDialogProps = {
   onUpdateSuccess: (newStatus: string, estimatedDurationDays?: number) => void;
 };
 
-const PROJECT_STATUS_FLOW = [
-  "Planning",
-  "Funding",
-  "Construction",
-  "Completed",
-];
+const PROJECT_STATUS_FLOW: readonly string[] = PROJECT_STAGES;
 
-const PROJECT_STATUS_TO_DB_STATUS: Record<string, string> = {
-  Planning: "USULAN",
-  Funding: "DISETUJUI",
-  Construction: "BERJALAN",
-  Completed: "SELESAI",
-};
+const PROJECT_STATUS_TO_DB_STATUS: Record<string, string> =
+  PROJECT_STAGE_API_STATUS;
 
 const STATUS_DESCRIPTIONS: Record<string, string> = {
-  Funding: "Open fundraising and allow residents to donate.",
-  Construction:
+  "Under Construction":
     "Move the project into active work and set a duration estimate.",
   Completed: "Close the project as finished.",
 };
@@ -77,7 +71,7 @@ export function UpdateProjectStatusDialog({
         "PATCH",
         {
           status: dbStatus,
-          ...(selectedStatus === "Construction" && estimatedDurationDays
+          ...(selectedStatus === "Under Construction" && estimatedDurationDays
             ? { estimatedDurationDays: Number(estimatedDurationDays) }
             : {}),
         },
@@ -90,7 +84,7 @@ export function UpdateProjectStatusDialog({
 
       onUpdateSuccess(
         selectedStatus,
-        selectedStatus === "Construction" && estimatedDurationDays
+        selectedStatus === "Under Construction" && estimatedDurationDays
           ? Number(estimatedDurationDays)
           : undefined,
       );
@@ -186,27 +180,28 @@ export function UpdateProjectStatusDialog({
           </div>
 
           <div className="space-y-5">
-            {nextStatuses.length > 0 && selectedStatus === "Construction" && (
-              <div>
-                <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-white">
-                  Estimated Duration
-                </label>
-                <div className="relative">
-                  <CalendarClock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-green-600" />
-                  <input
-                    type="number"
-                    min="1"
-                    inputMode="numeric"
-                    className="h-12 w-full rounded-xl border border-green-200 bg-green-50 pl-10 pr-4 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
-                    placeholder="Duration in days"
-                    value={estimatedDurationDays}
-                    onChange={(event) =>
-                      setEstimatedDurationDays(event.target.value)
-                    }
-                  />
+            {nextStatuses.length > 0 &&
+              selectedStatus === "Under Construction" && (
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-white">
+                    Estimated Duration
+                  </label>
+                  <div className="relative">
+                    <CalendarClock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-green-600" />
+                    <input
+                      type="number"
+                      min="1"
+                      inputMode="numeric"
+                      className="h-12 w-full rounded-xl border border-green-200 bg-green-50 pl-10 pr-4 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                      placeholder="Duration in days"
+                      value={estimatedDurationDays}
+                      onChange={(event) =>
+                        setEstimatedDurationDays(event.target.value)
+                      }
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {nextStatuses.length > 0 && selectedStatus !== currentStatus && (
               <div className="flex items-start rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">

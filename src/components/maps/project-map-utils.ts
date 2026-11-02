@@ -1,3 +1,4 @@
+import { getProjectStage } from "@/lib/project-lifecycle";
 import type { ProjectMapStatus } from "./project-map-types";
 
 export const HOUSING_AREA_BOUNDS: [[number, number], [number, number]] = [
@@ -9,14 +10,12 @@ export const DEFAULT_PROJECT_COORDINATES: [number, number] = [-6.941, 107.7755];
 
 const markerColors: Record<ProjectMapStatus, string> = {
   Planning: "#3b82f6",
-  Funding: "#eab308",
-  Construction: "#f97316",
   "Under Construction": "#f97316",
   Completed: "#22c55e",
 };
 
 export function getProjectMarkerColor(status?: string) {
-  return markerColors[status as ProjectMapStatus] ?? "#6b7280";
+  return markerColors[getProjectStage(status)] ?? "#6b7280";
 }
 
 export function getFallbackProjectCoordinates(index: number): [number, number] {

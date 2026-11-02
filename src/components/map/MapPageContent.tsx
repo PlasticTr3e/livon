@@ -4,18 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useToast } from "@/components/shared/AppToaster";
-import {
-  fetchCurrentUserVotes,
-  fetchMapProjects,
-  getStoredMapToken,
-  submitMapProjectVote,
-} from "@/lib/map/map-api";
-import { filterMapProjects, updateMapProjectVotes } from "@/lib/map/map-format";
-import type {
-  MapProject,
-  MapStatusFilter,
-  MapVoteChoice,
-} from "@/lib/map/map-types";
+import { fetchMapProjects, getStoredMapToken } from "@/lib/map/map-api";
+import { filterMapProjects } from "@/lib/map/map-format";
+import type { MapProject, MapStatusFilter } from "@/lib/map/map-types";
 import { MapCanvasArea } from "./MapCanvasArea";
 import { MapProjectDetailPanel } from "./MapProjectDetailPanel";
 import { MapSidebar } from "./MapSidebar";
@@ -32,8 +23,6 @@ export function MapPageContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<MapStatusFilter>("All");
-  const [userVotes, setUserVotes] = useState<Record<string, MapVoteChoice>>({});
-  const [savingVotes, setSavingVotes] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const handleToggle = () =>
@@ -55,11 +44,6 @@ export function MapPageContent() {
         const token = getStoredMapToken();
         const nextProjects = await fetchMapProjects(token);
         setProjects(nextProjects);
-
-        if (token && userRole === "resident") {
-          const nextUserVotes = await fetchCurrentUserVotes(token);
-          setUserVotes(nextUserVotes);
-        }
       } catch (error) {
         console.error("Failed to fetch map projects", error);
         toast.error("Map failed to load", "Please refresh and try again.");
@@ -79,74 +63,6 @@ export function MapPageContent() {
         status: filterStatus,
       }),
     [filterStatus, projects, searchQuery],
-  );
-
-  const handleVote = useCallback(
-    async (projectId: string, voteType: MapVoteChoice) => {
-      if (!userRole || userRole !== "resident") {
-        toast.error("Voting unavailable", "Only residents can vote.");
-        return;
-      }
-
-      const project = projects.find(
-        (currentProject) => currentProject.id === projectId,
-      );
-      if (project?.status !== "Planning") {
-        toast.error(
-          "Voting closed",
-          "Voting is only available during planning.",
-        );
-        return;
-      }
-
-      if (savingVotes[projectId]) return;
-
-      const token = getStoredMapToken();
-      if (!token) {
-        toast.error("Login required", "Please log in to vote.");
-        return;
-      }
-
-      setSavingVotes((prev) => ({ ...prev, [projectId]: true }));
-
-      try {
-        const currentVote = userVotes[projectId];
-        const { nextVote, agreeDelta, disagreeDelta } =
-          await submitMapProjectVote({
-            currentVote,
-            projectId,
-            token,
-            voteType,
-          });
-
-        setUserVotes((prev) => {
-          const next = { ...prev };
-          if (nextVote) next[projectId] = nextVote;
-          else delete next[projectId];
-          return next;
-        });
-
-        setProjects((prev) =>
-          prev.map((project) =>
-            project.id === projectId
-              ? updateMapProjectVotes(project, agreeDelta, disagreeDelta)
-              : project,
-          ),
-        );
-        setSelectedProject((prev) =>
-          prev && prev.id === projectId
-            ? updateMapProjectVotes(prev, agreeDelta, disagreeDelta)
-            : prev,
-        );
-        toast.success("Success", "Vote saved.");
-      } catch (error) {
-        console.error(error);
-        toast.error("Vote failed", "Failed to save vote. Please try again.");
-      } finally {
-        setSavingVotes((prev) => ({ ...prev, [projectId]: false }));
-      }
-    },
-    [projects, savingVotes, toast, userRole, userVotes],
   );
 
   const handleProjectCardClick = useCallback(
@@ -173,11 +89,6 @@ export function MapPageContent() {
   const handlePanelClose = useCallback(() => {
     setSelectedProject(null);
   }, []);
-
-  const handleDonate = useCallback(
-    (projectId: string) => router.push(`/crowdfunding/${projectId}`),
-    [router],
-  );
 
   const handleSeeComments = useCallback(
     (projectId: string) => router.push(`/project/${projectId}#comments`),
@@ -216,14 +127,10 @@ export function MapPageContent() {
         {selectedProject && (
           <MapProjectDetailPanel
             project={selectedProject}
-            isSavingVote={savingVotes[selectedProject.id]}
-            currentVote={userVotes[selectedProject.id]}
             userRole={userRole}
             onClose={handlePanelClose}
-            onDonate={handleDonate}
             onSeeComments={handleSeeComments}
             onViewDetail={handleViewDetail}
-            onVote={handleVote}
           />
         )}
       </div>
