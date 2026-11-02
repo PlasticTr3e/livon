@@ -35,7 +35,7 @@ type RouteParams = {
  */
 export async function POST(req: NextRequest, { params }: RouteParams) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser) {
       return badRequest("Unauthorized: You must be logged in to like a post.");
     }
