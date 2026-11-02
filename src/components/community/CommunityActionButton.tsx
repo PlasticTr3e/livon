@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import styles from "./community.module.css";
@@ -13,7 +13,7 @@ type CommunityActionButtonProps = {
   size?: "sm" | "md";
   text?: string;
   tone?: "like" | "neutral";
-  onClick: () => void;
+  onClick: () => void | Promise<unknown>;
 };
 
 export function CommunityActionButton({
@@ -28,20 +28,34 @@ export function CommunityActionButton({
 }: CommunityActionButtonProps) {
   // Only animate likes the user just made, not ones that were already active.
   const [hasToggled, setHasToggled] = useState(false);
+  const pending = useRef(false);
+  const [isPending, setIsPending] = useState(false);
   const isLike = tone === "like";
   const isLiked = isLike && isActive;
+
+  async function handleClick() {
+    if (pending.current) return;
+    pending.current = true;
+    setIsPending(true);
+    try {
+      const result = await onClick();
+      if (result !== false) setHasToggled(true);
+    } finally {
+      pending.current = false;
+      setIsPending(false);
+    }
+  }
 
   return (
     <button
       type="button"
       aria-label={label}
       aria-pressed={isLike ? isActive : undefined}
-      onClick={() => {
-        setHasToggled(true);
-        onClick();
-      }}
+      onClick={handleClick}
+      disabled={isPending}
+      aria-busy={isPending}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-semibold tabular-nums transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 active:scale-95",
+        "disabled:pointer-events-none disabled:opacity-50 inline-flex items-center gap-1.5 rounded-full font-semibold tabular-nums transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 active:scale-95",
         size === "md" ? "h-10 px-3 text-sm" : "h-8 px-2.5 text-xs",
         isLiked
           ? "bg-rose-50 text-rose-500 dark:bg-rose-500/10"

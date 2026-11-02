@@ -53,7 +53,7 @@ export function CommunityPostContent({
         <div className="mt-3">
           <CommunityImageGrid
             images={post.images}
-            title={`Foto dari ${post.author.name}`}
+            title={`Photo by ${post.author.name}`}
             onOpenImage={onOpenImage}
           />
         </div>

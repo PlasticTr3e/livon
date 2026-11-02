@@ -12,9 +12,9 @@ import { CommunityRoleBadge } from "./CommunityRoleBadge";
 type CommunityCommentItemProps = {
   canModerate: boolean;
   comment: CommunityComment;
-  onDelete: (target: CommunityCommentTarget) => void;
+  onDelete: (target: CommunityCommentTarget) => void | Promise<unknown>;
   onReply: (comment: CommunityComment) => void;
-  onToggleLike: (target: CommunityCommentTarget) => void;
+  onToggleLike: (target: CommunityCommentTarget) => void | Promise<unknown>;
 };
 
 export function CommunityCommentItem({
@@ -74,9 +74,9 @@ function CommunityCommentEntry({
   onToggleLike,
 }: {
   entry: CommunityReply;
-  onDelete?: () => void;
+  onDelete?: () => void | Promise<unknown>;
   onReply: () => void;
-  onToggleLike: () => void;
+  onToggleLike: () => void | Promise<unknown>;
 }) {
   return (
     <>
@@ -95,7 +95,7 @@ function CommunityCommentEntry({
           icon={Heart}
           tone="like"
           size="sm"
-          label={entry.isLiked ? "Batal menyukai komentar" : "Sukai komentar"}
+          label={entry.isLiked ? "Unlike comment" : "Like comment"}
           count={entry.likeCount > 0 ? entry.likeCount : undefined}
           isActive={entry.isLiked}
           onClick={onToggleLike}
@@ -103,14 +103,14 @@ function CommunityCommentEntry({
         <CommunityActionButton
           icon={MessageCircle}
           size="sm"
-          label={`Balas ${entry.author.name}`}
-          text="Balas"
+          label={`Reply ${entry.author.name}`}
+          text="Reply"
           onClick={onReply}
         />
         {onDelete && (
           <CommunityDeleteButton
             size="sm"
-            label="Hapus komentar"
+            label="Delete comment"
             onConfirm={onDelete}
           />
         )}

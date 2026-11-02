@@ -9,7 +9,7 @@ import type {
 
 export const MAX_COMMUNITY_DRAFT_ITEMS = 5;
 
-const NEW_ENTRY_TIME_LABEL = "Baru saja";
+const NEW_ENTRY_TIME_LABEL = "Just now";
 
 export function createCommunityId() {
   return globalThis.crypto?.randomUUID?.() ?? String(Date.now());
