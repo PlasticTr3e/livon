@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
 
     if (role === Role.WARGA) {
       await broadcastNotification({
-        recipientRole: Role.AGENCY,
+        recipientRole: Role.ADMIN,
         title: "Warga Baru Mendaftar",
         type: "NEW_REGISTRATION",
         message: `${profileData.fullName || email} mendaftar dan menunggu verifikasi.`,

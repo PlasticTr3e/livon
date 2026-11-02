@@ -101,7 +101,7 @@ import { Role, SentimentLabel, ProjectStatus } from "@/generated/prisma/enums";
 export async function GET(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
+    if (!authUser || authUser.role !== Role.ADMIN) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
         { status: 401 },

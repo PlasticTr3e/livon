@@ -37,7 +37,7 @@ type RouteParams = {
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
 
     const post = await getCommunityPostDetail(id, authUser?.userId);
 
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
-    const authUser = getAuthUser(req);
+    const authUser = await getAuthUser(req);
     if (!authUser) {
       return badRequest(
         "Unauthorized: You must be logged in to delete a post.",

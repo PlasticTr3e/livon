@@ -161,7 +161,7 @@ export async function PUT(req: NextRequest) {
           houseNumber: data.houseNumber,
         },
       });
-    } else if (authUser.role === Role.AGENCY) {
+    } else if (authUser.role === Role.ADMIN) {
       updatableData = await prisma.agencyProfile.update({
         where: { userId: authUser.userId },
         data: {

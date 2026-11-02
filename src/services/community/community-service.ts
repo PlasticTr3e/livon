@@ -56,7 +56,7 @@ type UserWithProfiles = {
  * Maps Prisma User with profiles to CommunityAuthorDto.
  */
 function mapCommunityAuthor(user: UserWithProfiles): CommunityAuthorDto {
-  const isAgency = user.role === Role.AGENCY;
+  const isAgency = user.role === Role.ADMIN;
   const displayName =
     user.citizenProfile?.fullName ||
     user.agencyProfile?.agencyName ||
@@ -559,7 +559,7 @@ export async function deleteCommunityPost(
   }
 
   const isAuthor = post.userId === userId;
-  const isAdmin = userRole === Role.AGENCY;
+  const isAdmin = userRole === Role.ADMIN;
 
   if (!isAuthor && !isAdmin) {
     return {
@@ -709,7 +709,7 @@ export async function deleteCommunityComment(
   }
 
   const isAuthor = comment.userId === userId;
-  const isAdmin = userRole === Role.AGENCY;
+  const isAdmin = userRole === Role.ADMIN;
 
   if (!isAuthor && !isAdmin) {
     return {

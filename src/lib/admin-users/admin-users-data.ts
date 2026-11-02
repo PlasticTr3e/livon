@@ -1,5 +1,6 @@
 import { Role } from "@/generated/prisma/enums";
 import prisma from "@/lib/prisma";
+import { maskResidentProfile } from "@/lib/permissions";
 import {
   filterAdminUsers,
   normalizeAdminUserFilters,
@@ -8,12 +9,13 @@ import type { AdminUsersSearchParams } from "./admin-users-types";
 
 export async function getAdminUsersPageData(
   searchParams?: AdminUsersSearchParams,
+  viewerRole?: Role | string | null,
 ) {
   const filters = normalizeAdminUserFilters(searchParams);
   const users = await prisma.user.findMany({
     where: {
       role: {
-        in: [Role.WARGA, Role.AGENCY],
+        in: [Role.WARGA, Role.ADMIN, Role.DEVELOPER],
       },
     },
     select: {
@@ -46,8 +48,16 @@ export async function getAdminUsersPageData(
     },
   });
 
+  const sanitizedUsers =
+    viewerRole === Role.DEVELOPER
+      ? users.map((u) => ({
+          ...u,
+          citizenProfile: maskResidentProfile(u.citizenProfile),
+        }))
+      : users;
+
   return {
     filters,
-    users: filterAdminUsers(users, filters),
+    users: filterAdminUsers(sanitizedUsers, filters),
   };
 }

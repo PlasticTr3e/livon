@@ -35,6 +35,9 @@ model User {
   communityComments     CommunityComment[]
   communityCommentLikes CommunityCommentLike[]
 
+  recordedTransactions  FinancialTransaction[] @relation("RecordedTransactions")
+  residentBills         ResidentBill[]         @relation("ResidentBills")
+
   @@map("users")
 }
 
@@ -259,8 +262,9 @@ model spatial_ref_sys {
 }
 
 enum Role {
+  ADMIN
   WARGA
-  AGENCY
+  DEVELOPER
 }
 
 enum ProjectStatus {
@@ -366,3 +370,78 @@ model CommunityCommentLike {
   @@unique([commentId, userId])
   @@map("community_comment_likes")
 }
+
+enum FundType {
+  IPL
+  DONASI
+}
+
+enum TransactionType {
+  PEMASUKAN
+  PENGELUARAN
+}
+
+enum BillStatus {
+  BELUM_BAYAR
+  LUNAS
+  MENUNGGU_VERIFIKASI
+}
+
+model FinanceSummary {
+  id           String   @id @default(uuid())
+  fundType     FundType @unique
+  balance      Decimal  @default(0) @db.Decimal(15, 2)
+  totalIncome  Decimal  @default(0) @db.Decimal(15, 2)
+  totalExpense Decimal  @default(0) @db.Decimal(15, 2)
+  updatedAt    DateTime @updatedAt
+
+  @@map("finance_summaries")
+}
+
+model FinancialTransaction {
+  id              String          @id @default(uuid())
+  title           String
+  description     String?
+  amount          Decimal         @db.Decimal(15, 2)
+  type            TransactionType
+  fundType        FundType
+  category        String?
+  proofUrl        String?
+  transactionDate DateTime        @default(now())
+  recordedById    String?
+  residentBillId  String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  recordedBy      User?           @relation("RecordedTransactions", fields: [recordedById], references: [id])
+  residentBill    ResidentBill?   @relation(fields: [residentBillId], references: [id])
+
+  @@index([fundType, type])
+  @@index([transactionDate(sort: Desc)])
+  @@map("financial_transactions")
+}
+
+model ResidentBill {
+  id              String                 @id @default(uuid())
+  userId          String
+  title           String
+  month           Int
+  year            Int
+  amount          Decimal                @db.Decimal(15, 2)
+  status          BillStatus             @default(BELUM_BAYAR)
+  dueDate         DateTime?
+  paidAt          DateTime?
+  paymentProofUrl String?
+  notes           String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  user            User                   @relation("ResidentBills", fields: [userId], references: [id], onDelete: Cascade)
+  transactions    FinancialTransaction[]
+
+  @@unique([userId, month, year])
+  @@index([userId, status])
+  @@map("resident_bills")
+}
+

@@ -1475,15 +1475,20 @@ export function ProjectDetailPageContent() {
                             <span
                               className={cn(
                                 "shrink-0 text-[9px] px-1.5 py-0.5 rounded-full font-medium border sm:text-[10px]",
-                                comment.role?.toLowerCase() === "agency" ||
-                                  comment.role?.toUpperCase() === "AGENCY"
+                                comment.role?.toLowerCase() === "admin" ||
+                                  comment.role?.toLowerCase() === "agency"
                                   ? "bg-blue-100 text-blue-700 border-blue-300"
-                                  : "bg-green-100 text-green-700 border-green-300",
+                                  : comment.role?.toLowerCase() === "developer"
+                                    ? "bg-purple-100 text-purple-700 border-purple-300"
+                                    : "bg-green-100 text-green-700 border-green-300",
                               )}
                             >
-                              {comment.role?.toUpperCase() === "WARGA"
-                                ? "Resident"
-                                : "Agency"}
+                              {comment.role?.toUpperCase() === "ADMIN" ||
+                              comment.role?.toUpperCase() === "AGENCY"
+                                ? "Admin"
+                                : comment.role?.toUpperCase() === "DEVELOPER"
+                                  ? "Developer"
+                                  : "Resident"}
                             </span>
                             <span className="shrink-0 text-[10px] text-gray-400 dark:text-white sm:text-xs">
                               {comment.timestamp}

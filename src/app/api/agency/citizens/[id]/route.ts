@@ -58,10 +58,26 @@ export async function GET(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
+    if (!authUser) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
         { status: 401 },
+      );
+    }
+    if (authUser.role === Role.DEVELOPER) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin mengakses data sensitif perumahan/warga",
+        },
+        { status: 403 },
+      );
+    }
+    if (authUser.role !== Role.ADMIN) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden: Admin access required" },
+        { status: 403 },
       );
     }
 
@@ -159,10 +175,26 @@ export async function PUT(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
+    if (!authUser) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
         { status: 401 },
+      );
+    }
+    if (authUser.role === Role.DEVELOPER) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin mengubah data warga",
+        },
+        { status: 403 },
+      );
+    }
+    if (authUser.role !== Role.ADMIN) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden: Admin access required" },
+        { status: 403 },
       );
     }
 
@@ -252,10 +284,26 @@ export async function DELETE(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
+    if (!authUser) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
         { status: 401 },
+      );
+    }
+    if (authUser.role === Role.DEVELOPER) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin menghapus akun warga",
+        },
+        { status: 403 },
+      );
+    }
+    if (authUser.role !== Role.ADMIN) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden: Admin access required" },
+        { status: 403 },
       );
     }
 
