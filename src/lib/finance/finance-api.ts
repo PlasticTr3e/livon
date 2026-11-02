@@ -1,7 +1,12 @@
 import type {
+  CreateDonationInput,
   CreateExpenseInput,
+  GenerateBillsInput,
   KpiCardsSummary,
+  PaginatedBillsResult,
   PaginatedTransactionsResult,
+  PayBillInput,
+  ResidentBillItem,
   TransactionListItem,
 } from "./finance-types";
 
@@ -97,6 +102,114 @@ export async function createExpenseTransaction(
     {
       method: "POST",
       body: JSON.stringify(data),
+    },
+    true,
+  );
+}
+
+/**
+ * Record a new community donation to the DONASI fund
+ */
+export async function recordDonation(
+  data: CreateDonationInput,
+): Promise<TransactionListItem> {
+  return request<TransactionListItem>(
+    "/api/finance/donations",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+    false,
+  );
+}
+
+/**
+ * Fetch resident bills (Warga gets own bills, Admin gets all)
+ */
+export async function getResidentBills(params?: {
+  status?: string;
+  month?: number;
+  year?: number;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedBillsResult> {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.month) searchParams.set("month", String(params.month));
+  if (params?.year) searchParams.set("year", String(params.year));
+  if (params?.search) searchParams.set("search", params.search);
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.limit) searchParams.set("limit", String(params.limit));
+
+  const qs = searchParams.toString();
+  return request<PaginatedBillsResult>(
+    `/api/finance/bills${qs ? `?${qs}` : ""}`,
+    { method: "GET" },
+    true,
+  );
+}
+
+/**
+ * Batch generate monthly IPL bills for verified residents (Admin only)
+ */
+export async function generateMonthlyBills(
+  data: GenerateBillsInput,
+): Promise<{ generatedCount: number; message: string }> {
+  return request<{ generatedCount: number; message: string }>(
+    "/api/finance/bills/generate",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+    true,
+  );
+}
+
+/**
+ * Submit payment proof for a resident bill (Resident)
+ */
+export async function payResidentBill(
+  billId: string,
+  data: PayBillInput,
+): Promise<ResidentBillItem> {
+  return request<ResidentBillItem>(
+    `/api/finance/bills/${billId}/pay`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+    true,
+  );
+}
+
+/**
+ * Verify resident bill payment and credit IPL fund (Admin only)
+ */
+export async function verifyResidentBill(
+  billId: string,
+): Promise<ResidentBillItem> {
+  return request<ResidentBillItem>(
+    `/api/finance/bills/${billId}/verify`,
+    {
+      method: "PATCH",
+    },
+    true,
+  );
+}
+
+/**
+ * Reject resident bill payment proof (Admin only)
+ */
+export async function rejectResidentBill(
+  billId: string,
+  reason?: string,
+): Promise<ResidentBillItem> {
+  return request<ResidentBillItem>(
+    `/api/finance/bills/${billId}/reject`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ reason }),
     },
     true,
   );

@@ -75,3 +75,47 @@ export interface CreateExpenseInput {
   proofUrl?: string | null;
   transactionDate?: string | Date;
 }
+
+export interface ResidentBillItem {
+  id: string;
+  userId: string;
+  title: string;
+  month: number;
+  year: number;
+  amount: number;
+  status: BillStatus;
+  dueDate: string | null;
+  paidAt: string | null;
+  paymentProofUrl: string | null;
+  notes: string | null;
+  createdAt: string;
+  residentName?: string;
+  blockHouse?: string | null;
+  houseNumber?: string | null;
+}
+
+export interface PaginatedBillsResult {
+  bills: ResidentBillItem[];
+  pagination: FinancePagination;
+}
+
+export interface CreateDonationInput {
+  amount: number;
+  donorName?: string | null;
+  description?: string | null;
+  proofUrl?: string | null;
+  isAnonymous?: boolean;
+}
+
+export interface GenerateBillsInput {
+  month: number;
+  year: number;
+  amount: number;
+  title?: string;
+  dueDate?: string | Date;
+}
+
+export interface PayBillInput {
+  paymentProofUrl: string;
+  notes?: string | null;
+}

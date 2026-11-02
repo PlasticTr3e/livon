@@ -64,3 +64,31 @@ export interface PaginatedTransactionsResult {
     totalPages: number;
   };
 }
+
+export interface ResidentBillItem {
+  id: string;
+  userId: string;
+  title: string;
+  month: number;
+  year: number;
+  amount: number;
+  status: BillStatus;
+  dueDate: string | null;
+  paidAt: string | null;
+  paymentProofUrl: string | null;
+  notes: string | null;
+  createdAt: string;
+  residentName?: string;
+  blockHouse?: string | null;
+  houseNumber?: string | null;
+}
+
+export interface PaginatedBillsResult {
+  bills: ResidentBillItem[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
