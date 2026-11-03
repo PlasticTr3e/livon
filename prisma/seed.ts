@@ -119,10 +119,10 @@ async function seedAgencies() {
   for (const item of agencies) {
     const user = await prisma.user.upsert({
       where: { email: item.email },
-      update: { role: Role.AGENCY, passwordHash: DEFAULT_PASSWORD_HASH },
+      update: { role: Role.ADMIN, passwordHash: DEFAULT_PASSWORD_HASH },
       create: {
         email: item.email,
-        role: Role.AGENCY,
+        role: Role.ADMIN,
         passwordHash: DEFAULT_PASSWORD_HASH,
       },
     });

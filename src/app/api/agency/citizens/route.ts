@@ -79,10 +79,28 @@ import { Role } from "@/generated/prisma/enums";
 export async function GET(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
+    if (!authUser) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
         { status: 401 },
+      );
+    }
+
+    if (authUser.role === Role.DEVELOPER) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin mengakses data sensitif perumahan/warga",
+        },
+        { status: 403 },
+      );
+    }
+
+    if (authUser.role !== Role.ADMIN) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden: Admin access required" },
+        { status: 403 },
       );
     }
 

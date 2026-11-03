@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
+    if (!authUser || authUser.role !== Role.ADMIN) {
       return badRequest("Forbidden");
     }
 

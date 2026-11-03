@@ -67,8 +67,8 @@ export async function POST(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
-      return badRequest("Forbidden: Only Agencies can post updates");
+    if (!authUser || authUser.role !== Role.ADMIN) {
+      return badRequest("Forbidden: Only Admins can post updates");
     }
 
     const { id: projectId } = await params;

@@ -28,11 +28,13 @@ const agencyNavLinks: AppNavLink[] = [
 ];
 
 export function getAppNavLinks(userRole: string) {
-  return userRole === "agency" ? agencyNavLinks : residentNavLinks;
+  const r = userRole?.toLowerCase();
+  return r === "agency" || r === "admin" ? agencyNavLinks : residentNavLinks;
 }
 
 export function getHomeHref(userRole: string) {
-  return userRole === "agency" ? "/admin/dashboard" : "/map";
+  const r = userRole?.toLowerCase();
+  return r === "agency" || r === "admin" ? "/admin/dashboard" : "/map";
 }
 
 export function canToggleRouteSidebar(pathname: string) {

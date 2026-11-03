@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { logoutSession } from "@/lib/auth-client";
 
-export type UserRole = "resident" | "agency";
+export type UserRole = "resident" | "agency" | "developer";
 
 type ApiUserProfile = {
   email?: string | null;
@@ -37,6 +37,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function normalizeUserRole(role?: string | null): UserRole {
   const normalized = role?.toUpperCase();
+  if (normalized === "DEVELOPER") return "developer";
   return normalized === "WARGA" || normalized === "RESIDENT"
     ? "resident"
     : "agency";
@@ -66,6 +67,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const defaultNames: Record<UserRole, string> = {
         resident: "Resident",
         agency: "Agency",
+        developer: "Developer",
       };
       setUserName(defaultNames[nextRole]);
     }

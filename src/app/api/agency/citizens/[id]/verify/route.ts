@@ -54,8 +54,8 @@ export async function PATCH(
   try {
     const authUser = await getAuthUser(req);
     if (!authUser) return badRequest("Unauthorized: Invalid or missing token");
-    if (authUser.role !== Role.AGENCY)
-      return badRequest("Forbidden: Only Agencies can verify citizens");
+    if (authUser.role !== Role.ADMIN)
+      return badRequest("Forbidden: Only Admins can verify citizens");
 
     const agencyProfile = await prisma.agencyProfile.findUnique({
       where: { userId: authUser.userId },
