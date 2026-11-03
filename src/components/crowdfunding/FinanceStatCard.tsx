@@ -37,7 +37,31 @@ type FinanceStatCardProps = {
   caption?: string;
   icon: LucideIcon;
   tone: FinanceStatTone;
+  isLoading?: boolean;
+  /** `compact` for dense dashboards such as the admin finance page. */
+  size?: "default" | "compact";
 };
+
+const sizes = {
+  default: {
+    card: "p-4 sm:p-6",
+    label: "text-[10px] sm:text-xs sm:tracking-[0.16em]",
+    icon: "h-9 w-9 sm:h-12 sm:w-12",
+    glyph: "h-4 w-4 sm:h-5 sm:w-5",
+    value: "mt-3 text-xl sm:mt-4 sm:text-2xl",
+    skeleton: "mt-3 h-7 sm:mt-5 sm:h-9",
+    caption: "text-xs sm:text-sm",
+  },
+  compact: {
+    card: "p-4",
+    label: "text-[10px] sm:text-[11px]",
+    icon: "h-8 w-8 sm:h-9 sm:w-9",
+    glyph: "h-4 w-4",
+    value: "mt-2 text-lg sm:text-xl",
+    skeleton: "mt-2 h-7",
+    caption: "text-xs",
+  },
+} as const;
 
 export function FinanceStatCard({
   label,
@@ -45,39 +69,61 @@ export function FinanceStatCard({
   caption,
   icon: Icon,
   tone,
+  isLoading = false,
+  size = "default",
 }: FinanceStatCardProps) {
   const styles = tones[tone];
+  const dims = sizes[size];
 
   return (
     <article
+      aria-busy={isLoading}
       className={cn(
-        "flex flex-col rounded-2xl border p-4 shadow-sm sm:p-6",
+        "flex flex-col rounded-2xl border shadow-sm",
+        dims.card,
         styles.card,
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <h2 className="text-[10px] font-bold uppercase leading-4 tracking-[0.14em] text-slate-600 sm:text-xs sm:tracking-[0.16em] dark:text-slate-400">
+        <h2
+          className={cn(
+            "font-bold uppercase leading-4 tracking-[0.14em] text-slate-600 dark:text-slate-400",
+            dims.label,
+          )}
+        >
           {label}
         </h2>
         <span
           className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12",
+            "flex shrink-0 items-center justify-center rounded-xl",
+            dims.icon,
             styles.icon,
           )}
         >
-          <Icon aria-hidden="true" className="h-4 w-4 sm:h-5 sm:w-5" />
+          <Icon aria-hidden="true" className={dims.glyph} />
         </span>
       </div>
-      <p
-        className={cn(
-          "mt-3 text-xl font-black tracking-tight tabular-nums sm:mt-5 sm:text-3xl",
-          styles.value,
-        )}
-      >
-        {value}
-      </p>
-      {caption && (
-        <p className="mt-1 text-xs text-slate-400 sm:text-sm">{caption}</p>
+      {isLoading ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "w-3/4 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800",
+            dims.skeleton,
+          )}
+        />
+      ) : (
+        <p
+          className={cn(
+            "font-black tracking-tight tabular-nums",
+            dims.value,
+            styles.value,
+          )}
+        >
+          {value}
+        </p>
+      )}
+      {caption && !isLoading && (
+        <p className={cn("mt-1 text-slate-400", dims.caption)}>{caption}</p>
       )}
     </article>
   );

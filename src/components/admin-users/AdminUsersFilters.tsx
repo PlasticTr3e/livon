@@ -36,8 +36,9 @@ export const AdminUsersFilters = memo(function AdminUsersFilters({
             className="h-11 w-full cursor-pointer appearance-none rounded-xl border border-green-200 bg-white pl-9 pr-8 text-xs font-bold text-gray-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-green-500/50 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white"
           >
             <option value="ALL">All Users</option>
-            <option value="agency">Agency</option>
-            <option value="resident">Resident</option>
+            <option value="admin">Admin</option>
+            <option value="warga">Warga</option>
+            <option value="developer">Developer</option>
             <option value="Verified">Verified</option>
             <option value="Pending">Pending</option>
             <option value="Blocked">Blocked</option>

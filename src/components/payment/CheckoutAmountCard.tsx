@@ -1,17 +1,23 @@
 import { HandHeart, Landmark } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
-import { IPL_RESIDENCE_LABEL } from "@/lib/payment/billing";
 import { getOrderPeriodLabel, type CheckoutOrder } from "./checkout-order";
 import { greenPanelClass } from "./payment-styles";
+
+function getSubtitle(order: CheckoutOrder) {
+  if (order.kind === "ipl") {
+    return [`IPL periode ${getOrderPeriodLabel(order)}`, order.residenceLabel]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return order.donation?.anonymous
+    ? "Ditampilkan sebagai donatur anonim"
+    : null;
+}
 
 export function CheckoutAmountCard({ order }: { order: CheckoutOrder }) {
   const isIpl = order.kind === "ipl";
   const Icon = isIpl ? Landmark : HandHeart;
-  const subtitle = isIpl
-    ? `IPL periode ${getOrderPeriodLabel(order)} · ${IPL_RESIDENCE_LABEL}`
-    : order.donation?.anonymous
-      ? "Ditampilkan sebagai donatur anonim"
-      : null;
+  const subtitle = getSubtitle(order);
 
   return (
     <section className={cn(greenPanelClass, "p-6")}>
@@ -21,7 +27,7 @@ export function CheckoutAmountCard({ order }: { order: CheckoutOrder }) {
       </h2>
       <p className="mt-6 flex items-baseline gap-2">
         <span className="text-sm text-white/50">Rp</span>
-        <strong className="text-4xl tracking-[-0.04em] tabular-nums">
+        <strong className="text-3xl tracking-[-0.04em] tabular-nums">
           {order.amount.toLocaleString("id-ID")}
         </strong>
       </p>

@@ -12,6 +12,7 @@ import { getStoredPaymentToken } from "@/lib/payment/payment-api";
 export type SnapPaidResult = {
   orderId: string;
   amount: number;
+  redirectUrl: string;
   paymentType?: string;
 };
 
@@ -19,6 +20,7 @@ export type SnapPendingOrder = {
   orderId: string;
   snapToken: string;
   amount: number;
+  redirectUrl: string;
 };
 
 const STATUS_POLL_INTERVAL_MS = 5000;
@@ -48,7 +50,12 @@ export function useSnapCheckout({
 
   function completePayment(order: SnapPendingOrder, paymentType?: string) {
     setPendingOrder(null);
-    onPaid({ orderId: order.orderId, amount: order.amount, paymentType });
+    onPaid({
+      orderId: order.orderId,
+      amount: order.amount,
+      redirectUrl: order.redirectUrl,
+      paymentType,
+    });
   }
 
   function failPayment() {
@@ -98,6 +105,7 @@ export function useSnapCheckout({
       openPopup({
         orderId: result.orderId,
         snapToken: result.token,
+        redirectUrl: result.redirectUrl,
         amount: result.amount,
       });
     } catch (error) {

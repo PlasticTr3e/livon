@@ -4,11 +4,22 @@ import { greenPanelClass } from "@/components/payment/payment-styles";
 import { formatCompactRupiah } from "@/lib/payment/billing";
 
 type DonationHeroProps = {
-  collected: number;
-  donorCount: number;
+  balance: number;
+  donationCount: number;
+  isLoading?: boolean;
 };
 
-export function DonationHero({ collected, donorCount }: DonationHeroProps) {
+function ValueSkeleton() {
+  return (
+    <span className="mt-2 block h-6 w-20 animate-pulse rounded bg-white/20" />
+  );
+}
+
+export function DonationHero({
+  balance,
+  donationCount,
+  isLoading = false,
+}: DonationHeroProps) {
   return (
     <section className={cn(greenPanelClass, "overflow-hidden")}>
       <div className="grid md:grid-cols-[1fr_220px]">
@@ -16,7 +27,7 @@ export function DonationHero({ collected, donorCount }: DonationHeroProps) {
           <p className="text-xs font-bold uppercase tracking-widest text-yellow-300">
             Kantong solidaritas warga
           </p>
-          <h1 className="mt-4 text-[1.75rem] font-black leading-tight sm:mt-5 sm:text-3xl md:text-4xl">
+          <h1 className="mt-4 text-2xl font-black leading-tight sm:mt-5 sm:text-3xl">
             Bantuan dekat,
             <br />
             dampak terasa.
@@ -29,17 +40,25 @@ export function DonationHero({ collected, donorCount }: DonationHeroProps) {
 
         <dl className="grid grid-cols-2 border-t border-white/10 md:grid-cols-1 md:border-l md:border-t-0">
           <div className="flex flex-col justify-center p-5 md:border-b md:border-white/10">
-            <dt className="text-xs text-green-200">Total terkumpul</dt>
-            <dd className="mt-1 text-xl font-bold tabular-nums">
-              {formatCompactRupiah(collected)}
-            </dd>
+            <dt className="text-xs text-green-200">Saldo kas donasi</dt>
+            {isLoading ? (
+              <ValueSkeleton />
+            ) : (
+              <dd className="mt-1 text-xl font-bold tabular-nums">
+                {formatCompactRupiah(balance)}
+              </dd>
+            )}
           </div>
           <div className="flex flex-col justify-center border-l border-white/10 p-5 md:border-l-0">
-            <dt className="text-xs text-green-200">Donatur</dt>
-            <dd className="mt-1 flex items-center gap-2 text-xl font-bold tabular-nums">
-              <Users aria-hidden="true" className="h-4 w-4" />
-              {donorCount.toLocaleString("id-ID")}
-            </dd>
+            <dt className="text-xs text-green-200">Donasi masuk</dt>
+            {isLoading ? (
+              <ValueSkeleton />
+            ) : (
+              <dd className="mt-1 flex items-center gap-2 text-xl font-bold tabular-nums">
+                <Users aria-hidden="true" className="h-4 w-4" />
+                {donationCount.toLocaleString("id-ID")}
+              </dd>
+            )}
           </div>
         </dl>
       </div>
