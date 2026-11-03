@@ -14,6 +14,7 @@ import type {
   TransactionQueryInput,
 } from "./finance-schema";
 import type {
+  ExpenditureItem,
   KpiCardsSummary,
   PaginatedBillsResult,
   PaginatedTransactionsResult,
@@ -22,6 +23,11 @@ import type {
   TransactionListItem,
 } from "./finance-types";
 import { Prisma } from "@/generated/prisma/client";
+import {
+  getOutstandingPeriods,
+  shiftBillingPeriod,
+  toBillingPeriod,
+} from "@/lib/payment/billing";
 
 /**
  * Retrieves the 4 realtime KPI Cards:
@@ -34,6 +40,7 @@ export async function getFinanceSummary(
   userId?: string,
 ): Promise<KpiCardsSummary> {
   const now = new Date();
+  const currentPeriod = toBillingPeriod(now);
   const currentMonth = now.getMonth() + 1; // 1-12
   const currentYear = now.getFullYear();
 
@@ -48,66 +55,92 @@ export async function getFinanceSummary(
     999,
   );
 
-  // 1. Fetch Realtime Fund Balances
-  const summaries = await prisma.financeSummary.findMany({
-    where: {
-      fundType: { in: [FundType.IPL, FundType.DONASI] },
-    },
-  });
+  // 1. Fetch Realtime Fund Balances and Aggregates
+  const [summaries, monthlyExpenseAgg, monthlyIncomeAgg, donationCount] =
+    await Promise.all([
+      prisma.financeSummary.findMany({
+        where: {
+          fundType: { in: [FundType.IPL, FundType.DONASI] },
+        },
+      }),
+      prisma.financialTransaction.aggregate({
+        _sum: { amount: true },
+        where: {
+          type: TransactionType.PENGELUARAN,
+          transactionDate: {
+            gte: startOfMonth,
+            lte: endOfMonth,
+          },
+          deletedAt: null,
+        },
+      }),
+      prisma.financialTransaction.aggregate({
+        _sum: { amount: true },
+        where: {
+          type: TransactionType.PEMASUKAN,
+          transactionDate: {
+            gte: startOfMonth,
+            lte: endOfMonth,
+          },
+          deletedAt: null,
+        },
+      }),
+      prisma.financialTransaction.count({
+        where: {
+          fundType: FundType.DONASI,
+          type: TransactionType.PEMASUKAN,
+          deletedAt: null,
+        },
+      }),
+    ]);
 
   const iplRecord = summaries.find((s) => s.fundType === FundType.IPL);
   const donationRecord = summaries.find((s) => s.fundType === FundType.DONASI);
 
   const iplBalance = iplRecord ? Number(iplRecord.balance) : 0;
   const donationBalance = donationRecord ? Number(donationRecord.balance) : 0;
-
-  // 2. Fetch Total Monthly Expenses (Pengeluaran Bulan Ini)
-  const monthlyExpenseAgg = await prisma.financialTransaction.aggregate({
-    _sum: { amount: true },
-    where: {
-      type: TransactionType.PENGELUARAN,
-      transactionDate: {
-        gte: startOfMonth,
-        lte: endOfMonth,
-      },
-      deletedAt: null,
-    },
-  });
+  const iplIncome = iplRecord ? Number(iplRecord.totalIncome) : 0;
+  const donationIncome = donationRecord
+    ? Number(donationRecord.totalIncome)
+    : 0;
 
   const monthlyExpense = monthlyExpenseAgg._sum.amount
     ? Number(monthlyExpenseAgg._sum.amount)
     : 0;
 
-  // 3. Fetch Monthly Income for additional overview
-  const monthlyIncomeAgg = await prisma.financialTransaction.aggregate({
-    _sum: { amount: true },
-    where: {
-      type: TransactionType.PEMASUKAN,
-      transactionDate: {
-        gte: startOfMonth,
-        lte: endOfMonth,
-      },
-      deletedAt: null,
-    },
-  });
-
   const monthlyIncome = monthlyIncomeAgg._sum.amount
     ? Number(monthlyIncomeAgg._sum.amount)
     : 0;
 
-  // 4. Fetch Active Citizen Bill Status for the logged-in user
+  // 4. Fetch Active Citizen Bill Status & Periods for the logged-in user
   let residentBill: ResidentBillSummary | null = null;
+  let iplPaidThrough: string = shiftBillingPeriod(currentPeriod, -1);
+  let outstandingIplPeriods: string[] = [];
 
   if (userId) {
-    // If the user has WARGA role or is checking their own bill
-    const activeBill = await prisma.residentBill.findFirst({
-      where: {
-        userId,
-        month: currentMonth,
-        year: currentYear,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const [lastPaidBill, activeBill] = await Promise.all([
+      prisma.residentBill.findFirst({
+        where: {
+          userId,
+          status: BillStatus.LUNAS,
+        },
+        orderBy: [{ year: "desc" }, { month: "desc" }],
+      }),
+      prisma.residentBill.findFirst({
+        where: {
+          userId,
+          month: currentMonth,
+          year: currentYear,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    if (lastPaidBill) {
+      iplPaidThrough = `${lastPaidBill.year}-${String(lastPaidBill.month).padStart(2, "0")}`;
+    }
+
+    outstandingIplPeriods = getOutstandingPeriods(iplPaidThrough, now);
 
     const bill =
       activeBill ||
@@ -131,9 +164,20 @@ export async function getFinanceSummary(
     }
   }
 
+  const isIplPaid = outstandingIplPeriods.length === 0;
+
   return {
     iplBalance,
     donationBalance,
+    monthExpense: monthlyExpense,
+    currentPeriod,
+    outstandingIplPeriods,
+    iplPaidThrough,
+    isIplPaid,
+    donationIncome,
+    donationCount,
+    iplIncome,
+
     monthlyExpense,
     residentBill,
     saldoIpl: iplBalance,
@@ -157,27 +201,36 @@ export async function getFinanceSummary(
 export async function getFinanceTransactions(
   query: TransactionQueryInput,
 ): Promise<PaginatedTransactionsResult> {
-  const { fundType, type, category, search, startDate, endDate, page, limit } =
-    query;
+  const {
+    fund,
+    fundType,
+    type,
+    category,
+    search,
+    startDate,
+    endDate,
+    page = 1,
+    limit = 20,
+  } = query;
 
   const whereClause: Prisma.FinancialTransactionWhereInput = {
     deletedAt: null,
   };
 
+  const rawFund = (fund || fundType || "").trim().toUpperCase();
   const rawType = (type || "").trim().toUpperCase();
-  const rawFundType = (fundType || "").trim().toUpperCase();
 
   let resolvedFundType: FundType | undefined;
   let resolvedTransactionType: TransactionType | undefined;
 
   // 1. Resolve fund type filter (IPL vs DONATION/DONASI)
-  if (rawType === "IPL" || rawFundType === "IPL") {
+  if (rawFund === "IPL" || rawType === "IPL") {
     resolvedFundType = FundType.IPL;
   } else if (
+    rawFund === "DONATION" ||
+    rawFund === "DONASI" ||
     rawType === "DONATION" ||
-    rawType === "DONASI" ||
-    rawFundType === "DONATION" ||
-    rawFundType === "DONASI"
+    rawType === "DONASI"
   ) {
     resolvedFundType = FundType.DONASI;
   }
@@ -251,6 +304,10 @@ export async function getFinanceTransactions(
         "Pengurus";
     }
 
+    const fundStr: "ipl" | "donation" =
+      t.fundType === FundType.IPL ? "ipl" : "donation";
+    const dateStr = t.transactionDate.toISOString();
+
     return {
       id: t.id,
       title: t.title,
@@ -258,9 +315,12 @@ export async function getFinanceTransactions(
       amount: Number(t.amount),
       type: t.type,
       fundType: t.fundType,
+      fund: fundStr,
       category: t.category,
       proofUrl: t.proofUrl,
-      transactionDate: t.transactionDate.toISOString(),
+      date: dateStr,
+      transactionDate: dateStr,
+      note: t.description,
       recordedBy: t.recordedBy
         ? {
             id: t.recordedBy.id,
@@ -271,8 +331,22 @@ export async function getFinanceTransactions(
     };
   });
 
+  const expenditures: ExpenditureItem[] = items
+    .filter((t) => t.type === TransactionType.PENGELUARAN)
+    .map((t) => ({
+      id: t.id,
+      fund: t.fund,
+      description: t.description || t.title,
+      category: t.category || "Umum",
+      amount: t.amount,
+      date: t.date,
+      note: t.note,
+    }));
+
   return {
     transactions: items,
+    expenditures,
+    items,
     pagination: {
       total,
       page,
@@ -343,6 +417,10 @@ export async function createExpenseReport(
         "Admin";
     }
 
+    const fundStr: "ipl" | "donation" =
+      transaction.fundType === FundType.IPL ? "ipl" : "donation";
+    const dateStr = transaction.transactionDate.toISOString();
+
     return {
       id: transaction.id,
       title: transaction.title,
@@ -350,9 +428,12 @@ export async function createExpenseReport(
       amount: Number(transaction.amount),
       type: transaction.type,
       fundType: transaction.fundType,
+      fund: fundStr,
       category: transaction.category,
       proofUrl: transaction.proofUrl,
-      transactionDate: transaction.transactionDate.toISOString(),
+      date: dateStr,
+      transactionDate: dateStr,
+      note: transaction.description,
       recordedBy: transaction.recordedBy
         ? {
             id: transaction.recordedBy.id,
@@ -426,6 +507,8 @@ export async function recordDonation(
         donorLabel;
     }
 
+    const dateStr = transaction.transactionDate.toISOString();
+
     return {
       id: transaction.id,
       title: transaction.title,
@@ -433,9 +516,12 @@ export async function recordDonation(
       amount: Number(transaction.amount),
       type: transaction.type,
       fundType: transaction.fundType,
+      fund: "donation",
       category: transaction.category,
       proofUrl: transaction.proofUrl,
-      transactionDate: transaction.transactionDate.toISOString(),
+      date: dateStr,
+      transactionDate: dateStr,
+      note: transaction.description,
       recordedBy: transaction.recordedBy
         ? {
             id: transaction.recordedBy.id,

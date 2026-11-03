@@ -17,13 +17,21 @@ export interface ResidentBillSummary {
 export interface KpiCardsSummary {
   iplBalance: number;
   donationBalance: number;
-  monthlyExpense: number;
-  residentBill: ResidentBillSummary | null;
+  monthExpense: number;
+  currentPeriod: string;
+  outstandingIplPeriods: string[];
+  iplPaidThrough: string;
+  isIplPaid: boolean;
+  donationIncome: number;
+  donationCount: number;
+  iplIncome: number;
 
   // Indonesian aliases
+  monthlyExpense: number;
   saldoIpl: number;
   saldoDonasi: number;
   pengeluaranBulanIni: number;
+  residentBill: ResidentBillSummary | null;
   statusTagihan: ResidentBillSummary | null;
 
   overview?: {
@@ -39,6 +47,16 @@ export interface TransactionAuthor {
   name: string;
 }
 
+export interface ExpenditureItem {
+  id: string;
+  fund: "ipl" | "donation";
+  description: string;
+  category: string;
+  amount: number;
+  date: string;
+  note?: string | null;
+}
+
 export interface TransactionListItem {
   id: string;
   title: string;
@@ -46,9 +64,12 @@ export interface TransactionListItem {
   amount: number;
   type: TransactionType;
   fundType: FundType;
+  fund: "ipl" | "donation";
   category: string | null;
   proofUrl: string | null;
+  date: string;
   transactionDate: string;
+  note: string | null;
   recordedBy: TransactionAuthor | null;
   createdAt: string;
 }
@@ -62,18 +83,22 @@ export interface FinancePagination {
 
 export interface PaginatedTransactionsResult {
   transactions: TransactionListItem[];
+  expenditures: ExpenditureItem[];
   items?: TransactionListItem[];
   pagination: FinancePagination;
 }
 
 export interface CreateExpenseInput {
-  title: string;
-  amount: number;
-  fundType: "IPL" | "DONASI" | "DONATION";
-  category: string;
+  title?: string;
   description?: string | null;
+  amount: number;
+  fund?: "ipl" | "donation";
+  fundType?: "IPL" | "DONASI" | "DONATION";
+  category: string;
   proofUrl?: string | null;
+  date?: string | Date;
   transactionDate?: string | Date;
+  note?: string | null;
 }
 
 export interface ResidentBillItem {

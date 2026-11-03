@@ -1,50 +1,76 @@
 import { z } from "zod";
 import { FundType } from "@/generated/prisma/enums";
 
-export const createExpenseSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(3, "Judul pengeluaran minimal 3 karakter")
-    .max(255, "Judul pengeluaran maksimal 255 karakter"),
-  description: z
-    .string()
-    .trim()
-    .max(1000, "Deskripsi maksimal 1000 karakter")
-    .optional()
-    .nullable(),
-  amount: z
-    .number({ message: "Nominal pengeluaran harus berupa angka" })
-    .positive("Nominal pengeluaran harus berupa angka positif")
-    .min(1, "Nominal pengeluaran minimal Rp 1"),
-  fundType: z.preprocess(
-    (val) => {
-      if (typeof val === "string") {
-        const u = val.toUpperCase();
-        if (u === "DONATION") return FundType.DONASI;
-        if (u === "DONASI") return FundType.DONASI;
-        if (u === "IPL") return FundType.IPL;
-      }
-      return val;
-    },
-    z.nativeEnum(FundType, {
-      message: "Jenis dana tidak valid. Pilihan: IPL atau DONASI (DONATION)",
-    }),
-  ),
-  category: z
-    .string()
-    .trim()
-    .min(1, "Kategori pengeluaran wajib diisi")
-    .max(100, "Kategori pengeluaran maksimal 100 karakter"),
-  proofUrl: z
-    .string()
-    .url("Format URL bukti kuitansi/struk tidak valid")
-    .optional()
-    .nullable(),
-  transactionDate: z.coerce.date().optional(),
-});
+export const createExpenseSchema = z
+  .object({
+    title: z.string().trim().max(255).optional(),
+    description: z.string().trim().max(1000).optional().nullable(),
+    amount: z
+      .number({ message: "Nominal pengeluaran harus berupa angka" })
+      .positive("Nominal pengeluaran harus berupa angka positif")
+      .min(1, "Nominal pengeluaran minimal Rp 1"),
+    fund: z.string().trim().optional(),
+    fundType: z
+      .preprocess((val) => {
+        if (typeof val === "string") {
+          const u = val.toUpperCase();
+          if (u === "DONATION" || u === "DONASI") return FundType.DONASI;
+          if (u === "IPL") return FundType.IPL;
+        }
+        return val;
+      }, z.nativeEnum(FundType).optional())
+      .optional(),
+    category: z
+      .string()
+      .trim()
+      .min(1, "Kategori pengeluaran wajib diisi")
+      .max(100, "Kategori pengeluaran maksimal 100 karakter"),
+    proofUrl: z
+      .string()
+      .url("Format URL bukti kuitansi/struk tidak valid")
+      .optional()
+      .nullable(),
+    date: z.coerce.date().optional(),
+    transactionDate: z.coerce.date().optional(),
+    note: z.string().trim().max(500).optional().nullable(),
+  })
+  .transform((data) => {
+    const rawTitle = (data.title || data.description || "").trim();
+    if (rawTitle.length < 3) {
+      throw new z.ZodError([
+        {
+          code: "custom",
+          message: "Judul atau deskripsi pengeluaran minimal 3 karakter",
+          path: ["title"],
+        },
+      ]);
+    }
+
+    let resolvedFundType = data.fundType;
+    if (!resolvedFundType && data.fund) {
+      const u = data.fund.trim().toUpperCase();
+      if (u === "DONATION" || u === "DONASI")
+        resolvedFundType = FundType.DONASI;
+      else if (u === "IPL") resolvedFundType = FundType.IPL;
+    }
+    if (!resolvedFundType) {
+      resolvedFundType = FundType.IPL;
+    }
+
+    return {
+      title: rawTitle,
+      description: data.description || data.note || null,
+      amount: data.amount,
+      fundType: resolvedFundType,
+      category: data.category,
+      proofUrl: data.proofUrl || null,
+      transactionDate: data.transactionDate || data.date || new Date(),
+      note: data.note || null,
+    };
+  });
 
 export const transactionQuerySchema = z.object({
+  fund: z.string().trim().optional(),
   fundType: z.string().trim().optional(),
   type: z.string().trim().optional(),
   category: z.string().trim().optional(),

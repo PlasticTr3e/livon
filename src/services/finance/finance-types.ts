@@ -17,15 +17,24 @@ export interface ResidentBillSummary {
 }
 
 export interface KpiCardsSummary {
+  // Exact fields expected by finance-store & new components:
   iplBalance: number;
   donationBalance: number;
-  monthlyExpense: number;
-  residentBill: ResidentBillSummary | null;
+  monthExpense: number;
+  currentPeriod: string;
+  outstandingIplPeriods: string[];
+  iplPaidThrough: string;
+  isIplPaid: boolean;
+  donationIncome: number;
+  donationCount: number;
+  iplIncome: number;
 
   // Naming aliases to ensure 100% frontend compatibility with Indonesian variables
+  monthlyExpense: number;
   saldoIpl: number;
   saldoDonasi: number;
   pengeluaranBulanIni: number;
+  residentBill: ResidentBillSummary | null;
   statusTagihan: ResidentBillSummary | null;
 
   overview?: {
@@ -41,6 +50,16 @@ export interface TransactionAuthorDto {
   name: string;
 }
 
+export interface ExpenditureItem {
+  id: string;
+  fund: "ipl" | "donation";
+  description: string;
+  category: string;
+  amount: number;
+  date: string;
+  note?: string | null;
+}
+
 export interface TransactionListItem {
   id: string;
   title: string;
@@ -48,15 +67,20 @@ export interface TransactionListItem {
   amount: number;
   type: TransactionType;
   fundType: FundType;
+  fund: "ipl" | "donation";
   category: string | null;
   proofUrl: string | null;
+  date: string;
   transactionDate: string;
+  note: string | null;
   recordedBy: TransactionAuthorDto | null;
   createdAt: string;
 }
 
 export interface PaginatedTransactionsResult {
   transactions: TransactionListItem[];
+  expenditures: ExpenditureItem[];
+  items?: TransactionListItem[];
   pagination: {
     total: number;
     page: number;
