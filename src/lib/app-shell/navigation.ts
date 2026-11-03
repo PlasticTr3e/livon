@@ -16,7 +16,7 @@ export type AppNavLink = {
 
 const residentNavLinks: AppNavLink[] = [
   { name: "Map & Projects", href: "/map", icon: Map },
-  { name: "Community Funds", href: "/crowdfunding", icon: HandCoins },
+  { name: "Billing & Care", href: "/crowdfunding", icon: HandCoins },
   { name: "News", href: "/news", icon: Newspaper },
   { name: "Community", href: "/komunitas", icon: MessagesSquare },
   { name: "CCTV", href: "/cctv", icon: Cctv },
