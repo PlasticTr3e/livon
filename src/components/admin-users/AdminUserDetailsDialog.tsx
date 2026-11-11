@@ -75,7 +75,7 @@ export function AdminUserDetailsDialog({
             {address}
           </p>
         </AdminUserDetailField>
-        {role === "resident" && (
+        {role === "warga" && (
           <>
             <AdminUserDetailField label="NIK">
               <p className="mt-2 font-semibold text-gray-800 dark:text-white">

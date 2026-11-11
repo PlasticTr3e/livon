@@ -189,7 +189,7 @@ const AdminUsersTableRow = memo(function AdminUsersTableRow({
               </ActionIconButton>
             </form>
           )}
-          {role === "resident" && (
+          {role === "warga" && (
             <form action={blockAction}>
               <input type="hidden" name="userId" value={user.id} />
               <input

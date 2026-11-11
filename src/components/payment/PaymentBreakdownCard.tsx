@@ -1,23 +1,19 @@
 import { cn } from "@/components/ui/primitives";
-import {
-  formatBillingPeriod,
-  formatRupiah,
-  IPL_MONTHLY_FEE,
-} from "@/lib/payment/billing";
+import { formatBillingPeriod, formatRupiah } from "@/lib/payment/billing";
 import type { CheckoutOrder } from "./checkout-order";
 import { sectionCardClass } from "./payment-styles";
 import { SummaryRows, type SummaryRow } from "./SummaryRows";
 
 export function PaymentBreakdownCard({ order }: { order: CheckoutOrder }) {
-  const periods = order.periods ?? [];
+  const bills = order.bills ?? [];
   const itemRows: SummaryRow[] =
     order.kind === "ipl"
-      ? periods.map((period) => ({
+      ? bills.map((bill) => ({
           label:
-            periods.length > 1
-              ? `IPL ${formatBillingPeriod(period)}`
-              : "Tagihan IPL",
-          value: formatRupiah(IPL_MONTHLY_FEE),
+            bills.length > 1
+              ? `IPL ${formatBillingPeriod(bill.period)}`
+              : bill.title,
+          value: formatRupiah(bill.amount),
         }))
       : [{ label: "Jumlah donasi", value: formatRupiah(order.amount) }];
   const message = order.donation?.message;

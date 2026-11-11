@@ -1,13 +1,9 @@
-/** Billing rules shared by the IPL & donation pages and the Snap server action. */
+/** Payment rules and formatters shared by the IPL & donation pages and the Snap server action. */
 
 export type CheckoutKind = "ipl" | "donation";
 
 /** Billing period in `YYYY-MM` form. */
 export type BillingPeriod = string;
-
-export const IPL_MONTHLY_FEE = 150_000;
-export const IPL_MAX_MONTHS = 12;
-export const IPL_RESIDENCE_LABEL = "Cluster Arunika A-12";
 
 export const DONATION_PRESETS = [25_000, 50_000, 100_000, 250_000];
 export const DONATION_DEFAULT = 100_000;
@@ -34,37 +30,8 @@ export function getCheckoutKindFromSlug(slug: string): CheckoutKind | null {
   return null;
 }
 
-export function isBillingPeriod(value: string): value is BillingPeriod {
-  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
-}
-
 export function toBillingPeriod(date: Date): BillingPeriod {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
-export function shiftBillingPeriod(
-  period: BillingPeriod,
-  months: number,
-): BillingPeriod {
-  const [year, month] = period.split("-").map(Number);
-  return toBillingPeriod(new Date(year, month - 1 + months, 1));
-}
-
-/** Months after `paidThrough` up to and including the current month. */
-export function getOutstandingPeriods(
-  paidThrough: BillingPeriod,
-  now = new Date(),
-): BillingPeriod[] {
-  const current = toBillingPeriod(now);
-  const periods: BillingPeriod[] = [];
-  let next = shiftBillingPeriod(paidThrough, 1);
-
-  while (next <= current && periods.length < IPL_MAX_MONTHS) {
-    periods.push(next);
-    next = shiftBillingPeriod(next, 1);
-  }
-
-  return periods;
 }
 
 export function formatBillingPeriod(period: BillingPeriod) {
@@ -79,14 +46,6 @@ export function formatBillingPeriods(periods: BillingPeriod[]) {
   if (periods.length === 0) return "-";
   if (periods.length === 1) return formatBillingPeriod(periods[0]);
   return `${formatBillingPeriod(periods[0])} – ${formatBillingPeriod(periods[periods.length - 1])}`;
-}
-
-/** Month name only, e.g. "November". */
-export function formatBillingMonth(period: BillingPeriod) {
-  const [year, month] = period.split("-").map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString("id-ID", {
-    month: "long",
-  });
 }
 
 export function formatRupiah(amount: number) {
