@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { treeifyError } from "zod";
-import { created, badRequest, internalError } from "@/lib/api-response";
+import { created, badRequest, notFound, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { createCommentSchema } from "@/services/community/community-schema";
 import { addCommunityComment } from "@/services/community/community-service";
@@ -74,10 +74,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return created("Comment created successfully", { data: comment });
   } catch (error: unknown) {
     console.error("POST Community Comment Error:", error);
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "An error occurred while adding the comment.";
-    return internalError(errorMessage);
+    if (
+      error instanceof Error &&
+      (error.message === "Post not found" ||
+        error.message === "Parent comment not found")
+    ) {
+      return notFound(error.message);
+    }
+    return internalError("An error occurred while adding the comment.");
   }
 }

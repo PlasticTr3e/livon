@@ -1,6 +1,7 @@
 "use client";
 
 import { Download, ExternalLink, FileText, X } from "lucide-react";
+import { sanitizeHref } from "@/lib/url-safety";
 
 type ProjectPdfViewerProps = {
   url: string;
@@ -8,6 +9,8 @@ type ProjectPdfViewerProps = {
 };
 
 export function ProjectPdfViewer({ url, onClose }: ProjectPdfViewerProps) {
+  const safeUrl = sanitizeHref(url);
+
   return (
     <div
       className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-black/80 px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+5.5rem)] backdrop-blur-sm md:px-10 md:pb-10 md:pt-[calc(env(safe-area-inset-top)+6rem)]"
@@ -31,12 +34,20 @@ export function ProjectPdfViewer({ url, onClose }: ProjectPdfViewerProps) {
           </button>
         </div>
         <div className="flex min-h-0 w-full flex-1 flex-col bg-gray-100 dark:bg-slate-950">
-          <MobileDocumentFallback url={url} />
-          <iframe
-            src={`${url}#toolbar=0`}
-            className="hidden h-full w-full border-none md:block"
-            title="PDF Reader"
-          />
+          {safeUrl ? (
+            <>
+              <MobileDocumentFallback url={safeUrl} />
+              <iframe
+                src={`${safeUrl}#toolbar=0`}
+                className="hidden h-full w-full border-none md:block"
+                title="PDF Reader"
+              />
+            </>
+          ) : (
+            <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-gray-600 dark:text-slate-300">
+              Invalid or unsupported document URL.
+            </div>
+          )}
         </div>
       </div>
     </div>

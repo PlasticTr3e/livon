@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.security import verify_api_key
 from app.services.predictor import predict
@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 class PredictRequest(BaseModel):
-    text: str
+    text: str = Field(..., min_length=1, max_length=5000)
 
 
 class PredictResponse(BaseModel):

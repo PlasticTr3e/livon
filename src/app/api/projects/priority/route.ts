@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { cached } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
-import { ok, badRequest } from "@/lib/api-response";
-import { Role, SentimentLabel, ProjectStatus } from "@/generated/prisma/enums";
+import { ok, internalError } from "@/lib/api-response";
+import { computeProjectSentimentAnalytics } from "@/lib/project-sentiment";
+import { Role, ProjectStatus } from "@/generated/prisma/enums";
 
 /**
  * @swagger
@@ -117,7 +118,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("[PROJECT_PRIORITY_GET]", error);
-    return badRequest("Error occure when try to get project priority", error);
+    return internalError("Error occurred while fetching project priority");
   }
 }
 
@@ -157,44 +158,12 @@ async function loadPriorityProjects() {
     },
   });
 
-  return projects.map((project) => {
-    let positiveCount = 0;
-    let negativeCount = 0;
-    let neutralCount = 0;
-    let totalSentimentScore = 0;
-
-    project.comments.forEach((comment) => {
-      if (comment.sentimentLabel === SentimentLabel.POSITIF) positiveCount++;
-      else if (comment.sentimentLabel === SentimentLabel.NEGATIF)
-        negativeCount++;
-      else if (comment.sentimentLabel === SentimentLabel.NETRAL) neutralCount++;
-
-      if (comment.sentimentScore) {
-        totalSentimentScore += comment.sentimentScore;
-      }
-    });
-
-    const totalCommentsWithSentiment = project.comments.length;
-    const averageSentimentScore =
-      totalCommentsWithSentiment > 0
-        ? totalSentimentScore / totalCommentsWithSentiment
-        : 0;
-
-    return {
-      id: project.id,
-      title: project.title,
-      status: project.status,
-      urbanPriorityScore: project.priorityScore ?? 0,
-      totalVotes: project._count.votes,
-      sentimentAnalytics: {
-        totalAnalyzed: totalCommentsWithSentiment,
-        distribution: {
-          positive: positiveCount,
-          negative: negativeCount,
-          neutral: neutralCount,
-        },
-        averageScore: Number(averageSentimentScore.toFixed(2)),
-      },
-    };
-  });
+  return projects.map((project) => ({
+    id: project.id,
+    title: project.title,
+    status: project.status,
+    urbanPriorityScore: project.priorityScore ?? 0,
+    totalVotes: project._count.votes,
+    sentimentAnalytics: computeProjectSentimentAnalytics(project.comments),
+  }));
 }

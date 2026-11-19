@@ -6,6 +6,7 @@ import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { Role } from "@/generated/prisma/enums";
 import { broadcastNotification } from "@/lib/notifications";
+import { isSafeMediaUrl } from "@/lib/url-safety";
 
 /**
  * @swagger
@@ -36,8 +37,11 @@ import { broadcastNotification } from "@/lib/notifications";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const rawPage = Number.parseInt(searchParams.get("page") || "1", 10);
+    const rawLimit = Number.parseInt(searchParams.get("limit") || "10", 10);
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+    const limit =
+      Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 10;
     const skip = (page - 1) * limit;
 
     const [news, totalCount] = await cached(
@@ -85,7 +89,12 @@ export async function GET(req: NextRequest) {
 const createNewsSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
   content: z.string().optional(),
-  thumbnailUrl: z.url("Must be a valid URL").optional().or(z.literal("")),
+  thumbnailUrl: z
+    .string()
+    .trim()
+    .refine(isSafeMediaUrl, "Must be a valid URL")
+    .optional()
+    .or(z.literal("")),
 });
 
 /**

@@ -9,7 +9,6 @@ ai-service
 deploy
 docs
 src/generated
-lint-results.txt
 *.md
 docker-compose*.yml
 Dockerfile
