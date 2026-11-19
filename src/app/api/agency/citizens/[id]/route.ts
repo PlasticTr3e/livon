@@ -1,9 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { invalidate } from "@/lib/cache";
 import { getAuthUser, revokeAllUserTokens } from "@/lib/auth";
-import { ok, badRequest, notFound } from "@/lib/api-response";
+import { ok, badRequest, notFound, internalError } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
+
+const safeCitizenSelect = {
+  id: true,
+  email: true,
+  emailVerified: true,
+  role: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  citizenProfile: true,
+} as const;
+
+const updateCitizenSchema = z.object({
+  role: z.nativeEnum(Role).optional(),
+  fullName: z.string().trim().min(1).max(200).optional(),
+  phone: z.string().trim().min(1).max(30).optional(),
+  isVerified: z.boolean().optional(),
+});
 
 /**
  * @swagger
@@ -89,24 +108,19 @@ export async function GET(
         role: Role.WARGA,
         deletedAt: null,
       },
-      include: {
-        citizenProfile: true,
-      },
+      select: safeCitizenSelect,
     });
 
     if (!citizen) {
       return notFound("Citizen not found");
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { passwordHash, ...safeCitizenData } = citizen;
-
     return ok("Citizen details retrieved successfully", {
-      data: safeCitizenData,
+      data: citizen,
     });
   } catch (error) {
     console.error("[AGENCY_CITIZEN_GET]", error);
-    return badRequest("Failed to retrieve citizen details", error);
+    return internalError("Failed to retrieve citizen details");
   }
 }
 
@@ -199,7 +213,17 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await req.json();
+    const body: unknown = await req.json();
+
+    const parsed = updateCitizenSchema.safeParse(body);
+    if (!parsed.success) {
+      return badRequest(
+        "Validation failed",
+        z.treeifyError(parsed.error),
+      );
+    }
+
+    const { role, fullName, phone, isVerified } = parsed.data;
 
     const existingUser = await prisma.user.findFirst({
       where: { id, role: Role.WARGA, deletedAt: null },
@@ -209,34 +233,32 @@ export async function PUT(
       return notFound("Citizen not found");
     }
 
+    const hasProfileUpdate =
+      fullName !== undefined || phone !== undefined || isVerified !== undefined;
+
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        ...(body.role && { role: body.role }), // Allow role modification if necessary
-        citizenProfile: {
-          update: {
-            ...(body.fullName && { fullName: body.fullName }),
-            ...(body.phone && { phone: body.phone }),
-            ...(body.isVerified !== undefined && {
-              isVerified: body.isVerified,
-            }),
+        ...(role !== undefined && { role }),
+        ...(hasProfileUpdate && {
+          citizenProfile: {
+            update: {
+              ...(fullName !== undefined && { fullName }),
+              ...(phone !== undefined && { phone }),
+              ...(isVerified !== undefined && { isVerified }),
+            },
           },
-        },
+        }),
       },
-      include: {
-        citizenProfile: true,
-      },
+      select: safeCitizenSelect,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { passwordHash, ...safeUpdatedData } = updatedUser;
-
-    if (body.role) await revokeAllUserTokens(id);
+    if (role !== undefined) await revokeAllUserTokens(id);
     await invalidate("dashboard");
-    return ok("Citizen updated successfully", { data: safeUpdatedData });
+    return ok("Citizen updated successfully", { data: updatedUser });
   } catch (error) {
     console.error("[AGENCY_CITIZEN_PUT]", error);
-    return badRequest("Failed to update citizen", error);
+    return internalError("Failed to update citizen");
   }
 }
 
@@ -330,9 +352,6 @@ export async function DELETE(
     return ok("Citizen account has been successfully deleted (soft-delete)");
   } catch (error: unknown) {
     console.error("[AGENCY_CITIZEN_DELETE]", error);
-    return badRequest(
-      "Failed to delete citizen",
-      error instanceof Error ? error.message : "Unknown error",
-    );
+    return internalError("Failed to delete citizen");
   }
 }

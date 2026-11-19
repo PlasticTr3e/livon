@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { invalidate } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
-import { ok, badRequest, notFound } from "@/lib/api-response";
+import { ok, notFound, internalError } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
 
 /**
@@ -95,6 +95,6 @@ export async function DELETE(
     return ok("Comment has been successfully moderated (soft-deleted).");
   } catch (error) {
     console.error("[COMMENT_MODERATION_DELETE]", error);
-    return badRequest("Failed to moderate comment", error);
+    return internalError("Failed to moderate comment");
   }
 }

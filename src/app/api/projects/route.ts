@@ -6,6 +6,7 @@ import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { ProjectStatus, Role } from "@/generated/prisma/enums";
 import { broadcastNotification } from "@/lib/notifications";
+import { isSafeMediaUrl } from "@/lib/url-safety";
 
 /**
  * @swagger
@@ -49,18 +50,51 @@ export async function GET(req: NextRequest) {
     const minLng = searchParams.get("minLng");
     const maxLng = searchParams.get("maxLng");
 
-    const cacheKey =
-      minLat && maxLat && minLng && maxLng
-        ? `list:${minLat}:${maxLat}:${minLng}:${maxLng}`
-        : "list:all";
+    const hasBoundingBox =
+      minLat !== null || maxLat !== null || minLng !== null || maxLng !== null;
+
+    let bounds: {
+      minLat: number;
+      maxLat: number;
+      minLng: number;
+      maxLng: number;
+    } | null = null;
+
+    if (hasBoundingBox) {
+      if (!minLat || !maxLat || !minLng || !maxLng) {
+        return badRequest("Incomplete bounding box coordinates");
+      }
+
+      const parsed = {
+        minLat: Number(minLat),
+        maxLat: Number(maxLat),
+        minLng: Number(minLng),
+        maxLng: Number(maxLng),
+      };
+
+      if (
+        !Number.isFinite(parsed.minLat) ||
+        !Number.isFinite(parsed.maxLat) ||
+        !Number.isFinite(parsed.minLng) ||
+        !Number.isFinite(parsed.maxLng)
+      ) {
+        return badRequest("Invalid bounding box coordinates");
+      }
+
+      bounds = parsed;
+    }
+
+    const cacheKey = bounds
+      ? `list:${bounds.minLat}:${bounds.maxLat}:${bounds.minLng}:${bounds.maxLng}`
+      : "list:all";
 
     const projects = await cached("projects", cacheKey, 60, async () => {
-      if (minLat && maxLat && minLng && maxLng) {
+      if (bounds) {
         return prisma.$queryRaw`
         SELECT id, title, description, status, latitude, longitude, "budgetTarget", "currentFunding", "estimatedDurationDays", "imageUrls"
         FROM projects
-        WHERE latitude BETWEEN ${parseFloat(minLat)} AND ${parseFloat(maxLat)}
-          AND longitude BETWEEN ${parseFloat(minLng)} AND ${parseFloat(maxLng)}
+        WHERE latitude BETWEEN ${bounds.minLat} AND ${bounds.maxLat}
+          AND longitude BETWEEN ${bounds.minLng} AND ${bounds.maxLng}
           AND "deletedAt" IS NULL
       `;
       }
@@ -92,10 +126,14 @@ const createProjectSchema = z.object({
   title: z.string().min(5),
   description: z.string().min(10),
   budgetTarget: z.number().positive(),
-  imageUrls: z.array(z.string()).optional(),
-  documentUrls: z.array(z.string()).optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  imageUrls: z
+    .array(z.string().trim().refine(isSafeMediaUrl, "Invalid image URL"))
+    .optional(),
+  documentUrls: z
+    .array(z.string().trim().refine(isSafeMediaUrl, "Invalid document URL"))
+    .optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
   estimatedDurationDays: z.number().int().positive().optional(),
   categoryId: z.number().int().optional(),
 });
@@ -181,13 +219,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (data.latitude && data.longitude) {
-      await prisma.$executeRawUnsafe(
-        `UPDATE projects SET "locationGeom" = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
-        data.longitude,
-        data.latitude,
-        project.id,
-      );
+    if (data.latitude !== undefined && data.longitude !== undefined) {
+      await prisma.$executeRaw`
+        UPDATE projects
+        SET "locationGeom" = ST_SetSRID(ST_MakePoint(${data.longitude}, ${data.latitude}), 4326)
+        WHERE id = ${project.id}
+      `;
     }
 
     await broadcastNotification({

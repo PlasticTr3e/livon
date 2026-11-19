@@ -119,7 +119,7 @@ export async function recordDonation(
       method: "POST",
       body: JSON.stringify(data),
     },
-    false,
+    true,
   );
 }
 

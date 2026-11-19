@@ -92,8 +92,6 @@ export function useFundExpenses(fundType: ApiFundType, limit = 50) {
   };
 }
 
-// --- Ledger (admin "Riwayat keuangan") ---------------------------------------
-
 export type LedgerActorRole = "Warga" | "Donatur" | "Pengurus";
 
 export type LedgerEntry = {
@@ -170,8 +168,6 @@ export function useFundLedger(
   };
 }
 
-// --- Donations ---------------------------------------------------------------
-
 /** Labels written by `recordDonation` in the finance service. */
 const API_DONATION_TITLE_PREFIX = "Donasi Kas Perumahan - ";
 const API_ANONYMOUS_LABEL = "Hamba Allah";
@@ -224,8 +220,6 @@ export function useDonationFeed(limit = 5) {
     donationCount: result.data?.pagination.total ?? 0,
   };
 }
-
-// --- IPL bills ---------------------------------------------------------------
 
 export type IplBill = {
   id: string;
@@ -284,8 +278,6 @@ export function useMyIplBills(enabled: boolean) {
     residenceLabel: getResidenceLabel(raw),
   };
 }
-
-// --- Admin -------------------------------------------------------------------
 
 export type BillStatusFilter = ResidentBillItem["status"] | "ALL";
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FundType } from "@/generated/prisma/enums";
+import { isSafeMediaUrl } from "@/lib/url-safety";
 
 export const createExpenseSchema = z.object({
   title: z
@@ -38,7 +39,8 @@ export const createExpenseSchema = z.object({
     .max(100, "Kategori pengeluaran maksimal 100 karakter"),
   proofUrl: z
     .string()
-    .url("Format URL bukti kuitansi/struk tidak valid")
+    .trim()
+    .refine(isSafeMediaUrl, "Format URL bukti kuitansi/struk tidak valid")
     .optional()
     .nullable(),
   transactionDate: z.coerce.date().optional(),
@@ -74,7 +76,8 @@ export const createDonationSchema = z.object({
     .nullable(),
   proofUrl: z
     .string()
-    .url("Format URL bukti transfer tidak valid")
+    .trim()
+    .refine(isSafeMediaUrl, "Format URL bukti transfer tidak valid")
     .optional()
     .nullable(),
   isAnonymous: z.boolean().default(false),
@@ -92,7 +95,10 @@ export const generateBillsSchema = z.object({
 });
 
 export const payBillSchema = z.object({
-  paymentProofUrl: z.string().url("Format URL bukti pembayaran tidak valid"),
+  paymentProofUrl: z
+    .string()
+    .trim()
+    .refine(isSafeMediaUrl, "Format URL bukti pembayaran tidak valid"),
   notes: z.string().trim().max(500).optional().nullable(),
 });
 

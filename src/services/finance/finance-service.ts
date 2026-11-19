@@ -48,7 +48,6 @@ export async function getFinanceSummary(
     999,
   );
 
-  // 1. Fetch Realtime Fund Balances
   const summaries = await prisma.financeSummary.findMany({
     where: {
       fundType: { in: [FundType.IPL, FundType.DONASI] },
@@ -61,7 +60,6 @@ export async function getFinanceSummary(
   const iplBalance = iplRecord ? Number(iplRecord.balance) : 0;
   const donationBalance = donationRecord ? Number(donationRecord.balance) : 0;
 
-  // 2. Fetch Total Monthly Expenses (Pengeluaran Bulan Ini)
   const monthlyExpenseAgg = await prisma.financialTransaction.aggregate({
     _sum: { amount: true },
     where: {
@@ -78,7 +76,6 @@ export async function getFinanceSummary(
     ? Number(monthlyExpenseAgg._sum.amount)
     : 0;
 
-  // 3. Fetch Monthly Income for additional overview
   const monthlyIncomeAgg = await prisma.financialTransaction.aggregate({
     _sum: { amount: true },
     where: {
@@ -95,11 +92,9 @@ export async function getFinanceSummary(
     ? Number(monthlyIncomeAgg._sum.amount)
     : 0;
 
-  // 4. Fetch Active Citizen Bill Status for the logged-in user
   let residentBill: ResidentBillSummary | null = null;
 
   if (userId) {
-    // If the user has WARGA role or is checking their own bill
     const activeBill = await prisma.residentBill.findFirst({
       where: {
         userId,
@@ -170,7 +165,6 @@ export async function getFinanceTransactions(
   let resolvedFundType: FundType | undefined;
   let resolvedTransactionType: TransactionType | undefined;
 
-  // 1. Resolve fund type filter (IPL vs DONATION/DONASI)
   if (rawType === "IPL" || rawFundType === "IPL") {
     resolvedFundType = FundType.IPL;
   } else if (
@@ -182,7 +176,6 @@ export async function getFinanceTransactions(
     resolvedFundType = FundType.DONASI;
   }
 
-  // 2. Resolve transaction type filter (PEMASUKAN vs PENGELUARAN)
   if (rawType === "PEMASUKAN" || rawType === "INCOME") {
     resolvedTransactionType = TransactionType.PEMASUKAN;
   } else if (rawType === "PENGELUARAN" || rawType === "EXPENSE") {
@@ -294,7 +287,6 @@ export async function createExpenseReport(
   const amountDecimal = new Prisma.Decimal(input.amount);
 
   return prisma.$transaction(async (tx) => {
-    // 1. Create the financial expense transaction
     const transaction = await tx.financialTransaction.create({
       data: {
         title: input.title,
@@ -319,7 +311,6 @@ export async function createExpenseReport(
       },
     });
 
-    // 2. Atomically update the respective fund balance in FinanceSummary
     await tx.financeSummary.upsert({
       where: { fundType: input.fundType },
       update: {

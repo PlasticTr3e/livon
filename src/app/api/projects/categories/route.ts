@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { cached, invalidate } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
-import { ok, created, badRequest } from "@/lib/api-response";
+import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
 
 /**
@@ -41,8 +41,7 @@ import { Role } from "@/generated/prisma/enums";
  *       400:
  *         description: Failed to retrieve project categories
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const categories = await cached("categories", "all", 3600, () =>
       prisma.projectCategory.findMany({
@@ -57,10 +56,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("[PROJECT_CATEGORIES_GET]", error);
-    return badRequest(
-      "Failed to retrieve project categories",
-      error instanceof Error ? error.message : "Unknown error",
-    );
+    return internalError("Failed to retrieve project categories");
   }
 }
 
@@ -161,9 +157,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("[PROJECT_CATEGORIES_POST]", error);
-    return badRequest(
-      "Failed to create project category",
-      error instanceof Error ? error.message : "Unknown error",
-    );
+    return internalError("Failed to create project category");
   }
 }

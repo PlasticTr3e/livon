@@ -1,12 +1,32 @@
 import { z } from "zod";
 
+// Kept self-contained because community-api.test.mjs transpiles this file without @/ path aliases.
+function isSafeCommunityMediaUrl(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed || /[\u0000-\u001F\u007F]/.test(trimmed)) return false;
+  if (trimmed.startsWith("/")) {
+    return !trimmed.startsWith("//") && !trimmed.startsWith("/\\");
+  }
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export const threadItemSchema = z.object({
   text: z
     .string()
     .trim()
     .min(1, "Thread item text cannot be empty")
     .max(5000, "Thread item text cannot exceed 5000 characters"),
-  imageUrl: z.string().url("Invalid image URL format").nullable().optional(),
+  imageUrl: z
+    .string()
+    .trim()
+    .refine(isSafeCommunityMediaUrl, "Invalid image URL format")
+    .nullable()
+    .optional(),
 });
 
 export const createPostSchema = z
@@ -17,7 +37,12 @@ export const createPostSchema = z
       .max(10000, "Post content cannot exceed 10000 characters")
       .optional(),
     images: z
-      .array(z.string().url("Invalid image URL format"))
+      .array(
+        z
+          .string()
+          .trim()
+          .refine(isSafeCommunityMediaUrl, "Invalid image URL format"),
+      )
       .max(5, "Maximum 5 images allowed per post")
       .optional()
       .default([]),
