@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Badge, Card, cn } from "@/components/ui/primitives";
 import {
   formatAdminCrowdfundingAmount,
@@ -49,6 +52,8 @@ function AdminCrowdfundingProjectCard({
   statusFilter: AdminCrowdfundingProjectStatusFilter;
   onSelectProject: (project: AdminCrowdfundingSelectedProject) => void;
 }) {
+  const { t: translateUi } = useLanguage();
+
   const { collected, progress, target } =
     getAdminCrowdfundingProjectStats(project);
 
@@ -79,9 +84,12 @@ function AdminCrowdfundingProjectCard({
 
       <div className="mt-auto space-y-2">
         <div className="flex justify-between text-xs font-semibold">
-          <span className="text-gray-500 dark:text-white">Collected:</span>
+          <span className="text-gray-500 dark:text-white">
+            {translateUi("Collected:")}
+          </span>
           <span className="font-bold text-green-700">
-            Rp {formatAdminCrowdfundingAmount(collected)}
+            {translateUi("Rp ")}
+            {formatAdminCrowdfundingAmount(collected)}
           </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
@@ -96,8 +104,14 @@ function AdminCrowdfundingProjectCard({
           />
         </div>
         <div className="flex items-center justify-between text-[10px] font-medium text-gray-400 dark:text-white">
-          <span>{progress}% funded</span>
-          <span>Target: Rp {formatAdminCrowdfundingAmount(target)}</span>
+          <span>
+            {progress}
+            {translateUi("% funded")}
+          </span>
+          <span>
+            {translateUi("Target: Rp ")}
+            {formatAdminCrowdfundingAmount(target)}
+          </span>
         </div>
       </div>
     </Card>
@@ -105,10 +119,12 @@ function AdminCrowdfundingProjectCard({
 }
 
 function AdminCrowdfundingEmptyProjects() {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="col-span-full flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 bg-white py-20 text-gray-400 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white">
       <SearchX className="h-12 w-12 opacity-20" />
-      <p className="font-medium">No projects found.</p>
+      <p className="font-medium">{translateUi("No projects found.")}</p>
     </div>
   );
 }

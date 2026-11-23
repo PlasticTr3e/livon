@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Card } from "@/components/ui/primitives";
 import { formatAdminCrowdfundingAmount } from "@/lib/admin-crowdfunding/admin-crowdfunding-format";
 import type { AdminCrowdfundingOverviewStats } from "@/lib/admin-crowdfunding/admin-crowdfunding-types";
@@ -8,6 +11,8 @@ type AdminCrowdfundingStatsProps = {
 };
 
 export function AdminCrowdfundingStats({ stats }: AdminCrowdfundingStatsProps) {
+  const { t: translateUi } = useLanguage();
+
   const statCards = [
     {
       label: "Total Collected",
@@ -49,7 +54,7 @@ export function AdminCrowdfundingStats({ stats }: AdminCrowdfundingStatsProps) {
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase text-gray-400 dark:text-white">
-                {stat.label}
+                {translateUi(stat.label)}
               </p>
               <p className="text-xl font-black text-gray-900 dark:text-white">
                 {stat.value}

@@ -1,29 +1,27 @@
-import { ShieldCheck, Wallet } from "lucide-react";
+"use client";
 
+import { useLanguage } from "@/context/LanguageContext";
+import { HandCoins } from "lucide-react";
+
+/** Same header treatment as News & Updates: on the page background, divider below. */
 export function PaymentHubHeader() {
+  const { t: translateUi } = useLanguage();
+
   return (
-    <div className="bg-white dark:bg-slate-900">
-      <div className="mx-auto max-w-6xl px-4 pb-6 pt-6 sm:px-5 md:pb-9 md:pt-10">
-        <div className="flex items-start gap-3 sm:gap-5">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-green-700 text-white shadow-md sm:h-14 sm:w-14">
-            <Wallet aria-hidden="true" className="h-5 w-5 sm:h-6 sm:w-6" />
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl md:text-4xl dark:text-white">
-              Pembayaran &amp; dana warga
-            </h1>
-            <p className="mt-1.5 text-sm leading-6 text-slate-500 sm:text-base dark:text-slate-400">
-              Bayar IPL, berdonasi, dan pantau penggunaan dana lingkungan secara
-              transparan.
-            </p>
-            <p className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-green-700 sm:text-sm dark:text-green-400">
-              <ShieldCheck aria-hidden="true" className="h-4 w-4" />
-              Data kas diperbarui otomatis
-            </p>
-          </div>
+    <div className="border-b border-gray-200 pb-6 dark:border-gray-800">
+      <div className="mb-2.5 flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-green-700 shadow-md">
+          <HandCoins aria-hidden="true" className="h-5 w-5 text-white" />
         </div>
-        <div className="mt-6 h-0.5 rounded-full bg-green-200 md:mt-8 dark:bg-green-900/60" />
+        <h1 className="text-3xl font-black text-gray-900 dark:text-white">
+          {translateUi("Billing & Care")}
+        </h1>
       </div>
+      <p className="ml-[52px] max-w-md text-sm leading-relaxed text-gray-500 dark:text-slate-300">
+        {translateUi(
+          "Bayar IPL bulanan rumah Anda dan ikut peduli lewat kantong donasi warga.",
+        )}
+      </p>
     </div>
   );
 }

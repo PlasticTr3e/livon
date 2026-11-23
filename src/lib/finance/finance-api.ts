@@ -98,7 +98,7 @@ export async function createExpenseTransaction(
   data: CreateExpenseInput,
 ): Promise<TransactionListItem> {
   return request<TransactionListItem>(
-    "/api/admin/transactions",
+    "/api/finance/transactions",
     {
       method: "POST",
       body: JSON.stringify(data),

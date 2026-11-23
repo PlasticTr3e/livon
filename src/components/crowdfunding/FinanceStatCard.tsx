@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 
@@ -46,6 +49,8 @@ export function FinanceStatCard({
   icon: Icon,
   tone,
 }: FinanceStatCardProps) {
+  const { t: translateUi } = useLanguage();
+
   const styles = tones[tone];
 
   return (
@@ -57,7 +62,7 @@ export function FinanceStatCard({
     >
       <div className="flex items-start justify-between gap-2">
         <h2 className="text-[10px] font-bold uppercase leading-4 tracking-[0.14em] text-slate-600 sm:text-xs sm:tracking-[0.16em] dark:text-slate-400">
-          {label}
+          {translateUi(label)}
         </h2>
         <span
           className={cn(
@@ -77,7 +82,9 @@ export function FinanceStatCard({
         {value}
       </p>
       {caption && (
-        <p className="mt-1 text-xs text-slate-400 sm:text-sm">{caption}</p>
+        <p className="mt-1 text-xs text-slate-400 sm:text-sm">
+          {translateUi(caption)}
+        </p>
       )}
     </article>
   );

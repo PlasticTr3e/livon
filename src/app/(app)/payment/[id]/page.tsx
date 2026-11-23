@@ -17,13 +17,21 @@ export default async function PaymentPage({
   const kind = getCheckoutKindFromSlug((await params).id);
   if (!kind) notFound();
 
+  const query = await searchParams;
   const donation =
-    kind === "donation" ? parseDonationCheckoutQuery(await searchParams) : null;
+    kind === "donation" ? parseDonationCheckoutQuery(query) : null;
+  const billId = typeof query.bill === "string" ? query.bill : undefined;
+  const orderId = typeof query.order === "string" ? query.order : undefined;
 
   return (
     <>
       <MidtransSnapScript />
-      <CheckoutPageContent kind={kind} donation={donation} />
+      <CheckoutPageContent
+        kind={kind}
+        donation={donation}
+        billId={billId}
+        orderId={orderId}
+      />
     </>
   );
 }

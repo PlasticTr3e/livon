@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { AdminCrowdfundingProjectFilters } from "@/components/admin-crowdfunding/AdminCrowdfundingProjectFilters";
 import { AdminCrowdfundingProjectGrid } from "@/components/admin-crowdfunding/AdminCrowdfundingProjectGrid";
 import { AdminCrowdfundingRecentTransactions } from "@/components/admin-crowdfunding/AdminCrowdfundingTransactionsTable";
@@ -33,6 +36,8 @@ export function AdminCrowdfundingDashboardView({
   onProjectStatusFilterChange,
   onSelectProject,
 }: AdminCrowdfundingDashboardViewProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="space-y-6">
       <AdminCrowdfundingStats stats={stats} />
@@ -40,7 +45,7 @@ export function AdminCrowdfundingDashboardView({
 
       <div className="flex flex-col items-start justify-between gap-4 pt-4 md:flex-row md:items-center">
         <h2 className="text-lg font-medium tracking-tight text-gray-900 dark:text-white">
-          Donation Dashboard
+          {translateUi("Donation Dashboard")}
         </h2>
         <AdminCrowdfundingProjectFilters
           searchQuery={projectSearchQuery}

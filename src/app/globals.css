@@ -137,3 +137,31 @@
     transform: translateX(var(--radix-toast-swipe-end-x)) scale(0.98);
   }
 }
+
+/* Billing & Care: print only the IPL nota (.print-area), not the admin shell. */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-area {
+    position: fixed;
+    inset: 0 0 auto 0;
+    padding: 0 !important;
+  }
+}

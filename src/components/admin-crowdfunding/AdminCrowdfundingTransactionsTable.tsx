@@ -1,3 +1,4 @@
+import { UiText } from "@/context/LanguageContext";
 import { memo, useMemo } from "react";
 import { Badge, Card, cn } from "@/components/ui/primitives";
 import {
@@ -32,12 +33,28 @@ export const AdminCrowdfundingTransactionsTable = memo(
         <table className="w-full min-w-[720px] border-collapse text-left">
           <thead>
             <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
-              {showTransactionId && <th className="px-8 py-4">TRX ID</th>}
-              <th className="px-8 py-4">Donor</th>
-              {showProject && <th className="px-4 py-4">Project</th>}
-              <th className="px-4 py-4">Amount</th>
-              <th className="px-4 py-4">Time</th>
-              <th className="px-8 py-4 text-center">Status</th>
+              {showTransactionId && (
+                <th className="px-8 py-4">
+                  <UiText>TRX ID</UiText>
+                </th>
+              )}
+              <th className="px-8 py-4">
+                <UiText>Donor</UiText>
+              </th>
+              {showProject && (
+                <th className="px-4 py-4">
+                  <UiText>Project</UiText>
+                </th>
+              )}
+              <th className="px-4 py-4">
+                <UiText>Amount</UiText>
+              </th>
+              <th className="px-4 py-4">
+                <UiText>Time</UiText>
+              </th>
+              <th className="px-8 py-4 text-center">
+                <UiText>Status</UiText>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
@@ -77,7 +94,7 @@ export const AdminCrowdfundingRecentTransactions = memo(
       <Card className="overflow-hidden rounded-2xl border-green-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-[#1F2937]">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Recent Transactions
+            <UiText>Recent Transactions</UiText>
           </h3>
         </div>
 
@@ -126,7 +143,8 @@ const TransactionRow = memo(function TransactionRow({
         </td>
       )}
       <td className="px-4 py-6 text-xs font-black text-green-700 dark:text-green-400">
-        Rp {formatAdminCrowdfundingAmount(transaction.amount)}
+        <UiText>Rp </UiText>
+        {formatAdminCrowdfundingAmount(transaction.amount)}
       </td>
       <td className="px-4 py-6 text-xs font-semibold text-gray-500 dark:text-white">
         {transaction.date}

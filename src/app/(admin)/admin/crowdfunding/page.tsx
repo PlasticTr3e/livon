@@ -1,5 +1,6 @@
-import { CrowdfundingComingSoon } from "@/components/crowdfunding/CrowdfundingComingSoon";
+import { redirect } from "next/navigation";
 
+/** Old admin Billing & Care URL; the dashboard now lives at /admin/billing. */
 export default function CrowdfundingMonitorPage() {
-  return <CrowdfundingComingSoon backHref="/admin/projects" />;
+  redirect("/admin/billing");
 }
