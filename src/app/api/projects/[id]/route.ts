@@ -1,10 +1,11 @@
+import { canManageProjects } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { cached, invalidate } from "@/lib/cache";
 import { ok, internalError, notFound, badRequest } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
-import { Role } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
+import { PROJECT_ADDRESS_MAX_LENGTH } from "@/lib/project-address";
 
 /**
  * @swagger
@@ -114,8 +115,11 @@ export async function PATCH(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
-      return badRequest("Forbidden: Only Admins update project");
+    if (!authUser || !canManageProjects(authUser.role)) {
+      return Response.json(
+        { success: false, message: "Forbidden: Only Admins update project" },
+        { status: authUser ? 403 : 401 },
+      );
     }
 
     const { id } = await params;
@@ -129,6 +133,7 @@ export async function PATCH(
       budgetTarget,
       latitude,
       longitude,
+      address,
       estimatedDurationDays,
       categoryId,
       startDate,
@@ -150,6 +155,16 @@ export async function PATCH(
     if (budgetTarget !== undefined) updateData.budgetTarget = budgetTarget;
     if (latitude !== undefined) updateData.latitude = latitude;
     if (longitude !== undefined) updateData.longitude = longitude;
+    if (address !== undefined) {
+      if (
+        address !== null &&
+        (typeof address !== "string" ||
+          address.trim().length > PROJECT_ADDRESS_MAX_LENGTH)
+      ) {
+        return badRequest("Invalid project address");
+      }
+      updateData.address = address?.trim() || null;
+    }
     if (estimatedDurationDays !== undefined)
       updateData.estimatedDurationDays = estimatedDurationDays;
     if (categoryId !== undefined) updateData.categoryId = categoryId;
@@ -164,9 +179,6 @@ export async function PATCH(
 
     const existingProject = await prisma.project.findUnique({ where: { id } });
     if (!existingProject) return notFound("Project not found");
-    if (existingProject.agencyId !== authUser.userId) {
-      return badRequest("Forbidden: You do not own this project");
-    }
 
     const project = await prisma.project.update({
       where: { id },
@@ -238,17 +250,17 @@ export async function DELETE(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
-      return badRequest("Forbidden: Only Admins delete projects");
+    if (!authUser || !canManageProjects(authUser.role)) {
+      return Response.json(
+        { success: false, message: "Forbidden: Only Admins delete projects" },
+        { status: authUser ? 403 : 401 },
+      );
     }
 
     const { id } = await params;
 
     const existingProject = await prisma.project.findUnique({ where: { id } });
     if (!existingProject) return notFound("Project not found");
-    if (existingProject.agencyId !== authUser.userId) {
-      return badRequest("Forbidden: You do not own this project");
-    }
 
     const project = await prisma.project.update({
       where: { id },

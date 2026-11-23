@@ -1,3 +1,4 @@
+import { getDisplayLocale } from "@/lib/i18n/display";
 import { getProjectStage } from "@/lib/project-lifecycle";
 import type {
   MapProject,
@@ -73,7 +74,7 @@ export function getMapProjectProgress(status: string) {
 }
 
 export function formatRupiahFull(value: number) {
-  return new Intl.NumberFormat("id-ID", {
+  return new Intl.NumberFormat(getDisplayLocale(), {
     style: "currency",
     currency: "IDR",
     minimumFractionDigits: 0,

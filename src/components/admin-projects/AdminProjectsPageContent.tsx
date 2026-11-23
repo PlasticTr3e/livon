@@ -58,6 +58,8 @@ export function AdminProjectsPageContent() {
                   status,
                   budget: formatAdminProjectBudget(d.budgetTarget),
                   date: formatAdminProjectDate(d.createdAt),
+                  createdAt: d.createdAt,
+                  budgetTarget: d.budgetTarget,
                   category: d.category?.name || "Uncategorized",
                 };
               } catch {

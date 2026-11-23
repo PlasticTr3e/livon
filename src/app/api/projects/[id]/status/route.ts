@@ -1,10 +1,11 @@
+import { canManageProjects } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { invalidate } from "@/lib/cache";
 import { ok, badRequest, internalError, notFound } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
-import { ProjectStatus, Role } from "@/generated/prisma/enums";
+import { ProjectStatus } from "@/generated/prisma/enums";
 
 const statusSchema = z.object({
   status: z.enum(ProjectStatus),
@@ -54,8 +55,14 @@ export async function PATCH(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
-      return badRequest("Forbidden: Only Admins can update project status");
+    if (!authUser || !canManageProjects(authUser.role)) {
+      return Response.json(
+        {
+          success: false,
+          message: "Forbidden: Only Admins can update project status",
+        },
+        { status: authUser ? 403 : 401 },
+      );
     }
 
     const body = await req.json();
@@ -67,9 +74,6 @@ export async function PATCH(
 
     const existingProject = await prisma.project.findUnique({ where: { id } });
     if (!existingProject) return notFound("Project not found");
-    if (existingProject.agencyId !== authUser.userId) {
-      return badRequest("Forbidden: You do not own this project");
-    }
 
     const updatedProject = await prisma.project.update({
       where: { id },

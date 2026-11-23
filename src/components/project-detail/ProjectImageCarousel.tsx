@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
@@ -21,6 +22,8 @@ export function ProjectImageCarousel({
   onPrevious,
   onNext,
 }: ProjectImageCarouselProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="group relative h-64 w-full overflow-hidden rounded-2xl border border-green-100 bg-black shadow-sm md:h-80">
       <div
@@ -32,7 +35,10 @@ export function ProjectImageCarousel({
           <div key={`${src}-${index}`} className="relative h-full min-w-full">
             <ImageWithFallback
               src={src}
-              alt={`${projectName} - Image ${index + 1}`}
+              alt={translateUi("{0} - Image {1}", {
+                0: projectName,
+                1: index + 1,
+              })}
               fill
               sizes="(min-width: 768px) 1024px, 100vw"
               priority={index === imageIndex}

@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { summarizeProjectSentiment } from "@/lib/project-sentiment";
 
 const segments = [
@@ -11,6 +14,8 @@ export function ProjectSentimentBar({
 }: {
   feedback: { sentimentLabel?: string | null }[];
 }) {
+  const { t: translateUi } = useLanguage();
+
   const summary = summarizeProjectSentiment(feedback);
   return (
     <section
@@ -22,7 +27,7 @@ export function ProjectSentimentBar({
           id="project-sentiment-title"
           className="font-bold text-gray-900 dark:text-white"
         >
-          Feedback sentiment
+          {translateUi("Feedback sentiment")}
         </h2>
         <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
           {summary.direction}
@@ -30,7 +35,15 @@ export function ProjectSentimentBar({
       </div>
       <div
         role="img"
-        aria-label={`Feedback sentiment: ${summary.positive} positive, ${summary.neutral} neutral, ${summary.negative} negative. ${summary.pending} not analyzed.`}
+        aria-label={translateUi(
+          "Feedback sentiment: {0} positive, {1} neutral, {2} negative. {3} not analyzed.",
+          {
+            0: summary.positive,
+            1: summary.neutral,
+            2: summary.negative,
+            3: summary.pending,
+          },
+        )}
         className="flex h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
       >
         {summary.analyzed > 0 &&
@@ -49,7 +62,7 @@ export function ProjectSentimentBar({
               aria-hidden="true"
               className={`h-2 w-2 rounded-full ${color}`}
             />
-            {label}{" "}
+            {translateUi(label)}{" "}
             {summary.analyzed > 0
               ? Math.round((summary[key] / summary.analyzed) * 100)
               : 0}
@@ -58,9 +71,13 @@ export function ProjectSentimentBar({
         ))}
       </ul>
       <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-        {summary.analyzed} analyzed{" "}
-        {summary.analyzed === 1 ? "comment" : "comments"}
-        {summary.pending > 0 ? ` · ${summary.pending} not analyzed yet` : ""}
+        {summary.analyzed} {translateUi(" analyzed")}{" "}
+        {summary.analyzed === 1
+          ? translateUi("comment")
+          : translateUi("comments")}
+        {summary.pending > 0
+          ? translateUi(" · {0} not analyzed yet", { 0: summary.pending })
+          : ""}
       </p>
     </section>
   );

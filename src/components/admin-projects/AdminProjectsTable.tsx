@@ -1,9 +1,16 @@
+"use client";
+
+import { UiText, useLanguage } from "@/context/LanguageContext";
 import { memo, useCallback, type MouseEvent } from "react";
 import Link from "next/link";
 import { Edit2, Trash2 } from "lucide-react";
 import { Card, cn } from "@/components/ui/primitives";
 import { LoadingState } from "@/components/shared/LoadingState";
-import { ADMIN_PROJECT_STATUS_CONFIG } from "@/lib/admin-projects/admin-projects-format";
+import {
+  ADMIN_PROJECT_STATUS_CONFIG,
+  formatAdminProjectDate,
+  formatAdminProjectBudget,
+} from "@/lib/admin-projects/admin-projects-format";
 import type { AdminProjectSummary } from "@/lib/admin-projects/admin-projects-types";
 
 type AdminProjectsTableProps = {
@@ -25,11 +32,21 @@ export const AdminProjectsTable = memo(function AdminProjectsTable({
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
-              <th className="px-8 py-4">Project Details</th>
-              <th className="px-4 py-4 text-center">Status</th>
-              <th className="px-4 py-4 text-center">Category</th>
-              <th className="px-4 py-4">Budget</th>
-              <th className="px-8 py-4 text-right">Actions</th>
+              <th className="px-8 py-4">
+                <UiText>Project Details</UiText>
+              </th>
+              <th className="px-4 py-4 text-center">
+                <UiText>Status</UiText>
+              </th>
+              <th className="px-4 py-4 text-center">
+                <UiText>Category</UiText>
+              </th>
+              <th className="px-4 py-4">
+                <UiText>Budget</UiText>
+              </th>
+              <th className="px-8 py-4 text-right">
+                <UiText>Actions</UiText>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
@@ -49,7 +66,7 @@ export const AdminProjectsTable = memo(function AdminProjectsTable({
                   colSpan={5}
                   className="py-24 text-center text-[10px] font-medium uppercase tracking-widest text-gray-400 dark:text-white"
                 >
-                  No projects found.
+                  <UiText>No projects found.</UiText>
                 </td>
               </tr>
             ) : (
@@ -78,6 +95,8 @@ const AdminProjectsTableRow = memo(function AdminProjectsTableRow({
   onDelete: (projectId: string) => void;
   onView: (projectId: string) => void;
 }) {
+  const { t: translateUi } = useLanguage();
+
   const statusConfig = ADMIN_PROJECT_STATUS_CONFIG[project.status];
   const handleView = useCallback(() => {
     onView(project.id);
@@ -103,7 +122,10 @@ const AdminProjectsTableRow = memo(function AdminProjectsTableRow({
             {project.name}
           </span>
           <span className="mt-1 text-[11px] font-medium text-gray-400 dark:text-white">
-            Created {project.date}
+            <UiText>Created </UiText>
+            {project.createdAt
+              ? formatAdminProjectDate(project.createdAt)
+              : project.date}
           </span>
         </div>
       </td>
@@ -115,7 +137,7 @@ const AdminProjectsTableRow = memo(function AdminProjectsTableRow({
               statusConfig.style,
             )}
           >
-            {statusConfig.label}
+            {translateUi(statusConfig.label)}
           </div>
         </div>
       </td>
@@ -127,7 +149,9 @@ const AdminProjectsTableRow = memo(function AdminProjectsTableRow({
         </div>
       </td>
       <td className="px-4 py-6 text-xs font-semibold text-gray-700 dark:text-white">
-        {project.budget}
+        {project.budgetTarget !== undefined
+          ? formatAdminProjectBudget(project.budgetTarget)
+          : project.budget}
       </td>
       <td className="px-8 py-6">
         <div

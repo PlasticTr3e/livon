@@ -1,3 +1,4 @@
+import { canManageProjects } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
@@ -6,6 +7,7 @@ import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { ProjectStatus, Role } from "@/generated/prisma/enums";
 import { broadcastNotification } from "@/lib/notifications";
+import { PROJECT_ADDRESS_MAX_LENGTH } from "@/lib/project-address";
 
 /**
  * @swagger
@@ -57,7 +59,8 @@ export async function GET(req: NextRequest) {
     const projects = await cached("projects", cacheKey, 60, async () => {
       if (minLat && maxLat && minLng && maxLng) {
         return prisma.$queryRaw`
-        SELECT id, title, description, status, latitude, longitude, "budgetTarget", "currentFunding", "estimatedDurationDays", "imageUrls"
+        SELECT id, title, description, status, latitude, longitude, address,
+          "budgetTarget", "currentFunding", "estimatedDurationDays", "imageUrls"
         FROM projects
         WHERE latitude BETWEEN ${parseFloat(minLat)} AND ${parseFloat(maxLat)}
           AND longitude BETWEEN ${parseFloat(minLng)} AND ${parseFloat(maxLng)}
@@ -77,6 +80,7 @@ export async function GET(req: NextRequest) {
           imageUrls: true,
           latitude: true,
           longitude: true,
+          address: true,
         },
       });
     });
@@ -96,6 +100,7 @@ const createProjectSchema = z.object({
   documentUrls: z.array(z.string()).optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  address: z.string().trim().max(PROJECT_ADDRESS_MAX_LENGTH).nullish(),
   estimatedDurationDays: z.number().int().positive().optional(),
   categoryId: z.number().int().optional(),
 });
@@ -153,8 +158,14 @@ const createProjectSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
-      return badRequest("Forbidden: Only Admins can create projects");
+    if (!authUser || !canManageProjects(authUser.role)) {
+      return Response.json(
+        {
+          success: false,
+          message: "Forbidden: Only Admins can create projects",
+        },
+        { status: authUser ? 403 : 401 },
+      );
     }
 
     const body = await req.json();
@@ -163,7 +174,6 @@ export async function POST(req: NextRequest) {
       return badRequest("Validation failed", z.treeifyError(result.error));
 
     const data = result.data;
-
     const project = await prisma.project.create({
       data: {
         title: data.title,
@@ -175,6 +185,7 @@ export async function POST(req: NextRequest) {
         documentUrl: data.documentUrls || [],
         latitude: data.latitude,
         longitude: data.longitude,
+        address: data.address || null,
         estimatedDurationDays: data.estimatedDurationDays,
         categoryId: data.categoryId,
         agencyId: authUser.userId,

@@ -1,4 +1,6 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
+
 import { Suspense, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, Button, Input, cn } from "@/components/ui/primitives";
@@ -19,6 +21,7 @@ import {
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { apiFetchJson } from "@/lib/api-client";
+import { PROJECT_ADDRESS_MAX_LENGTH } from "@/lib/project-address";
 import { roundAdminProjectCoordinate } from "@/lib/admin-projects/admin-projects-format";
 import type {
   AdminProjectCategory,
@@ -41,6 +44,8 @@ const ProjectLocationPicker = dynamic<{
 });
 
 function EditProjectContent() {
+  const { t: translateUi } = useLanguage();
+
   const { id } = useParams();
   const router = useRouter();
   const toast = useToast();
@@ -55,6 +60,7 @@ function EditProjectContent() {
     status: "USULAN",
     latitude: -6.941,
     longitude: 107.7755,
+    address: "",
     startDate: "",
     documentUrl: [] as string[],
   });
@@ -139,6 +145,7 @@ function EditProjectContent() {
                 status: d.status || "USULAN",
                 latitude: d.latitude || -6.941,
                 longitude: d.longitude || 107.7755,
+                address: d.address ?? "",
                 startDate: d.startDate
                   ? new Date(d.startDate).toISOString().split("T")[0]
                   : "",
@@ -304,6 +311,7 @@ function EditProjectContent() {
         budgetTarget: parseFloat(formData.budgetTarget),
         latitude: formData.latitude,
         longitude: formData.longitude,
+        address: formData.address.trim() || null,
         imageUrls: projectPhotos,
         documentUrl: formData.documentUrl || [],
         estimatedDurationDays: formData.estimatedDurationDays
@@ -373,7 +381,7 @@ function EditProjectContent() {
   if (isLoading) {
     return (
       <LoadingState
-        label="Loading project editor..."
+        label={translateUi("Loading project editor...")}
         className="min-h-[400px]"
       />
     );
@@ -388,7 +396,9 @@ function EditProjectContent() {
           className="flex items-center text-green-600 hover:text-green-800 dark:text-green-400 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          <span className="font-medium text-sm">Back to Menu</span>
+          <span className="font-medium text-sm">
+            {translateUi("Back to Menu")}
+          </span>
         </Link>
       </div>
 
@@ -396,12 +406,16 @@ function EditProjectContent() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-black text-gray-900">
-              {isCreate ? "Create Project" : "Edit Project"}
+              {isCreate
+                ? translateUi("Create Project")
+                : translateUi("Edit Project")}
             </h1>
             <p className="text-gray-500 text-sm mt-0.5">
               {isCreate
-                ? "Add a new development proposal"
-                : `Managing details for "${formData.title}"`}
+                ? translateUi("Add a new development proposal")
+                : translateUi('Managing details for "{0}"', {
+                    0: formData.title,
+                  })}
             </p>
           </div>
           <div className="hidden items-center gap-3 md:flex">
@@ -414,16 +428,16 @@ function EditProjectContent() {
             <Card className="p-6 border-green-100 shadow-sm space-y-6 bg-white rounded-2xl">
               <h3 className="flex items-center gap-2 border-b border-gray-50 pb-4 text-sm font-black text-gray-900 dark:text-white">
                 <FileText className="w-4 h-4 text-green-600" />
-                Project Information
+                {translateUi("Project Information")}
               </h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                    Project Title
+                    {translateUi("Project Title")}
                   </label>
                   <Input
-                    placeholder="Enter title..."
+                    placeholder={translateUi("Enter title...")}
                     className="h-12 border-green-200 focus:ring-green-400 rounded-xl"
                     value={formData.title}
                     onChange={(e) => handleInput("title", e.target.value)}
@@ -432,11 +446,11 @@ function EditProjectContent() {
 
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                    Description
+                    {translateUi("Description")}
                   </label>
                   <textarea
                     className="w-full p-4 border border-green-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-green-400 text-sm min-h-[160px] resize-none text-gray-800"
-                    placeholder="Detailed description..."
+                    placeholder={translateUi("Detailed description...")}
                     value={formData.description}
                     onChange={(e) => handleInput("description", e.target.value)}
                   />
@@ -446,7 +460,7 @@ function EditProjectContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                    Budget (IDR)
+                    {translateUi("Budget (IDR)")}
                   </label>
                   <Input
                     type="number"
@@ -461,7 +475,7 @@ function EditProjectContent() {
                 {formData.status === "BERJALAN" && (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                      Est. Duration (Days)
+                      {translateUi("Est. Duration (Days)")}
                     </label>
                     <Input
                       type="number"
@@ -479,14 +493,14 @@ function EditProjectContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                    Category
+                    {translateUi("Category")}
                   </label>
                   <select
                     className="w-full h-12 px-3 border border-green-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-green-400 text-sm font-bold text-gray-700"
                     value={formData.categoryId}
                     onChange={(e) => handleInput("categoryId", e.target.value)}
                   >
-                    <option value="">Select Category</option>
+                    <option value="">{translateUi("Select Category")}</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -496,7 +510,7 @@ function EditProjectContent() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                    Start Date
+                    {translateUi("Start Date")}
                   </label>
                   <Input
                     type="date"
@@ -512,10 +526,10 @@ function EditProjectContent() {
               <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-4">
                 <h3 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
                   <ImageIcon className="w-4 h-4 text-green-600" />
-                  Project Gallery
+                  {translateUi("Project Gallery")}
                 </h3>
                 <span className="text-[10px] font-black text-green-600 uppercase bg-green-50 px-2 py-1 rounded">
-                  {projectPhotos.length} / 3 Photos
+                  {projectPhotos.length} {translateUi(" / 3 Photos")}
                 </span>
               </div>
 
@@ -527,7 +541,7 @@ function EditProjectContent() {
                   >
                     <Image
                       src={url}
-                      alt="Project"
+                      alt={translateUi("Project")}
                       fill
                       className="object-cover"
                     />
@@ -545,7 +559,7 @@ function EditProjectContent() {
                   <div className="aspect-video rounded-xl border-2 border-dashed border-purple-200 bg-purple-50 flex flex-col items-center justify-center gap-2 animate-pulse">
                     <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                     <span className="text-[9px] font-black text-purple-500 uppercase">
-                      Uploading...
+                      {translateUi("Uploading...")}
                     </span>
                   </div>
                 )}
@@ -560,7 +574,7 @@ function EditProjectContent() {
                   >
                     <Plus className="w-5 h-5 text-green-300 group-hover:text-green-600 transition-colors" />
                     <span className="text-[10px] font-bold text-green-600/50">
-                      Add Photo
+                      {translateUi("Add Photo")}
                     </span>
                   </button>
                 )}
@@ -579,10 +593,10 @@ function EditProjectContent() {
               <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-4">
                 <h3 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
                   <FileText className="w-4 h-4 text-green-600" />
-                  Supporting Documents
+                  {translateUi("Supporting Documents")}
                 </h3>
                 <span className="text-[10px] font-black text-green-600 uppercase bg-green-50 px-2 py-1 rounded">
-                  PDF / ZIP
+                  {translateUi("PDF / ZIP")}
                 </span>
               </div>
 
@@ -598,7 +612,8 @@ function EditProjectContent() {
                           <FileText className="w-4 h-4" />
                         </div>
                         <span className="text-xs font-bold text-gray-700 truncate">
-                          {url.split("/").pop() || `Document ${index + 1}`}
+                          {url.split("/").pop() ||
+                            translateUi("Document {0}", { 0: index + 1 })}
                         </span>
                       </div>
                       <button
@@ -619,7 +634,7 @@ function EditProjectContent() {
                   <div className="py-8 border-2 border-dashed border-green-50 rounded-2xl flex flex-col items-center justify-center gap-2">
                     <FileText className="w-8 h-8 text-green-100" />
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      No documents uploaded
+                      {translateUi("No documents uploaded")}
                     </p>
                   </div>
                 )}
@@ -628,7 +643,7 @@ function EditProjectContent() {
                   <div className="rounded-xl border-2 border-dashed border-purple-200 bg-purple-50 p-4 flex flex-col items-center justify-center gap-2 animate-pulse">
                     <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                     <span className="text-[9px] font-black text-purple-500 uppercase">
-                      Uploading...
+                      {translateUi("Uploading...")}
                     </span>
                   </div>
                 )}
@@ -639,7 +654,7 @@ function EditProjectContent() {
                   className="w-full h-11 border border-green-200 border-dashed rounded-xl flex items-center justify-center gap-2 text-green-600 font-bold text-[11px] hover:bg-green-50 transition-all mt-2"
                 >
                   <Plus className="w-4 h-4" />
-                  UPLOAD DOCUMENT
+                  {translateUi("UPLOAD DOCUMENT")}
                 </button>
                 <input
                   id="doc-upload"
@@ -685,7 +700,7 @@ function EditProjectContent() {
             <Card className="p-6 border-green-100 shadow-sm rounded-2xl bg-white">
               <h3 className="mb-4 flex items-center gap-2 border-b border-gray-50 pb-4 text-sm font-black text-gray-900 dark:text-white">
                 <Activity className="w-4 h-4 text-green-600" />
-                Project Status
+                {translateUi("Project Status")}
               </h3>
               <div className="flex flex-col gap-2">
                 {["USULAN", "BERJALAN", "SELESAI"].map((s) => {
@@ -754,10 +769,10 @@ function EditProjectContent() {
                       </div>
                       <div className="flex-1 text-left">
                         {s === "USULAN"
-                          ? "Planning"
+                          ? translateUi("Planning")
                           : s === "BERJALAN"
-                            ? "Under Construction"
-                            : "Completed"}
+                            ? translateUi("Under Construction")
+                            : translateUi("Completed")}
                       </div>
                       <div
                         className={cn(
@@ -776,8 +791,26 @@ function EditProjectContent() {
             <Card className="p-6 border-green-100 shadow-sm rounded-2xl bg-white overflow-hidden">
               <h3 className="mb-4 flex items-center gap-2 border-b border-gray-50 pb-4 text-sm font-black text-gray-900 dark:text-white">
                 <MapPin className="w-4 h-4 text-green-600" />
-                Project Location
+                {translateUi("Project Location")}
               </h3>
+              <div className="mb-4">
+                <label
+                  htmlFor="project-address"
+                  className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-slate-300"
+                >
+                  {translateUi("Detail alamat (opsional)")}
+                </label>
+                <Input
+                  id="project-address"
+                  placeholder="Jl. Permaisuri Blok 22"
+                  maxLength={PROJECT_ADDRESS_MAX_LENGTH}
+                  className="h-12 rounded-xl border-green-200 focus:ring-green-400"
+                  value={formData.address}
+                  onChange={(event) =>
+                    handleInput("address", event.target.value)
+                  }
+                />
+              </div>
               <div className="w-full h-56 bg-slate-50 rounded-xl overflow-hidden mb-4 border border-gray-100 shadow-inner">
                 <ProjectLocationPicker
                   lat={formData.latitude}
@@ -801,7 +834,7 @@ function EditProjectContent() {
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-gray-100">
                   <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-0.5">
-                    Latitude
+                    {translateUi("Latitude")}
                   </p>
                   <p className="text-[11px] font-black text-gray-700">
                     {formData.latitude.toFixed(4)}
@@ -809,7 +842,7 @@ function EditProjectContent() {
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-gray-100">
                   <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-0.5">
-                    Longitude
+                    {translateUi("Longitude")}
                   </p>
                   <p className="text-[11px] font-black text-gray-700">
                     {formData.longitude.toFixed(4)}
@@ -829,11 +862,13 @@ function EditProjectContent() {
 }
 
 export function AdminProjectEditorPageContent() {
+  const { t: translateUi } = useLanguage();
+
   return (
     <Suspense
       fallback={
         <LoadingState
-          label="Loading project editor..."
+          label={translateUi("Loading project editor...")}
           className="h-full min-h-[600px]"
         />
       }

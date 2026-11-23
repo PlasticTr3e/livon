@@ -1,9 +1,9 @@
+import { canManageProjects } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { cached, invalidate } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
 import { ok, created, badRequest } from "@/lib/api-response";
-import { Role } from "@/generated/prisma/enums";
 
 /**
  * @swagger
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
  * /api/projects/categories:
  *   post:
  *     summary: Create a new project category
- *     description: Create a new project category. Only accessible by admins (AGENCY role).
+ *     description: Create a new project category. Requires the DEVELOPER role.
  *     tags:
  *       - Project Categories
  *     security:
@@ -117,13 +117,13 @@ export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
 
-    if (!authUser || authUser.role !== Role.AGENCY) {
+    if (!authUser || !canManageProjects(authUser.role)) {
       return NextResponse.json(
         {
           success: false,
-          message: "Unauthorized access. Only admins can create categories.",
+          message: "Forbidden: Only developers can manage projects",
         },
-        { status: 401 },
+        { status: authUser ? 403 : 401 },
       );
     }
 
