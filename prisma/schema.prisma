@@ -115,6 +115,7 @@ model Project {
   imageUrls             String[]                 @default([])
   latitude              Float?
   longitude             Float?
+  address               String?
   locationGeom          Unsupported("geometry")?
   estimatedDurationDays Int?
   startDate             DateTime?

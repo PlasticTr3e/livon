@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage, UiText } from "@/context/LanguageContext";
 import { memo } from "react";
 import {
   Activity,
@@ -46,7 +49,9 @@ export const MapProjectDetailPanel = memo(function MapProjectDetailPanel({
 
         <MapProjectComments project={project} onSeeComments={onSeeComments} />
 
-        {userRole === "agency" && <MapAgencyStats project={project} />}
+        {(userRole === "agency" || userRole === "developer") && (
+          <MapAgencyStats project={project} />
+        )}
       </div>
 
       <div className="p-3 pt-0">
@@ -55,7 +60,9 @@ export const MapProjectDetailPanel = memo(function MapProjectDetailPanel({
           onClick={() => onViewDetail(project.id)}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 py-2 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-white dark:hover:bg-slate-800"
         >
-          <span>View Details</span>
+          <span>
+            <UiText>View Details</UiText>
+          </span>
           <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -70,11 +77,13 @@ function MapProjectDetailImage({
   project: MapProject;
   onClose: () => void;
 }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-t-2xl bg-gray-200 dark:bg-[#1F2937]">
       <ImageWithFallback
         src={project.imageUrl}
-        alt="Project thumbnail"
+        alt={translateUi("Project thumbnail")}
         fill
         sizes="280px"
         className="h-full w-full object-cover"
@@ -94,6 +103,8 @@ function MapProjectDetailImage({
 }
 
 function MapProjectDetailHeader({ project }: { project: MapProject }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="flex items-start justify-between px-4 pb-2 pt-3">
       <div className="flex-1 pr-2">
@@ -104,7 +115,7 @@ function MapProjectDetailHeader({ project }: { project: MapProject }) {
               getMapStatusStyle(project.status),
             )}
           >
-            {project.status}
+            {translateUi(project.status)}
           </Badge>
           <span
             className={cn(
@@ -128,11 +139,13 @@ function MapProjectDetailHeader({ project }: { project: MapProject }) {
 }
 
 function MapProjectCoreStats({ project }: { project: MapProject }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="grid grid-cols-2 gap-2">
       <div className="flex flex-col rounded-lg border border-gray-100 bg-gray-50 p-2 dark:border-gray-800 dark:bg-[#1F2937]/50">
         <span className="mb-0.5 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-gray-400">
-          <Wallet className="h-2.5 w-2.5" /> Budget
+          <Wallet className="h-2.5 w-2.5" /> {translateUi(" Budget")}
         </span>
         <span className="text-xs font-bold text-gray-900 dark:text-white">
           {formatRupiahFull(project.budget)}
@@ -140,7 +153,7 @@ function MapProjectCoreStats({ project }: { project: MapProject }) {
       </div>
       <div className="flex flex-col rounded-lg border border-gray-100 bg-gray-50 p-2 dark:border-gray-800 dark:bg-[#1F2937]/50">
         <span className="mb-0.5 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-gray-400">
-          <Activity className="h-2.5 w-2.5" /> Stage progress
+          <Activity className="h-2.5 w-2.5" /> {translateUi(" Stage progress")}
         </span>
         <div className="mt-0.5 flex items-center gap-1.5">
           <div className="h-1 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
@@ -168,20 +181,24 @@ function MapProjectComments({
   project: MapProject;
   onSeeComments: (projectId: string) => void;
 }) {
+  const { t: translateUi } = useLanguage();
+
   const latestComment = project.comments[0];
 
   return (
     <div className="pt-1">
       <div className="mb-1.5 flex items-center justify-between">
         <span className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-gray-400">
-          <MessageSquare className="h-2.5 w-2.5" /> Latest Comments
+          <MessageSquare className="h-2.5 w-2.5" />{" "}
+          {translateUi(" Latest Comments")}
         </span>
         <button
           type="button"
           onClick={() => onSeeComments(project.id)}
           className="flex items-center text-[9px] font-bold text-blue-600 hover:underline dark:text-blue-400"
         >
-          See all <ChevronRight className="ml-0.5 h-2 w-2" />
+          {translateUi("See all ")}
+          <ChevronRight className="ml-0.5 h-2 w-2" />
         </button>
       </div>
 
@@ -204,7 +221,7 @@ function MapProjectComments({
       ) : (
         <div className="rounded-lg border border-gray-100 bg-gray-50 p-2 text-center dark:border-gray-800 dark:bg-[#1F2937]/50">
           <p className="text-[9px] italic text-gray-500">
-            No comments yet. Be the first!
+            {translateUi("No comments yet. Be the first!")}
           </p>
         </div>
       )}
@@ -213,13 +230,15 @@ function MapProjectComments({
 }
 
 function MapAgencyStats({ project }: { project: MapProject }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-2 gap-2">
         {["Under Construction", "Completed"].includes(project.status) && (
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-2 dark:border-gray-800 dark:bg-[#1F2937]/50">
             <p className="mb-0.5 flex items-center text-[9px] font-semibold uppercase text-gray-400">
-              <Clock className="mr-1 h-2.5 w-2.5" /> Duration
+              <Clock className="mr-1 h-2.5 w-2.5" /> {translateUi(" Duration")}
             </p>
             <p className="text-xs font-bold text-gray-900 dark:text-white">
               {getMapProjectDuration(project)}

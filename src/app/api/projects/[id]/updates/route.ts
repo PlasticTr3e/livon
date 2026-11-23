@@ -1,3 +1,4 @@
+import { canManageProjects } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
@@ -9,7 +10,6 @@ import {
   notFound,
 } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
-import { Role } from "@/generated/prisma/enums";
 
 const updateSchema = z.object({
   title: z.string().min(3),
@@ -67,8 +67,11 @@ export async function POST(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.AGENCY) {
-      return badRequest("Forbidden: Only Admins can post updates");
+    if (!authUser || !canManageProjects(authUser.role)) {
+      return Response.json(
+        { success: false, message: "Forbidden: Only Admins can post updates" },
+        { status: authUser ? 403 : 401 },
+      );
     }
 
     const { id: projectId } = await params;
@@ -77,9 +80,6 @@ export async function POST(
       where: { id: projectId },
     });
     if (!existingProject) return notFound("Project not found");
-    if (existingProject.agencyId !== authUser.userId) {
-      return badRequest("Forbidden: You do not own this project");
-    }
 
     const body = await req.json();
     const result = updateSchema.safeParse(body);

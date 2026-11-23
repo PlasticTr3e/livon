@@ -1,3 +1,5 @@
+import { getDisplayLocale } from "@/lib/i18n/display";
+import { formatProjectAddress } from "@/lib/project-address";
 import { getMapProjectProgress, mapStatusToUI } from "./map-format";
 import { getUserProfileDisplayName } from "@/lib/app-shell/user";
 import type { MapComment, MapProject } from "./map-types";
@@ -74,7 +76,7 @@ async function fetchMapProject(
     return {
       id: detail.id,
       name: detail.title,
-      address: getProjectAddress(detail),
+      address: formatProjectAddress(detail),
       category: detail.category?.name || "Uncategorized",
       status: mapStatusToUI(detail.status),
       progress: getMapProjectProgress(detail.status),
@@ -114,7 +116,7 @@ async function fetchMapProjectComments(
       author: getUserProfileDisplayName(comment.user, "Resident"),
       text: comment.text || "",
       timestamp: comment.createdAt
-        ? new Date(comment.createdAt).toLocaleDateString()
+        ? new Date(comment.createdAt).toLocaleDateString(getDisplayLocale())
         : "-",
     }));
   } catch (error) {
@@ -127,20 +129,6 @@ function getAuthorizedHeaders(token: string | null) {
   const headers: Record<string, string> = {};
   if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
-}
-
-function getProjectAddress(project: ApiProjectDetail) {
-  const hasCoordinates =
-    typeof project.latitude === "number" &&
-    typeof project.longitude === "number" &&
-    !Number.isNaN(project.latitude) &&
-    !Number.isNaN(project.longitude);
-
-  if (hasCoordinates) {
-    return `${project.latitude.toFixed(4)}, ${project.longitude.toFixed(4)}`;
-  }
-
-  return project.address || "-";
 }
 
 function getProjectImageUrl(project: ApiProjectDetail) {

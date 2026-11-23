@@ -1,4 +1,6 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
+
 import {
   PROJECT_STAGES,
   PROJECT_STAGE_API_STATUS,
@@ -38,6 +40,8 @@ export function UpdateProjectStatusDialog({
   projectId,
   onUpdateSuccess,
 }: UpdateProjectStatusDialogProps) {
+  const { t: translateUi } = useLanguage();
+
   const toast = useToast();
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
   const [estimatedDurationDays, setEstimatedDurationDays] = useState("");
@@ -106,7 +110,7 @@ export function UpdateProjectStatusDialog({
         <div className="flex items-center justify-between border-b border-green-100 bg-green-50/80 p-6 dark:border-slate-700 dark:bg-[#0B1120]">
           <div>
             <h2 className="text-xl font-black text-gray-900 dark:text-white">
-              Update Project Status
+              {translateUi("Update Project Status")}
             </h2>
             <p className="mt-1 text-sm font-medium text-green-700 dark:text-green-400">
               {projectName}
@@ -115,7 +119,7 @@ export function UpdateProjectStatusDialog({
           <button
             onClick={onClose}
             className="rounded-xl p-2 text-gray-500 transition-colors hover:bg-green-100 hover:text-gray-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            aria-label="Close status update dialog"
+            aria-label={translateUi("Close status update dialog")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -125,7 +129,7 @@ export function UpdateProjectStatusDialog({
           <div className="space-y-5">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-900">
               <p className="mb-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-white">
-                Current Status
+                {translateUi("Current Status")}
               </p>
               <p className="font-bold text-gray-900 dark:text-white">
                 {currentStatus}
@@ -134,7 +138,7 @@ export function UpdateProjectStatusDialog({
 
             <div>
               <label className="mb-3 block text-sm font-bold text-gray-700 dark:text-white">
-                Select New Status
+                {translateUi("Select New Status")}
               </label>
               <div className="space-y-2">
                 {nextStatuses.length > 0 ? (
@@ -159,7 +163,7 @@ export function UpdateProjectStatusDialog({
                       />
                       <span>
                         <span className="block font-semibold text-gray-900 dark:text-white">
-                          {status}
+                          {translateUi(status)}
                         </span>
                         <span className="mt-1 block text-xs leading-relaxed text-gray-500 dark:text-slate-300">
                           {STATUS_DESCRIPTIONS[status]}
@@ -171,7 +175,7 @@ export function UpdateProjectStatusDialog({
                   <div className="flex items-center rounded-2xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
                     <CheckCircle className="mr-3 h-5 w-5 text-green-600 dark:text-green-400" />
                     <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                      This project is already completed.
+                      {translateUi("This project is already completed.")}
                     </p>
                   </div>
                 )}
@@ -184,7 +188,7 @@ export function UpdateProjectStatusDialog({
               selectedStatus === "Under Construction" && (
                 <div>
                   <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-white">
-                    Estimated Duration
+                    {translateUi("Estimated Duration")}
                   </label>
                   <div className="relative">
                     <CalendarClock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-green-600" />
@@ -193,7 +197,7 @@ export function UpdateProjectStatusDialog({
                       min="1"
                       inputMode="numeric"
                       className="h-12 w-full rounded-xl border border-green-200 bg-green-50 pl-10 pr-4 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
-                      placeholder="Duration in days"
+                      placeholder={translateUi("Duration in days")}
                       value={estimatedDurationDays}
                       onChange={(event) =>
                         setEstimatedDurationDays(event.target.value)
@@ -207,14 +211,16 @@ export function UpdateProjectStatusDialog({
               <div className="flex items-start rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
                 <AlertCircle className="mr-3 mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
                 <div className="text-sm text-amber-800 dark:text-amber-300">
-                  <p className="mb-1 font-bold">This action will:</p>
+                  <p className="mb-1 font-bold">
+                    {translateUi("This action will:")}
+                  </p>
                   <ul className="list-inside list-disc space-y-1 text-xs">
                     <li>
-                      Update the project status to{" "}
+                      {translateUi("Update the project status to")}{" "}
                       <strong>{selectedStatus}</strong>
                     </li>
-                    <li>Notify relevant stakeholders</li>
-                    <li>Add a new project timeline entry</li>
+                    <li>{translateUi("Notify relevant stakeholders")}</li>
+                    <li>{translateUi("Add a new project timeline entry")}</li>
                   </ul>
                 </div>
               </div>
@@ -228,7 +234,7 @@ export function UpdateProjectStatusDialog({
             className="h-11 border-green-300 px-6 text-green-700 dark:border-green-700 dark:text-green-400"
             onClick={onClose}
           >
-            Cancel
+            {translateUi("Cancel")}
           </Button>
           <Button
             variant="primary"
@@ -236,7 +242,9 @@ export function UpdateProjectStatusDialog({
             onClick={handleConfirm}
             disabled={!canUpdate}
           >
-            {isUpdating ? "Saving..." : "Confirm Update"}
+            {isUpdating
+              ? translateUi("Saving...")
+              : translateUi("Confirm Update")}
           </Button>
         </div>
       </div>
