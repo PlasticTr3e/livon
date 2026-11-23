@@ -1,8 +1,8 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthUser } from "@/lib/auth";
 import { ok, created, badRequest, internalError } from "@/lib/api-response";
-import { Role } from "@/generated/prisma/enums";
 import {
   createExpenseSchema,
   transactionQuerySchema,
@@ -10,6 +10,7 @@ import {
 import {
   createExpenseReport,
   getFinanceTransactions,
+  InsufficientFundError,
 } from "@/services/finance/finance-service";
 
 export const dynamic = "force-dynamic";
@@ -147,7 +148,7 @@ export async function GET(req: NextRequest) {
  *       401:
  *         description: Unauthorized - Token tidak valid atau belum login
  *       403:
- *         description: Forbidden - Role tidak memiliki izin (Hanya ADMIN yang diizinkan)
+ *         description: Forbidden - Hanya pengelola yang memiliki izin
  *       500:
  *         description: Terjadi kesalahan pada server internal
  */
@@ -162,24 +163,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Explicit developer & resident restriction
-    if (authUser.role === Role.DEVELOPER) {
+    if (!canManage(authUser.role)) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Forbidden: Role DEVELOPER tidak memiliki wewenang untuk menginput laporan pengeluaran keuangan.",
-        },
-        { status: 403 },
-      );
-    }
-
-    if (authUser.role !== Role.AGENCY) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Forbidden: Hanya role ADMIN yang memiliki izin untuk menginput laporan pengeluaran baru.",
+            "Forbidden: Hanya pengelola yang memiliki izin untuk menginput laporan pengeluaran baru.",
         },
         { status: 403 },
       );
@@ -204,6 +193,12 @@ export async function POST(req: NextRequest) {
       data: transaction,
     });
   } catch (error: unknown) {
+    if (error instanceof InsufficientFundError) {
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: 409 },
+      );
+    }
     console.error("[FINANCE_EXPENSE_POST]", error);
     return internalError("An error occurred while creating expense report.");
   }

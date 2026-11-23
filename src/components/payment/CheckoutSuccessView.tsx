@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
@@ -25,6 +26,8 @@ export function CheckoutSuccessView({
   order,
   receipt,
 }: CheckoutSuccessViewProps) {
+  const { t: translateUi } = useLanguage();
+
   const headingRef = useRef<HTMLHeadingElement>(null);
   const isIpl = order.kind === "ipl";
 
@@ -54,18 +57,21 @@ export function CheckoutSuccessView({
         <CheckCircle2 aria-hidden="true" className="h-9 w-9" />
       </div>
       <p className="mt-8 text-xs font-bold uppercase tracking-widest text-green-700 dark:text-green-400">
-        Transaksi selesai
+        {translateUi("Transaksi selesai")}
       </p>
       <h1
         ref={headingRef}
         tabIndex={-1}
         className="mt-2 text-3xl font-black text-slate-900 outline-none dark:text-white"
       >
-        {isIpl ? "Pembayaran IPL berhasil" : "Donasi berhasil"}
+        {isIpl
+          ? translateUi("Pembayaran IPL berhasil")
+          : translateUi("Donasi berhasil")}
       </h1>
       <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">
-        Bukti transaksi telah tersimpan di akun Anda dan saldo kas warga sudah
-        diperbarui.
+        {translateUi(
+          "Bukti transaksi telah tersimpan di akun Anda dan saldo kas warga sudah diperbarui.",
+        )}
       </p>
 
       <section className="mt-7 rounded-2xl border border-green-200 bg-white p-5 text-left shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -74,13 +80,13 @@ export function CheckoutSuccessView({
             aria-hidden="true"
             className="h-4 w-4 text-emerald-600"
           />
-          Rincian transaksi
+          {translateUi("Rincian transaksi")}
         </h2>
         <SummaryRows rows={rows} />
       </section>
 
       <Link href={PAYMENT_ROUTES.hub} className={`${primaryButtonClass} mt-5`}>
-        Kembali
+        {translateUi("Kembali")}
       </Link>
     </div>
   );

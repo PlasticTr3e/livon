@@ -1,3 +1,4 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { getAuthUser } from "@/lib/auth";
@@ -52,6 +53,16 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
+    if (!canManage(authUser?.role)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message:
+            "Pencatatan donasi manual hanya untuk pengelola. Gunakan pembayaran donasi.",
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
+      );
+    }
     const body: unknown = await req.json();
 
     const validation = createDonationSchema.safeParse(body);

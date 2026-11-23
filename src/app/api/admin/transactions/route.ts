@@ -1,1 +1,2 @@
-export { POST, dynamic } from "@/app/api/finance/transactions/route";
+export { POST } from "@/app/api/finance/transactions/route";
+export const dynamic = "force-dynamic";

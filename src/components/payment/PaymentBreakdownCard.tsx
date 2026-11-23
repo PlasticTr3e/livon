@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/components/ui/primitives";
 import {
   formatBillingPeriod,
@@ -9,6 +12,8 @@ import { sectionCardClass } from "./payment-styles";
 import { SummaryRows, type SummaryRow } from "./SummaryRows";
 
 export function PaymentBreakdownCard({ order }: { order: CheckoutOrder }) {
+  const { t: translateUi } = useLanguage();
+
   const periods = order.periods ?? [];
   const itemRows: SummaryRow[] =
     order.kind === "ipl"
@@ -25,7 +30,7 @@ export function PaymentBreakdownCard({ order }: { order: CheckoutOrder }) {
   return (
     <section className={cn(sectionCardClass, "md:p-5")}>
       <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
-        Rincian pembayaran
+        {translateUi("Rincian pembayaran")}
       </h2>
       <SummaryRows
         className="mt-4"
@@ -38,9 +43,9 @@ export function PaymentBreakdownCard({ order }: { order: CheckoutOrder }) {
       {message && (
         <p className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
           <span className="block text-xs font-bold text-slate-400">
-            Pesan untuk komunitas
+            {translateUi("Pesan untuk komunitas")}
           </span>
-          {message}
+          {translateUi(message)}
         </p>
       )}
     </section>

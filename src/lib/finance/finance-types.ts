@@ -1,3 +1,5 @@
+import type { BillItemLine } from "./bill-items";
+
 export type BillStatus = "BELUM_BAYAR" | "LUNAS" | "MENUNGGU_VERIFIKASI";
 export type FundType = "IPL" | "DONASI";
 export type TransactionType = "PEMASUKAN" | "PENGELUARAN";
@@ -88,6 +90,8 @@ export interface ResidentBillItem {
   paidAt: string | null;
   paymentProofUrl: string | null;
   notes: string | null;
+  /** Rincian tagihan (Keamanan, Kebersihan, ...). Selalu minimal satu baris. */
+  items?: BillItemLine[];
   createdAt: string;
   residentName?: string;
   blockHouse?: string | null;

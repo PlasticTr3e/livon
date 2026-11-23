@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { HandHeart, Landmark } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import { IPL_RESIDENCE_LABEL } from "@/lib/payment/billing";
@@ -5,6 +8,8 @@ import { getOrderPeriodLabel, type CheckoutOrder } from "./checkout-order";
 import { greenPanelClass } from "./payment-styles";
 
 export function CheckoutAmountCard({ order }: { order: CheckoutOrder }) {
+  const { t: translateUi, locale: uiLocale } = useLanguage();
+
   const isIpl = order.kind === "ipl";
   const Icon = isIpl ? Landmark : HandHeart;
   const subtitle = isIpl
@@ -17,12 +22,13 @@ export function CheckoutAmountCard({ order }: { order: CheckoutOrder }) {
     <section className={cn(greenPanelClass, "p-6")}>
       <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/60">
         <Icon aria-hidden="true" className="h-4 w-4" />
-        Ringkasan {isIpl ? "pembayaran" : "donasi"}
+        {translateUi("Ringkasan ")}
+        {isIpl ? translateUi("pembayaran") : translateUi("donasi")}
       </h2>
       <p className="mt-6 flex items-baseline gap-2">
-        <span className="text-sm text-white/50">Rp</span>
+        <span className="text-sm text-white/50">{translateUi("Rp")}</span>
         <strong className="text-4xl tracking-[-0.04em] tabular-nums">
-          {order.amount.toLocaleString("id-ID")}
+          {order.amount.toLocaleString(uiLocale)}
         </strong>
       </p>
       {subtitle && (

@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "db:migrate": "prisma migrate deploy",
+    "db:seed:billing": "node scripts/seed-billing-mock.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings=2",
     "prepare": "husky"

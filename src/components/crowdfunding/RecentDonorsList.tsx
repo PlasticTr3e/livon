@@ -1,8 +1,11 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Users } from "lucide-react";
 import { sectionCardClass } from "@/components/payment/payment-styles";
 import { PersonAvatar } from "@/components/payment/PersonAvatar";
 import { formatActivityTime, formatRupiah } from "@/lib/payment/billing";
-import type { FinanceTransaction } from "@/lib/payment/finance-store";
+import type { FinanceTransaction } from "@/lib/payment/activity-types";
 
 type RecentDonorsListProps = {
   donations: FinanceTransaction[];
@@ -13,18 +16,20 @@ export function RecentDonorsList({
   donations,
   limit = 5,
 }: RecentDonorsListProps) {
+  const { t: translateUi } = useLanguage();
+
   const items = donations.slice(0, limit);
 
   return (
     <section className={sectionCardClass}>
       <h2 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-white">
         <Users aria-hidden="true" className="h-5 w-5 text-green-600" />
-        Donatur terbaru
+        {translateUi("Donatur terbaru")}
       </h2>
 
       {items.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">
-          Jadilah donatur pertama bulan ini.
+          {translateUi("Jadilah donatur pertama bulan ini.")}
         </p>
       ) : (
         <ul className="mt-4 divide-y divide-slate-100 dark:divide-slate-800">

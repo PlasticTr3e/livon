@@ -8,6 +8,7 @@ import {
 } from "@/app/(app)/payment/actions";
 import { useToast } from "@/components/shared/AppToaster";
 import { getStoredPaymentToken } from "@/lib/payment/payment-api";
+import { getDisplayLanguage } from "@/lib/i18n/display";
 
 export type SnapPaidResult = {
   orderId: string;
@@ -69,6 +70,7 @@ export function useSnapCheckout({
     }
 
     window.snap.pay(order.snapToken, {
+      language: getDisplayLanguage(),
       onSuccess: (result) => completePayment(order, result.payment_type),
       onPending: () => setPendingOrder(order),
       onError: failPayment,

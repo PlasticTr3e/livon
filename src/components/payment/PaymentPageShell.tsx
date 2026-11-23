@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/components/ui/primitives";
 
 const widthClasses = {
@@ -27,8 +30,12 @@ export function PaymentPageShell({
   width = "default",
   className,
 }: PaymentPageShellProps) {
+  const { language } = useLanguage();
   return (
-    <div className="h-full overflow-y-auto overscroll-contain bg-slate-50 dark:bg-slate-950">
+    <div
+      lang={language}
+      className="h-full overflow-y-auto overscroll-contain bg-slate-50 dark:bg-slate-950"
+    >
       {header}
       <div
         className={cn(

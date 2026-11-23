@@ -1,8 +1,8 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthUser } from "@/lib/auth";
 import { created, badRequest, internalError } from "@/lib/api-response";
-import { Role } from "@/generated/prisma/enums";
 import { generateBillsSchema } from "@/services/finance/finance-schema";
 import { generateMonthlyBills } from "@/services/finance/finance-service";
 
@@ -67,12 +67,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (authUser.role !== Role.AGENCY) {
+    if (!canManage(authUser.role)) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Forbidden: Hanya role ADMIN yang memiliki izin untuk menerbitkan tagihan iuran warga.",
+            "Forbidden: Hanya role AGENCY yang memiliki izin untuk menerbitkan tagihan iuran warga.",
         },
         { status: 403 },
       );

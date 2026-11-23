@@ -46,8 +46,8 @@ export const ADMIN_DASHBOARD_ACTIONS = [
   },
   {
     icon: DollarSign,
-    label: "Community Funds",
-    href: "/admin/crowdfunding",
+    label: "Billing & Care",
+    href: "/admin/billing",
     color: "text-yellow-600",
     hover: "hover:bg-gray-50 dark:hover:bg-[#111827]",
     bgIcon: "bg-yellow-50",

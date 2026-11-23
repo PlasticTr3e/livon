@@ -5,7 +5,7 @@ import {
   type CheckoutKind,
 } from "@/lib/payment/billing";
 import type { DonationCheckoutDetails } from "@/lib/payment/checkout-query";
-import { ANONYMOUS_DONOR } from "@/lib/payment/finance-store";
+import { ANONYMOUS_DONOR } from "@/lib/payment/activity-types";
 
 /** Everything the checkout screens need to describe one payment. */
 export type CheckoutOrder = {

@@ -10,16 +10,16 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(uuid())
-  email          String          @unique
-  emailVerified  DateTime?    
-  passwordHash   String?
-  role           Role?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  deletedAt      DateTime?
+  id            String    @id @default(uuid())
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  role          Role?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
 
-  accounts       Account[]
+  accounts Account[]
 
   agencyProfile  AgencyProfile?
   citizenProfile CitizenProfile?
@@ -35,25 +35,26 @@ model User {
   communityComments     CommunityComment[]
   communityCommentLikes CommunityCommentLike[]
 
-  recordedTransactions  FinancialTransaction[] @relation("RecordedTransactions")
-  residentBills         ResidentBill[]         @relation("ResidentBills")
+  recordedTransactions FinancialTransaction[] @relation("RecordedTransactions")
+  residentBills        ResidentBill[]         @relation("ResidentBills")
+  paymentOrders        PaymentOrder[]
 
   @@map("users")
 }
 
 model Account {
-  id  String @id @default(uuid())
-  userId String
-  type String
-  provider String
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
   providerAccountId String
-  refresh_token String? @db.Text
-  access_token String? @db.Text
-  expires_at Int?
-  token_type String?
-  scope String?
-  id_token String? @db.Text
-  session_state String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -63,28 +64,28 @@ model Account {
 
 model VerificationToken {
   identifier String
-  token String @unique
-  expires DateTime
+  token      String   @unique
+  expires    DateTime
 
   @@unique([identifier, token])
   @@map("verification_tokens")
 }
 
 model CitizenProfile {
-  id          String  @id @default(uuid())
-  userId      String  @unique
+  id          String    @id @default(uuid())
+  userId      String    @unique
   fullName    String
   phone       String
-  kkNumber    String  @unique
-  nik         String  @unique
+  kkNumber    String    @unique
+  nik         String    @unique
   blockHouse  String?
   houseNumber String?
-  isVerified  Boolean @default(false)
+  isVerified  Boolean   @default(false)
   verifiedAt  DateTime?
   verifiedBy  String?
 
-  verifier    AgencyProfile?   @relation("VerifiedCitizens", fields: [verifiedBy], references: [id])
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifier AgencyProfile? @relation("VerifiedCitizens", fields: [verifiedBy], references: [id])
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("citizen_profiles")
 }
@@ -97,8 +98,8 @@ model AgencyProfile {
   address    String
   isVerified Boolean @default(false)
 
-  verifiedCitizens  CitizenProfile[] @relation("VerifiedCitizens")
-  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifiedCitizens CitizenProfile[] @relation("VerifiedCitizens")
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("agency_profiles")
 }
@@ -292,13 +293,13 @@ enum DonationStatus {
 }
 
 model CommunityPost {
-  id          String                @id @default(uuid())
-  userId      String                @map("user_id")
-  content     String                @db.Text
-  images      String[]              @default([])
-  createdAt   DateTime              @default(now()) @map("created_at")
-  updatedAt   DateTime              @updatedAt @map("updated_at")
-  deletedAt   DateTime?             @map("deleted_at")
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  content   String    @db.Text
+  images    String[]  @default([])
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   threadItems CommunityThreadItem[]
@@ -311,47 +312,47 @@ model CommunityPost {
 }
 
 model CommunityThreadItem {
-  id        String        @id @default(uuid())
-  postId    String        @map("post_id")
-  order     Int           @default(0)
-  text      String        @db.Text
-  imageUrl  String?       @map("image_url")
-  createdAt DateTime      @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  order     Int      @default(0)
+  text      String   @db.Text
+  imageUrl  String?  @map("image_url")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId, order])
   @@map("community_thread_items")
 }
 
 model CommunityPostLike {
-  id        String        @id @default(uuid())
-  postId    String        @map("post_id")
-  userId    String        @map("user_id")
-  createdAt DateTime      @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
   @@map("community_post_likes")
 }
 
 model CommunityComment {
-  id        String                 @id @default(uuid())
-  postId    String                 @map("post_id")
-  userId    String                 @map("user_id")
-  parentId  String?                @map("parent_id")
-  content   String                 @db.Text
-  createdAt DateTime               @default(now()) @map("created_at")
-  updatedAt DateTime               @updatedAt @map("updated_at")
-  deletedAt DateTime?              @map("deleted_at")
+  id        String    @id @default(uuid())
+  postId    String    @map("post_id")
+  userId    String    @map("user_id")
+  parentId  String?   @map("parent_id")
+  content   String    @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
-  post      CommunityPost          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent    CommunityComment?      @relation("ThreadedCommunityComments", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   CommunityComment[]     @relation("ThreadedCommunityComments")
-  likes     CommunityCommentLike[]
+  post    CommunityPost          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  CommunityComment?      @relation("ThreadedCommunityComments", fields: [parentId], references: [id], onDelete: Cascade)
+  replies CommunityComment[]     @relation("ThreadedCommunityComments")
+  likes   CommunityCommentLike[]
 
   @@index([postId, createdAt])
   @@index([parentId])
@@ -359,13 +360,13 @@ model CommunityComment {
 }
 
 model CommunityCommentLike {
-  id        String           @id @default(uuid())
-  commentId String           @map("comment_id")
-  userId    String           @map("user_id")
-  createdAt DateTime         @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  commentId String   @map("comment_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  comment   CommunityComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment CommunityComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([commentId, userId])
   @@map("community_comment_likes")
@@ -410,12 +411,14 @@ model FinancialTransaction {
   transactionDate DateTime        @default(now())
   recordedById    String?
   residentBillId  String?
+  paymentOrderId  String?         @unique
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?
 
-  recordedBy      User?           @relation("RecordedTransactions", fields: [recordedById], references: [id])
-  residentBill    ResidentBill?   @relation(fields: [residentBillId], references: [id])
+  recordedBy   User?         @relation("RecordedTransactions", fields: [recordedById], references: [id])
+  residentBill ResidentBill? @relation(fields: [residentBillId], references: [id])
+  paymentOrder PaymentOrder? @relation(fields: [paymentOrderId], references: [id])
 
   @@index([fundType, type])
   @@index([transactionDate(sort: Desc)])
@@ -423,25 +426,60 @@ model FinancialTransaction {
 }
 
 model ResidentBill {
-  id              String                 @id @default(uuid())
+  id              String     @id @default(uuid())
   userId          String
   title           String
   month           Int
   year            Int
-  amount          Decimal                @db.Decimal(15, 2)
-  status          BillStatus             @default(BELUM_BAYAR)
+  amount          Decimal    @db.Decimal(15, 2)
+  status          BillStatus @default(BELUM_BAYAR)
   dueDate         DateTime?
   paidAt          DateTime?
   paymentProofUrl String?
   notes           String?
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
+  /// Rincian tagihan: [{ "label": "Keamanan", "amount": 150000 }, ...]
+  items           Json?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  user            User                   @relation("ResidentBills", fields: [userId], references: [id], onDelete: Cascade)
-  transactions    FinancialTransaction[]
+  user          User                   @relation("ResidentBills", fields: [userId], references: [id], onDelete: Cascade)
+  transactions  FinancialTransaction[]
+  paymentOrders PaymentOrder[]
 
   @@unique([userId, month, year])
   @@index([userId, status])
+  @@index([paidAt])
   @@map("resident_bills")
 }
 
+model PaymentOrder {
+  id                   String    @id @default(uuid())
+  requestKey           String    @unique
+  userId               String
+  billId               String?
+  fundType             FundType
+  amount               Decimal   @db.Decimal(15, 2)
+  status               String    @default("CREATING")
+  payerName            String
+  title                String
+  anonymous            Boolean   @default(false)
+  message              String?
+  snapToken            String?
+  redirectUrl          String?
+  paymentType          String?
+  /// Bank / penerbit pembayaran dari Midtrans, mis. "bca", "gopay".
+  paymentBank          String?
+  /// transaction_id dari Midtrans, untuk nota dan rekonsiliasi.
+  gatewayTransactionId String?
+  expiresAt            DateTime
+  paidAt               DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user        User                  @relation(fields: [userId], references: [id])
+  bill        ResidentBill?         @relation(fields: [billId], references: [id])
+  transaction FinancialTransaction?
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("payment_orders")
+}
