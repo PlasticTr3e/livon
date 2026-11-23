@@ -62,12 +62,19 @@ export function AppShell({ children }: AppShellProps) {
     }
 
     fetchNotifications();
+    window.addEventListener("livon:notifications-changed", fetchNotifications);
     const interval = window.setInterval(
       fetchNotifications,
       NOTIFICATION_POLL_INTERVAL_MS,
     );
 
-    return () => window.clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener(
+        "livon:notifications-changed",
+        fetchNotifications,
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -107,7 +114,6 @@ export function AppShell({ children }: AppShellProps) {
         onToggleTheme={toggleTheme}
         onNotificationOpenChange={setIsNotificationOpen}
         onOpenNotifications={() => router.push("/notifications")}
-        onOpenProfile={() => router.push("/profile")}
       />
 
       <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">

@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import Link from "next/link";
 import { cn } from "@/components/ui/primitives";
 import {
@@ -12,6 +15,8 @@ type AdminMobileNavigationProps = {
 export function AdminMobileNavigation({
   pathname,
 }: AdminMobileNavigationProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <nav className="fixed bottom-0 z-50 flex h-16 w-full items-center justify-around border-t border-gray-200 bg-white pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:border-gray-800 dark:bg-[#111827] md:hidden">
       {adminTopNavigationLinks.map((link) => {
@@ -45,7 +50,7 @@ export function AdminMobileNavigation({
                 isActive ? "scale-105" : "",
               )}
             >
-              {link.name}
+              {translateUi(link.name)}
             </span>
           </Link>
         );

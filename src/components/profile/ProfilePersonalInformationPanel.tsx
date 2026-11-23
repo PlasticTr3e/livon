@@ -1,10 +1,10 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, UserRound } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import type { ProfileRole, UserWithProfile } from "@/lib/profile/profile-types";
-import { ProfileSectionHeader } from "./ProfileSectionHeader";
 
 type ProfilePersonalInformationPanelProps = {
   isSaving: boolean;
@@ -14,12 +14,15 @@ type ProfilePersonalInformationPanelProps = {
 };
 
 const inputClassName =
-  "h-12 w-full rounded-xl border border-gray-200 bg-white px-5 text-sm text-gray-800 transition focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white";
+  "h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 sm:text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white";
 
 const readOnlyInputClassName = cn(
   inputClassName,
-  "cursor-not-allowed select-none bg-slate-100 text-gray-500 dark:bg-slate-800 dark:text-white",
+  "bg-slate-100 text-slate-600 shadow-none dark:bg-slate-800 dark:text-slate-300",
 );
+
+const sectionClass =
+  "min-w-0 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900";
 
 export function ProfilePersonalInformationPanel({
   isSaving,
@@ -27,49 +30,73 @@ export function ProfilePersonalInformationPanel({
   userRole,
   onSubmit,
 }: ProfilePersonalInformationPanelProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
-    <div className="max-w-xl">
-      <ProfileSectionHeader
-        title="Personal Information"
-        description="Manage your account details and preferences."
-      />
-
-      <form onSubmit={onSubmit} className="space-y-5" noValidate>
-        {userRole === "agency" ? (
-          <AgencyProfileFields user={user} />
-        ) : (
-          <ResidentProfileFields user={user} />
-        )}
-
+    <form onSubmit={onSubmit} className="space-y-5" noValidate>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <section className={sectionClass} aria-labelledby="profile-information">
+          <h2
+            id="profile-information"
+            className="mb-5 flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white"
+          >
+            <UserRound
+              aria-hidden="true"
+              className="size-5 text-green-700 dark:text-green-400"
+            />
+            {translateUi("Personal Information")}
+          </h2>
+          <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
+            {userRole === "agency" ? (
+              <AgencyProfileFields user={user} />
+            ) : (
+              <ResidentProfileFields user={user} />
+            )}
+          </div>
+        </section>
         <PasswordFields />
-
+      </div>
+      <div className="flex justify-end">
         <button
           type="submit"
           disabled={isSaving}
-          className="mt-1 flex h-12 w-full items-center justify-center rounded-xl bg-green-600 text-sm font-semibold text-white transition-all hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-green-700 px-5 text-sm font-semibold text-white hover:bg-green-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
         >
-          {isSaving ? "Saving..." : "Save"}
+          {isSaving ? translateUi("Saving...") : translateUi("Save")}
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }
 
 function PasswordFields() {
+  const { t: translateUi } = useLanguage();
+
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const passwordType = isPasswordVisible ? "text" : "password";
 
   return (
-    <div className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Password
-        </h3>
+    <section className={sectionClass} aria-labelledby="profile-password">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2
+          id="profile-password"
+          className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white"
+        >
+          <LockKeyhole
+            aria-hidden="true"
+            className="size-5 text-green-700 dark:text-green-400"
+          />
+          {translateUi("Password")}
+        </h2>
         <button
           type="button"
           onClick={() => setIsPasswordVisible((current) => !current)}
-          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-slate-100 hover:text-green-600 dark:hover:bg-slate-800"
-          aria-label={isPasswordVisible ? "Hide passwords" : "Show passwords"}
+          className="grid size-11 shrink-0 place-items-center rounded-lg text-slate-600 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 dark:text-slate-300 dark:hover:bg-slate-800"
+          aria-label={
+            isPasswordVisible
+              ? translateUi("Hide passwords")
+              : translateUi("Show passwords")
+          }
         >
           {isPasswordVisible ? (
             <EyeOff className="h-4 w-4" />
@@ -79,7 +106,7 @@ function PasswordFields() {
         </button>
       </div>
       <div className="space-y-4">
-        <ProfileField label="Current Password">
+        <ProfileField label={translateUi("Current Password")}>
           <input
             name="currentPassword"
             type={passwordType}
@@ -87,7 +114,7 @@ function PasswordFields() {
             className={inputClassName}
           />
         </ProfileField>
-        <ProfileField label="New Password">
+        <ProfileField label={translateUi("New Password")}>
           <input
             name="newPassword"
             type={passwordType}
@@ -96,7 +123,7 @@ function PasswordFields() {
             className={inputClassName}
           />
         </ProfileField>
-        <ProfileField label="Confirm New Password">
+        <ProfileField label={translateUi("Confirm New Password")}>
           <input
             name="confirmPassword"
             type={passwordType}
@@ -106,21 +133,23 @@ function PasswordFields() {
           />
         </ProfileField>
       </div>
-    </div>
+    </section>
   );
 }
 
 function AgencyProfileFields({ user }: { user: UserWithProfile }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <>
-      <ProfileField label="Agency Name">
+      <ProfileField label={translateUi("Agency Name")}>
         <input
           name="agencyName"
           defaultValue={user.agencyProfile?.agencyName || ""}
           className={inputClassName}
         />
       </ProfileField>
-      <ProfileField label="Email Address">
+      <ProfileField label={translateUi("Email Address")}>
         <input
           type="email"
           value={user.email}
@@ -128,7 +157,7 @@ function AgencyProfileFields({ user }: { user: UserWithProfile }) {
           className={readOnlyInputClassName}
         />
       </ProfileField>
-      <ProfileField label="Phone Number">
+      <ProfileField label={translateUi("Phone Number")}>
         <input
           name="phone"
           defaultValue={user.agencyProfile?.phone || ""}
@@ -137,7 +166,7 @@ function AgencyProfileFields({ user }: { user: UserWithProfile }) {
           className={inputClassName}
         />
       </ProfileField>
-      <ProfileField label="Agency Address">
+      <ProfileField label={translateUi("Agency Address")}>
         <input
           name="address"
           defaultValue={user.agencyProfile?.address || ""}
@@ -150,16 +179,18 @@ function AgencyProfileFields({ user }: { user: UserWithProfile }) {
 }
 
 function ResidentProfileFields({ user }: { user: UserWithProfile }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <>
-      <ProfileField label="Full Name">
+      <ProfileField label={translateUi("Full Name")}>
         <input
           name="fullName"
           defaultValue={user.citizenProfile?.fullName || user.name || ""}
           className={inputClassName}
         />
       </ProfileField>
-      <ProfileField label="Email Address">
+      <ProfileField label={translateUi("Email Address")}>
         <input
           type="email"
           value={user.email}
@@ -167,7 +198,7 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
           className={readOnlyInputClassName}
         />
       </ProfileField>
-      <ProfileField label="Phone Number">
+      <ProfileField label={translateUi("Phone Number")}>
         <input
           name="phone"
           defaultValue={user.citizenProfile?.phone || user.phone || ""}
@@ -176,24 +207,8 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
           className={inputClassName}
         />
       </ProfileField>
-      <ProfileField label="National Identity Number (NIK)">
-        <input
-          type="text"
-          value={user.citizenProfile?.nik || ""}
-          readOnly
-          className={readOnlyInputClassName}
-        />
-      </ProfileField>
-      <ProfileField label="Family card Number (KK)">
-        <input
-          type="text"
-          value={user.citizenProfile?.kkNumber || ""}
-          readOnly
-          className={readOnlyInputClassName}
-        />
-      </ProfileField>
-      <div className="flex gap-3">
-        <ProfileField className="flex-1" label="House Block">
+      <div className="grid grid-cols-2 gap-3">
+        <ProfileField label={translateUi("House Block")}>
           <input
             name="blokRumah"
             defaultValue={
@@ -203,7 +218,7 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
             className={readOnlyInputClassName}
           />
         </ProfileField>
-        <ProfileField className="w-32" label="House Number">
+        <ProfileField label={translateUi("House Number")}>
           <input
             name="noRumah"
             defaultValue={
@@ -214,25 +229,39 @@ function ResidentProfileFields({ user }: { user: UserWithProfile }) {
           />
         </ProfileField>
       </div>
+      <ProfileField label={translateUi("National Identity Number (NIK)")}>
+        <input
+          type="text"
+          value={user.citizenProfile?.nik || ""}
+          readOnly
+          className={readOnlyInputClassName}
+        />
+      </ProfileField>
+      <ProfileField label={translateUi("Family card Number (KK)")}>
+        <input
+          type="text"
+          value={user.citizenProfile?.kkNumber || ""}
+          readOnly
+          className={readOnlyInputClassName}
+        />
+      </ProfileField>
     </>
   );
 }
 
 function ProfileField({
   children,
-  className,
   label,
 }: {
   children: React.ReactNode;
-  className?: string;
   label: string;
 }) {
   return (
-    <div className={className}>
-      <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-500">
+    <label className="block min-w-0">
+      <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
         {label}
-      </label>
+      </span>
       {children}
-    </div>
+    </label>
   );
 }

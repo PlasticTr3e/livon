@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Moon, Sun } from "lucide-react";
 
 type AppThemeToggleProps = {
@@ -6,6 +9,8 @@ type AppThemeToggleProps = {
 };
 
 export function AppThemeToggle({ theme, onToggle }: AppThemeToggleProps) {
+  const { t: translateUi } = useLanguage();
+
   const isDarkMode = theme === "dark";
 
   return (
@@ -13,9 +18,15 @@ export function AppThemeToggle({ theme, onToggle }: AppThemeToggleProps) {
       type="button"
       onClick={onToggle}
       className="rounded-full p-2 text-gray-500 transition-colors hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800"
-      title={isDarkMode ? "Beralih ke mode terang" : "Beralih ke mode gelap"}
+      title={
+        isDarkMode
+          ? translateUi("Beralih ke mode terang")
+          : translateUi("Beralih ke mode gelap")
+      }
       aria-label={
-        isDarkMode ? "Beralih ke mode terang" : "Beralih ke mode gelap"
+        isDarkMode
+          ? translateUi("Beralih ke mode terang")
+          : translateUi("Beralih ke mode gelap")
       }
     >
       {isDarkMode ? (

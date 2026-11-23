@@ -1,3 +1,8 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
+import { useUser } from "@/context/UserContext";
+import { canManageProjects } from "@/lib/permissions";
 import Link from "next/link";
 import { ChevronRight, Leaf } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
@@ -13,6 +18,12 @@ type AdminSidebarProps = {
 };
 
 export function AdminSidebar({ isOpen, pathname, onClose }: AdminSidebarProps) {
+  const { t: translateUi } = useLanguage();
+  const { userRole } = useUser();
+  const links = canManageProjects(userRole.toUpperCase())
+    ? adminSidebarLinks
+    : adminSidebarLinks.filter((link) => link.href !== "/admin/projects");
+
   return (
     <aside
       className={cn(
@@ -26,14 +37,16 @@ export function AdminSidebar({ isOpen, pathname, onClose }: AdminSidebarProps) {
         </div>
         <div>
           <p className="text-xs font-black uppercase tracking-widest text-white">
-            Admin Panel
+            {translateUi("Admin Panel")}
           </p>
-          <p className="text-[10px] text-green-200">LIVON Platform</p>
+          <p className="text-[10px] text-green-200">
+            {translateUi("LIVON Platform")}
+          </p>
         </div>
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
-        {adminSidebarLinks.map((link) => {
+        {links.map((link) => {
           const isActive = isAdminSidebarLinkActive(pathname, link);
           const Icon = link.icon;
 
@@ -58,7 +71,7 @@ export function AdminSidebar({ isOpen, pathname, onClose }: AdminSidebarProps) {
                       : "text-gray-400 group-hover:text-green-600 dark:text-white dark:group-hover:text-green-400",
                   )}
                 />
-                <span>{link.name}</span>
+                <span>{translateUi(link.name)}</span>
               </div>
               {isActive && (
                 <ChevronRight className="h-3.5 w-3.5 text-green-200" />
