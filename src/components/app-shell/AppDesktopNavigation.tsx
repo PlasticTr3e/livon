@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import Link from "next/link";
 import { cn } from "@/components/ui/primitives";
 import type { AppNavLink } from "@/lib/app-shell/navigation";
@@ -11,6 +14,8 @@ export function AppDesktopNavigation({
   navLinks,
   pathname,
 }: AppDesktopNavigationProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <nav className="hidden items-center space-x-1 md:flex">
       {navLinks.map((link) => {
@@ -20,8 +25,8 @@ export function AppDesktopNavigation({
           <Link
             key={link.name}
             href={link.href}
-            aria-label={link.name}
-            title={link.name}
+            aria-label={translateUi(link.name)}
+            title={translateUi(link.name)}
             className={cn(
               "flex min-h-11 min-w-11 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-all xl:space-x-2 xl:px-4",
               isActive
@@ -30,7 +35,7 @@ export function AppDesktopNavigation({
             )}
           >
             <link.icon className="h-4 w-4" />
-            <span className="hidden xl:inline">{link.name}</span>
+            <span className="hidden xl:inline">{translateUi(link.name)}</span>
           </Link>
         );
       })}

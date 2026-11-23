@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Bell } from "lucide-react";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { cn } from "@/components/ui/primitives";
@@ -24,6 +27,8 @@ export function AppNotificationMenu({
   onOpenChange,
   onNavigate,
 }: AppNotificationMenuProps) {
+  const { t: translateUi } = useLanguage();
+
   const handleNotificationButtonClick = () => {
     onOpenChange(false);
     onNavigate();
@@ -52,7 +57,7 @@ export function AppNotificationMenu({
         type="button"
         onClick={handleNotificationButtonClick}
         className="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800"
-        aria-label="Open notifications"
+        aria-label={translateUi("Open notifications")}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
@@ -64,7 +69,7 @@ export function AppNotificationMenu({
         <div className="absolute right-0 z-[2147483647] mt-0 w-80 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-[#1F2937]">
           <div className="flex items-center justify-between rounded-t-xl border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50 p-3 dark:border-gray-800 dark:from-slate-800 dark:to-slate-800">
             <p className="text-sm font-bold text-green-800 dark:text-green-300">
-              Notifikasi
+              {translateUi("Notifikasi")}
             </p>
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-600 text-[10px] font-bold text-white">
               {unreadCount}
@@ -87,10 +92,15 @@ function NotificationMenuContent({
   notifications,
   isLoading,
 }: Pick<AppNotificationMenuProps, "notifications" | "isLoading">) {
+  const { t: translateUi } = useLanguage();
+
   if (isLoading) {
     return (
       <div className="p-3 text-center text-sm text-gray-500 dark:text-white">
-        <LoadingState label="Loading notifications..." variant="inline" />
+        <LoadingState
+          label={translateUi("Loading notifications...")}
+          variant="inline"
+        />
       </div>
     );
   }
@@ -98,7 +108,7 @@ function NotificationMenuContent({
   if (notifications.length === 0) {
     return (
       <div className="p-3 text-center text-sm text-gray-500 dark:text-white">
-        Tidak ada notifikasi
+        {translateUi("Tidak ada notifikasi")}
       </div>
     );
   }
@@ -124,7 +134,7 @@ function NotificationMenuContent({
               : "text-gray-800 dark:text-white",
           )}
         >
-          {notification.title || "Notifikasi"}
+          {notification.title || translateUi("Notifikasi")}
         </p>
         <p className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-white">
           {notification.message || ""}
