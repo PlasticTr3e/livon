@@ -1,7 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
+import { getAuthUser } from "@/lib/auth";
+import { canManage } from "@/lib/permissions";
+
+async function getManager(token: string) {
+  const actor = await getAuthUser({
+    headers: new Headers({ Authorization: `Bearer ${token}` }),
+  });
+  return actor && canManage(actor.role) ? actor : null;
+}
 
 export type AdminUserActionState = {
   message: string;
@@ -11,20 +19,20 @@ export type AdminUserActionState = {
 export async function verifyAdminUser(
   _previousState: AdminUserActionState,
   formData: FormData,
+  token: string,
 ): Promise<AdminUserActionState> {
+  const actor = await getManager(token);
+  if (!actor) return { message: "Forbidden", status: "error" };
   const userId = String(formData.get("userId") || "");
-  const verifierUserId = String(formData.get("verifierUserId") || "");
   if (!userId) {
     return { message: "User ID is missing.", status: "error" };
   }
 
   try {
-    const agencyProfile = verifierUserId
-      ? await prisma.agencyProfile.findUnique({
-          where: { userId: verifierUserId },
-          select: { id: true },
-        })
-      : null;
+    const agencyProfile = await prisma.agencyProfile.findUnique({
+      where: { userId: actor.userId },
+      select: { id: true },
+    });
 
     await prisma.$transaction([
       prisma.citizenProfile.updateMany({
@@ -41,7 +49,6 @@ export async function verifyAdminUser(
       }),
     ]);
 
-    revalidatePath("/admin/users");
     return { message: "User verified.", status: "success" };
   } catch {
     return { message: "Failed to verify user.", status: "error" };
@@ -51,7 +58,10 @@ export async function verifyAdminUser(
 export async function toggleAdminUserBlock(
   _previousState: AdminUserActionState,
   formData: FormData,
+  token: string,
 ): Promise<AdminUserActionState> {
+  if (!(await getManager(token)))
+    return { message: "Forbidden", status: "error" };
   const userId = String(formData.get("userId") || "");
   const isBlocked = formData.get("isBlocked") === "true";
   if (!userId) {
@@ -60,11 +70,10 @@ export async function toggleAdminUserBlock(
 
   try {
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: userId, role: "WARGA" },
       data: { deletedAt: isBlocked ? null : new Date() },
     });
 
-    revalidatePath("/admin/users");
     return {
       message: isBlocked ? "User unblocked." : "User blocked.",
       status: "success",

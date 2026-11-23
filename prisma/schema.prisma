@@ -262,7 +262,7 @@ model spatial_ref_sys {
 }
 
 enum Role {
-  ADMIN
+  AGENCY
   WARGA
   DEVELOPER
 }

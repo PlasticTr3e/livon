@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
 
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         {
           success: false,

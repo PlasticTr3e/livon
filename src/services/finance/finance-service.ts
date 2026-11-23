@@ -480,7 +480,7 @@ export async function getResidentBills(
   if (month) whereClause.month = month;
   if (year) whereClause.year = year;
 
-  if (search && viewer.role === Role.ADMIN) {
+  if (search && viewer.role === Role.AGENCY) {
     whereClause.OR = [
       { title: { contains: search, mode: "insensitive" } },
       {

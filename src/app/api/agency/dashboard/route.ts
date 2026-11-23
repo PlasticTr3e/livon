@@ -1,9 +1,10 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { cached } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
 import { ok, badRequest } from "@/lib/api-response";
-import { Role, DonationStatus } from "@/generated/prisma/enums";
+import { DonationStatus } from "@/generated/prisma/enums";
 
 /**
  * @swagger
@@ -67,7 +68,7 @@ import { Role, DonationStatus } from "@/generated/prisma/enums";
 export async function GET(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
         { status: 401 },

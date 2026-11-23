@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
       );
     }
 
-    if (authUser.role !== Role.ADMIN) {
+    if (authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         {
           success: false,

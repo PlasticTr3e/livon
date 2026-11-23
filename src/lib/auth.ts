@@ -57,7 +57,7 @@ async function isRevoked(payload: AuthPayload) {
 }
 
 export async function getAuthUser(
-  req: NextRequest,
+  req: Pick<NextRequest, "headers">,
 ): Promise<AuthPayload | null> {
   const authHeader = req.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;

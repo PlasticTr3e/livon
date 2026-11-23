@@ -1,10 +1,10 @@
 import { Role } from "@/generated/prisma/enums";
 
 /**
- * Checks if the user has ADMIN role.
+ * Checks if the user has AGENCY role.
  */
-export function isAdmin(role?: Role | string | null): boolean {
-  return role === Role.ADMIN || role === "ADMIN";
+export function isAgency(role?: Role | string | null): boolean {
+  return role === Role.AGENCY;
 }
 
 /**
@@ -18,18 +18,19 @@ export function isCitizen(role?: Role | string | null): boolean {
  * Checks if the user has DEVELOPER role.
  */
 export function isDeveloper(role?: Role | string | null): boolean {
-  return role === Role.DEVELOPER || role === "DEVELOPER";
+  return role === Role.DEVELOPER;
 }
 
-/**
- * Enforces that DEVELOPER and unauthorized roles CANNOT access sensitive housing/citizen data.
- * Sensitive data includes: NIK, KK Number, Phone Number, and full resident identity details.
- * ONLY ADMIN is granted access to raw sensitive data.
- */
+export function canManage(role?: Role | string | null): boolean {
+  return isAgency(role) || isDeveloper(role);
+}
+
+export const canManageProjects = isDeveloper;
+
 export function canAccessSensitiveResidentData(
   role?: Role | string | null,
 ): boolean {
-  return isAdmin(role);
+  return canManage(role);
 }
 
 /**
@@ -68,7 +69,7 @@ export type SensitiveCitizenProfile = {
 };
 
 /**
- * Masks sensitive resident profile fields for DEVELOPER or non-admin roles.
+ * Masks sensitive resident profile fields.
  */
 export function maskResidentProfile<T extends SensitiveCitizenProfile>(
   profile: T | null | undefined,
