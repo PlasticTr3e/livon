@@ -8,12 +8,14 @@ import type {
 export function getAdminUserRole(
   user: Pick<AdminUser, "role" | "agencyProfile">,
 ): AdminUserRole {
+  if (user.role?.toUpperCase() === "DEVELOPER") return "developer";
   return user.role?.toUpperCase() === "AGENCY" || user.agencyProfile
     ? "agency"
     : "resident";
 }
 
 export function getAdminUserRoleLabel(role: AdminUserRole) {
+  if (role === "developer") return "Developer";
   return role === "agency" ? "Agency" : "Resident";
 }
 
@@ -68,6 +70,8 @@ export function getAdminUserStatusStyle(status: string) {
 
 export function getAdminUserRoleStyle(role: string) {
   switch (role) {
+    case "developer":
+      return "border border-purple-300 bg-purple-50 text-purple-800 dark:border-purple-700 dark:bg-purple-950 dark:text-purple-300";
     case "agency":
       return "text-blue-700 bg-blue-50 border border-blue-300";
     default:
@@ -127,7 +131,8 @@ function getAdminUserFilterMatch(
   status: AdminUserStatus,
 ) {
   if (filter === "ALL") return true;
-  if (filter === "resident" || filter === "agency") return role === filter;
+  if (filter === "resident" || filter === "agency" || filter === "developer")
+    return role === filter;
   return status === filter;
 }
 

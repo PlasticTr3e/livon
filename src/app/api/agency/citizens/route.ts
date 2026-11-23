@@ -1,3 +1,4 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
@@ -86,18 +87,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    if (authUser.role === Role.DEVELOPER) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin mengakses data sensitif perumahan/warga",
-        },
-        { status: 403 },
-      );
-    }
-
-    if (authUser.role !== Role.ADMIN) {
+    if (!canManage(authUser.role)) {
       return NextResponse.json(
         { success: false, message: "Forbidden: Admin access required" },
         { status: 403 },

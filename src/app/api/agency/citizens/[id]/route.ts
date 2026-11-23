@@ -1,3 +1,4 @@
+import { canManage, isDeveloper } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { invalidate } from "@/lib/cache";
@@ -58,29 +59,12 @@ export async function GET(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
-        { status: 401 },
+        { status: authUser ? 403 : 401 },
       );
     }
-    if (authUser.role === Role.DEVELOPER) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin mengakses data sensitif perumahan/warga",
-        },
-        { status: 403 },
-      );
-    }
-    if (authUser.role !== Role.ADMIN) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden: Admin access required" },
-        { status: 403 },
-      );
-    }
-
     const { id } = await params;
 
     const citizen = await prisma.user.findFirst({
@@ -175,31 +159,20 @@ export async function PUT(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
-        { status: 401 },
+        { status: authUser ? 403 : 401 },
       );
     }
-    if (authUser.role === Role.DEVELOPER) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin mengubah data warga",
-        },
-        { status: 403 },
-      );
-    }
-    if (authUser.role !== Role.ADMIN) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden: Admin access required" },
-        { status: 403 },
-      );
-    }
-
     const { id } = await params;
     const body = await req.json();
+    if (body.role === Role.DEVELOPER && !isDeveloper(authUser.role)) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden" },
+        { status: 403 },
+      );
+    }
 
     const existingUser = await prisma.user.findFirst({
       where: { id, role: Role.WARGA, deletedAt: null },
@@ -284,29 +257,12 @@ export async function DELETE(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
-        { status: 401 },
+        { status: authUser ? 403 : 401 },
       );
     }
-    if (authUser.role === Role.DEVELOPER) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin menghapus akun warga",
-        },
-        { status: 403 },
-      );
-    }
-    if (authUser.role !== Role.ADMIN) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden: Admin access required" },
-        { status: 403 },
-      );
-    }
-
     const { id } = await params;
 
     const existingUser = await prisma.user.findFirst({

@@ -153,7 +153,7 @@ const createProjectSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Admins can create projects");
     }
 

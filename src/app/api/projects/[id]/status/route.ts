@@ -54,7 +54,7 @@ export async function PATCH(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Admins can update project status");
     }
 

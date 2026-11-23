@@ -114,7 +114,7 @@ export async function PATCH(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Admins update project");
     }
 
@@ -238,7 +238,7 @@ export async function DELETE(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || authUser.role !== Role.AGENCY) {
       return badRequest("Forbidden: Only Admins delete projects");
     }
 

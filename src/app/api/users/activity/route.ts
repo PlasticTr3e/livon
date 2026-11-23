@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20", 10);
     const safeLimit = Number.isFinite(limit) && limit > 0 ? limit : 20;
 
-    if (authUser.role === Role.ADMIN) {
+    if (authUser.role === Role.AGENCY) {
       return getAgencyActivity(authUser.userId, safeLimit);
     }
 

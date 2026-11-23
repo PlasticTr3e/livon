@@ -1,10 +1,10 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { invalidate } from "@/lib/cache";
 import { ok, badRequest, internalError, notFound } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
-import { Role } from "@/generated/prisma/enums";
 
 const verifySchema = z.object({
   isVerified: z.boolean(),
@@ -54,17 +54,13 @@ export async function PATCH(
   try {
     const authUser = await getAuthUser(req);
     if (!authUser) return badRequest("Unauthorized: Invalid or missing token");
-    if (authUser.role !== Role.ADMIN)
+    if (!canManage(authUser.role))
       return badRequest("Forbidden: Only Admins can verify citizens");
 
     const agencyProfile = await prisma.agencyProfile.findUnique({
       where: { userId: authUser.userId },
       select: { id: true },
     });
-
-    if (!agencyProfile) {
-      return badRequest("Forbidden: Agency profile not found");
-    }
 
     const body = await req.json();
     const result = verifySchema.safeParse(body);
@@ -86,7 +82,7 @@ export async function PATCH(
       data: {
         isVerified,
         verifiedAt: isVerified ? new Date() : null,
-        verifiedBy: isVerified ? agencyProfile.id : null,
+        verifiedBy: isVerified ? (agencyProfile?.id ?? null) : null,
       },
     });
 

@@ -1,8 +1,8 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { ok, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
-import { Role } from "@/generated/prisma/enums";
 
 /**
  * @swagger
@@ -23,9 +23,8 @@ import { Role } from "@/generated/prisma/enums";
  */
 export async function GET(req: NextRequest) {
   try {
-    // Check if user is admin (ADMIN role)
     const user = await getAuthUser(req);
-    if (!user || user.role !== Role.ADMIN) {
+    if (!user || !canManage(user.role)) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },

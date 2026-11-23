@@ -1,4 +1,4 @@
-export type AdminUserRole = "agency" | "resident";
+export type AdminUserRole = "agency" | "developer" | "resident";
 
 export type AdminUserStatus = "Verified" | "Pending" | "Blocked";
 

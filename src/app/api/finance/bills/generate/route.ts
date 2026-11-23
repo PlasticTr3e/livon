@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (authUser.role !== Role.ADMIN) {
+    if (authUser.role !== Role.AGENCY) {
       return NextResponse.json(
         {
           success: false,

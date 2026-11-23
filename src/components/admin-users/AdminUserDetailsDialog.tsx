@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Badge } from "@/components/ui/primitives";
 import {
   getAdminUserAddress,
@@ -25,6 +28,8 @@ export function AdminUserDetailsDialog({
   role,
   user,
 }: AdminUserDetailsDialogProps) {
+  const { t: translateUi } = useLanguage();
+
   const displayName = getAdminUserDisplayName(user);
   const address = getAdminUserAddress(user);
   const status = getAdminUserStatus(user);
@@ -44,12 +49,12 @@ export function AdminUserDetailsDialog({
           <span
             className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${getAdminUserRoleStyle(role)}`}
           >
-            {getAdminUserRoleLabel(role)}
+            {translateUi(getAdminUserRoleLabel(role))}
           </span>
           {onClose && (
             <button
               type="button"
-              aria-label="Close user details"
+              aria-label={translateUi("Close user details")}
               className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
               onClick={onClose}
             >
@@ -60,29 +65,32 @@ export function AdminUserDetailsDialog({
       </div>
 
       <div className="grid grid-cols-1 gap-3 overflow-y-auto px-5 py-5 text-sm sm:grid-cols-2 sm:gap-4 sm:px-8 sm:py-6">
-        <AdminUserDetailField label="Status">
+        <AdminUserDetailField label={translateUi("Status")}>
           <Badge className={`mt-2 text-xs ${getAdminUserStatusStyle(status)}`}>
-            {status}
+            {translateUi(status)}
           </Badge>
         </AdminUserDetailField>
-        <AdminUserDetailField label="Phone">
+        <AdminUserDetailField label={translateUi("Phone")}>
           <p className="mt-2 font-semibold text-gray-800 dark:text-white">
             {getAdminUserPhone(user)}
           </p>
         </AdminUserDetailField>
-        <AdminUserDetailField className="sm:col-span-2" label="Address">
+        <AdminUserDetailField
+          className="sm:col-span-2"
+          label={translateUi("Address")}
+        >
           <p className="mt-2 font-semibold text-gray-800 dark:text-white">
             {address}
           </p>
         </AdminUserDetailField>
         {role === "resident" && (
           <>
-            <AdminUserDetailField label="NIK">
+            <AdminUserDetailField label={translateUi("NIK")}>
               <p className="mt-2 font-semibold text-gray-800 dark:text-white">
                 {user.citizenProfile?.nik || "-"}
               </p>
             </AdminUserDetailField>
-            <AdminUserDetailField label="KK">
+            <AdminUserDetailField label={translateUi("KK")}>
               <p className="mt-2 font-semibold text-gray-800 dark:text-white">
                 {user.citizenProfile?.kkNumber || "-"}
               </p>
@@ -103,12 +111,14 @@ function AdminUserDetailField({
   className?: string;
   label: string;
 }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div
       className={`rounded-xl border border-gray-100 bg-slate-50 p-4 dark:border-gray-800 dark:bg-[#111827]/50 ${className ?? ""}`}
     >
       <p className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-white">
-        {label}
+        {translateUi(label)}
       </p>
       {children}
     </div>
