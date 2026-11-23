@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Card } from "@/components/ui/primitives";
 import { AdminCommentCard } from "@/components/admin-comments/AdminCommentCard";
 import { AdminCommentsFilters } from "@/components/admin-comments/AdminCommentsFilters";
@@ -56,9 +59,11 @@ export function AdminCommentsList({
 }
 
 function AdminCommentsLoadingState() {
+  const { t: translateUi } = useLanguage();
+
   return (
     <LoadingState
-      label="Loading comments..."
+      label={translateUi("Loading comments...")}
       variant="panel"
       className="bg-transparent"
     />
@@ -66,11 +71,13 @@ function AdminCommentsLoadingState() {
 }
 
 function AdminCommentsEmptyState() {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="py-10 text-center">
       <MessageSquare className="mx-auto mb-2 h-10 w-10 text-gray-300" />
       <p className="font-medium text-gray-400">
-        Tidak ada komentar yang ditemukan di proyek ini.
+        {translateUi("Tidak ada komentar yang ditemukan di proyek ini.")}
       </p>
     </div>
   );

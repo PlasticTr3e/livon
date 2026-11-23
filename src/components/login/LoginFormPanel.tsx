@@ -1,8 +1,12 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import Link from "next/link";
 import { GoogleLoginButton } from "./GoogleLoginButton";
 import { LoginDivider } from "./LoginDivider";
 import { LoginThemeToggle } from "./LoginThemeToggle";
 import { PasswordInput } from "./PasswordInput";
+import { LanguageSwitch } from "@/components/shared/LanguageSwitch";
 
 export type LoginCredentials = {
   email: string;
@@ -30,23 +34,30 @@ export function LoginFormPanel({
   onTogglePasswordVisibility,
   onToggleTheme,
 }: LoginFormPanelProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="relative flex w-full flex-col justify-center bg-white px-6 py-16 dark:bg-[#111827] sm:px-10 lg:w-[45%]">
-      <LoginThemeToggle theme={theme} onToggle={onToggleTheme} />
+      <div className="absolute right-6 top-6 flex items-center gap-2">
+        <LanguageSwitch />
+        <LoginThemeToggle theme={theme} onToggle={onToggleTheme} />
+      </div>
 
       <div className="mx-auto w-full max-w-[22rem]">
         <h1 className="mb-2 text-[2.2rem] font-extrabold leading-tight text-gray-900 dark:text-white">
-          Welcome!
+          {translateUi("Welcome!")}
         </h1>
         <p className="mb-6 max-w-[18rem] text-sm leading-relaxed text-gray-400 dark:text-white sm:max-w-none">
-          Log in to LIVON and help make your neighborhood even better!
+          {translateUi(
+            "Log in to LIVON and help make your neighborhood even better!",
+          )}
         </p>
 
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <input
             type="email"
             name="email"
-            placeholder="Email address"
+            placeholder={translateUi("Email address")}
             value={credentials.email}
             onChange={onChange}
             className="h-12 w-full rounded-full border border-gray-200 bg-slate-50 px-5 text-sm text-gray-800 transition-colors placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white dark:placeholder:text-slate-500"
@@ -65,7 +76,7 @@ export function LoginFormPanel({
               href="/auth/forgot-password"
               className="text-xs font-medium text-gray-400 transition-colors hover:text-green-600 dark:text-white dark:hover:text-green-400"
             >
-              Forgot password?
+              {translateUi("Forgot password?")}
             </Link>
           </div>
 
@@ -80,20 +91,20 @@ export function LoginFormPanel({
                 Logging in...
               </>
             ) : (
-              "Log In"
+              translateUi("Log In")
             )}
           </button>
 
-          <LoginDivider label="or continue with" />
+          <LoginDivider label={translateUi("or continue with")} />
           <GoogleLoginButton />
 
           <p className="mt-2 text-center text-xs text-gray-400 dark:text-white">
-            Don&apos;t have an account?{" "}
+            {translateUi("Don't have an account?")}{" "}
             <Link
               href="./register"
               className="font-semibold text-green-600 hover:underline dark:text-green-400"
             >
-              Register
+              {translateUi("Register")}
             </Link>
           </p>
         </form>

@@ -1,4 +1,9 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 export function RegisterGoogleButton() {
+  const { t: translateUi } = useLanguage();
+
   return (
     <a
       href="/api/auth/google"
@@ -28,7 +33,7 @@ export function RegisterGoogleButton() {
         />
       </svg>
       <span className="text-sm font-medium text-gray-700 dark:text-white">
-        Continue with Google
+        {translateUi("Continue with Google")}
       </span>
     </a>
   );

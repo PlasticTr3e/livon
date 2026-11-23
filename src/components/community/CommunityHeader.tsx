@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { MessagesSquare } from "lucide-react";
 import type { CommunityPageVariant } from "@/lib/community/community-types";
 
@@ -6,14 +9,18 @@ type CommunityHeaderProps = {
 };
 
 export function CommunityHeader({ variant }: CommunityHeaderProps) {
+  const { t: translateUi } = useLanguage();
+
   if (variant === "admin") {
     return (
       <div>
         <h1 className="text-2xl font-black text-gray-900 dark:text-white">
-          Community
+          {translateUi("Community")}
         </h1>
         <p className="mt-0.5 text-sm text-gray-500 dark:text-white">
-          Review resident feedback, respond, and moderate discussions.
+          {translateUi(
+            "Review resident feedback, respond, and moderate discussions.",
+          )}
         </p>
       </div>
     );
@@ -26,10 +33,12 @@ export function CommunityHeader({ variant }: CommunityHeaderProps) {
       </div>
       <div className="min-w-0">
         <h1 className="text-2xl font-black leading-tight text-gray-900 dark:text-white sm:text-3xl">
-          Community
+          {translateUi("Community")}
         </h1>
         <p className="text-sm leading-relaxed text-gray-500 dark:text-white">
-          Share your ideas and stay updated on your neighborhood.
+          {translateUi(
+            "Share your ideas and stay updated on your neighborhood.",
+          )}
         </p>
       </div>
     </div>

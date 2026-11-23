@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -26,6 +27,8 @@ export function CommunityActionButton({
   tone = "neutral",
   onClick,
 }: CommunityActionButtonProps) {
+  const { t: translateUi } = useLanguage();
+
   // Only animate likes the user just made, not ones that were already active.
   const [hasToggled, setHasToggled] = useState(false);
   const pending = useRef(false);
@@ -49,7 +52,7 @@ export function CommunityActionButton({
   return (
     <button
       type="button"
-      aria-label={label}
+      aria-label={translateUi(label)}
       aria-pressed={isLike ? isActive : undefined}
       onClick={handleClick}
       disabled={isPending}

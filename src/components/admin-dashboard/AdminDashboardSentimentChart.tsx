@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Card } from "@/components/ui/primitives";
 import type { ProjectSentimentChartItem } from "@/lib/admin-dashboard/admin-dashboard-types";
 import {
@@ -18,14 +21,16 @@ type AdminDashboardSentimentChartProps = {
 export function AdminDashboardSentimentChart({
   data,
 }: AdminDashboardSentimentChartProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <Card className="flex min-h-[350px] flex-col border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#1F2937] lg:col-span-2">
       <div className="mb-5">
         <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-          Project Sentiment Distribution
+          {translateUi("Project Sentiment Distribution")}
         </h3>
         <p className="mt-0.5 text-xs text-gray-500 dark:text-white">
-          Comparison of comment sentiment on top 5 projects
+          {translateUi("Comparison of comment sentiment on top 5 projects")}
         </p>
       </div>
       <div className="mt-2 min-h-0 w-full flex-1 pl-0">
@@ -74,14 +79,21 @@ export function AdminDashboardSentimentChart({
               />
               <Bar
                 dataKey="Positive"
+                name={translateUi("Positive")}
                 stackId="a"
                 fill="#10b981"
                 radius={[0, 0, 4, 4]}
                 barSize={40}
               />
-              <Bar dataKey="Neutral" stackId="a" fill="#9ca3af" />
+              <Bar
+                dataKey="Neutral"
+                name={translateUi("Neutral")}
+                stackId="a"
+                fill="#9ca3af"
+              />
               <Bar
                 dataKey="Negative"
+                name={translateUi("Negative")}
                 stackId="a"
                 fill="#ef4444"
                 radius={[4, 4, 0, 0]}
@@ -97,10 +109,12 @@ export function AdminDashboardSentimentChart({
 }
 
 function EmptyChartState({ message }: { message: string }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-[#111827]">
       <p className="text-sm font-medium text-gray-400 dark:text-white">
-        {message}
+        {translateUi(message)}
       </p>
     </div>
   );

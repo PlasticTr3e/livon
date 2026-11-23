@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -34,11 +35,15 @@ function CommunityRequestError({
   message: string;
   onRetry: () => void;
 }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div role="alert" className="px-4 py-10 text-center">
-      <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">{message}</p>
+      <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
+        {translateUi(message)}
+      </p>
       <Button variant="outline" onClick={onRetry}>
-        Try again
+        {translateUi("Try again")}
       </Button>
     </div>
   );
@@ -47,6 +52,8 @@ function CommunityRequestError({
 export function CommunityPageContent({
   variant = "app",
 }: CommunityPageContentProps) {
+  const { t: translateUi } = useLanguage();
+
   const toast = useToast();
   const searchParams = useSearchParams();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -59,7 +66,10 @@ export function CommunityPageContent({
   const feed = useCommunityFeed(searchQuery, selectedPostId);
   const selectedPost = feed.selectedPost;
   const isDetailOpen = Boolean(selectedPostId);
-  const canModerate = variant === "admin" && feed.currentUser.role === "agency";
+  const canModerate =
+    variant === "admin" &&
+    (feed.currentUser.role === "agency" ||
+      feed.currentUser.role === "developer");
 
   useLayoutEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -129,7 +139,7 @@ export function CommunityPageContent({
           feed.isDetailLoading ? (
             <>
               <CommunityBackBar onBack={handleClosePost} />
-              <LoadingState label="Loading post..." />
+              <LoadingState label={translateUi("Loading post...")} />
             </>
           ) : selectedPost ? (
             <CommunityPostDetail
@@ -172,7 +182,7 @@ export function CommunityPageContent({
               onSearchChange={setSearchQuery}
             />
             {feed.isLoading ? (
-              <LoadingState label="Loading Community..." />
+              <LoadingState label={translateUi("Loading Community...")} />
             ) : feed.error ? (
               <CommunityRequestError
                 message={feed.error}
@@ -196,7 +206,9 @@ export function CommunityPageContent({
                       disabled={feed.isLoadingMore}
                       onClick={() => void feed.loadMore()}
                     >
-                      {feed.isLoadingMore ? "Loading..." : "Load more posts"}
+                      {feed.isLoadingMore
+                        ? translateUi("Loading...")
+                        : translateUi("Load more posts")}
                     </Button>
                   </div>
                 )}

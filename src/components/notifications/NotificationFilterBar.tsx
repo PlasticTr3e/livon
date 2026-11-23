@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Filter } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import type { NotificationFilter } from "@/lib/notifications/notification-types";
@@ -20,6 +23,8 @@ export function NotificationFilterBar({
   unreadCount,
   onFilterChange,
 }: NotificationFilterBarProps) {
+  const { t: translateUi } = useLanguage();
+
   const counts: Record<NotificationFilter, number> = {
     all: notificationsCount,
     unread: unreadCount,
@@ -41,7 +46,8 @@ export function NotificationFilterBar({
                 : "text-gray-600 hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800",
             )}
           >
-            {option.label} {counts[option.key] > 0 && `(${counts[option.key]})`}
+            {translateUi(option.label)}{" "}
+            {counts[option.key] > 0 && `(${counts[option.key]})`}
           </button>
         ))}
       </div>

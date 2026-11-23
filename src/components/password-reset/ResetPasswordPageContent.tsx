@@ -1,4 +1,6 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
+import { LanguageSwitch } from "@/components/shared/LanguageSwitch";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,6 +18,8 @@ type ResetPasswordPayload = {
 };
 
 export function ResetPasswordPageContent() {
+  const { t: translateUi } = useLanguage();
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
@@ -81,14 +85,17 @@ export function ResetPasswordPageContent() {
   return (
     <div className="flex min-h-screen bg-white dark:bg-[#0B1120]">
       <div className="relative flex w-full flex-col justify-center bg-white px-10 py-16 dark:bg-[#111827] lg:w-[45%]">
+        <div className="absolute right-6 top-6">
+          <LanguageSwitch />
+        </div>
         <div className="mx-auto w-full max-w-85">
           <LoginBrandMark className="mb-8 lg:hidden" />
 
           <h1 className="mb-2 text-[2.2rem] font-extrabold leading-tight text-gray-900 dark:text-white">
-            Reset password
+            {translateUi("Reset password")}
           </h1>
           <p className="mb-6 text-sm leading-relaxed text-gray-400 dark:text-white">
-            Create a new password for your LIVON account.
+            {translateUi("Create a new password for your LIVON account.")}
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -103,7 +110,7 @@ export function ResetPasswordPageContent() {
 
             <PasswordInput
               name="confirmPassword"
-              placeholder="Confirm password"
+              placeholder={translateUi("Confirm password")}
               value={formData.confirmPassword}
               isVisible={isConfirmPasswordVisible}
               onChange={handleChange}
@@ -123,13 +130,13 @@ export function ResetPasswordPageContent() {
                   Resetting...
                 </>
               ) : (
-                "Reset Password"
+                translateUi("Reset Password")
               )}
             </button>
 
             {!token ? (
               <p className="text-center text-xs leading-relaxed text-red-500">
-                This reset link is missing a token.
+                {translateUi("This reset link is missing a token.")}
               </p>
             ) : null}
 
@@ -137,7 +144,7 @@ export function ResetPasswordPageContent() {
               href="/auth/login"
               className="mt-2 text-center text-xs font-semibold text-green-600 hover:underline dark:text-green-400"
             >
-              Back to login
+              {translateUi("Back to login")}
             </Link>
           </form>
         </div>

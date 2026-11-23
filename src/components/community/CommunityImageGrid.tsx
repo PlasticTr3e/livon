@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { cn } from "@/components/ui/primitives";
 
@@ -30,6 +33,8 @@ export function CommunityImageGrid({
   title,
   onOpenImage,
 }: CommunityImageGridProps) {
+  const { t: translateUi } = useLanguage();
+
   const visibleImages = images.slice(0, MAX_VISIBLE_IMAGES);
   const hiddenCount = images.length - visibleImages.length;
 
@@ -48,7 +53,10 @@ export function CommunityImageGrid({
             key={`${image}-${index}`}
             type="button"
             onClick={() => onOpenImage(index)}
-            aria-label={`View photo ${index + 1} of ${images.length}`}
+            aria-label={translateUi("View photo {0} of {1}", {
+              0: index + 1,
+              1: images.length,
+            })}
             className={cn(
               "group relative min-h-0 overflow-hidden bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-500 dark:bg-slate-800",
               getTileClassName(visibleImages.length, index),

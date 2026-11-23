@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import type {
   RegisterFormData,
   RegisterFormErrors,
@@ -15,11 +18,13 @@ export function RegisterResidentFields({
   errors,
   onFieldChange,
 }: RegisterResidentFieldsProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <>
       <RegisterTextInput
         type="text"
-        placeholder="Family Card Number (16 digits)"
+        placeholder={translateUi("Family Card Number (16 digits)")}
         value={formData.nomorKK}
         onChange={(event) => onFieldChange("nomorKK", event.target.value)}
         error={errors.nomorKK}
@@ -27,7 +32,7 @@ export function RegisterResidentFields({
 
       <RegisterTextInput
         type="text"
-        placeholder="NIK (16 digits)"
+        placeholder={translateUi("NIK (16 digits)")}
         value={formData.nik}
         onChange={(event) => onFieldChange("nik", event.target.value)}
         error={errors.nik}
@@ -37,7 +42,7 @@ export function RegisterResidentFields({
         <div className="flex-1">
           <RegisterTextInput
             type="text"
-            placeholder="Block"
+            placeholder={translateUi("Block")}
             value={formData.blokRumah}
             onChange={(event) => onFieldChange("blokRumah", event.target.value)}
             error={errors.blokRumah}
@@ -46,7 +51,7 @@ export function RegisterResidentFields({
         <div className="w-28">
           <RegisterTextInput
             type="text"
-            placeholder="House Number"
+            placeholder={translateUi("House Number")}
             value={formData.noRumah}
             onChange={(event) => onFieldChange("noRumah", event.target.value)}
             error={errors.noRumah}

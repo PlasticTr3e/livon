@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
@@ -121,9 +122,11 @@ export function AdminDashboardPageContent() {
 }
 
 function DashboardChartLoading({ label }: { label: string }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <LoadingState
-      label={label}
+      label={translateUi(label)}
       variant="panel"
       className="min-h-[350px] border border-gray-200 bg-white dark:border-gray-800 dark:bg-[#1F2937]"
     />

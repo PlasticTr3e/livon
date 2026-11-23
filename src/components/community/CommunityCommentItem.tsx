@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Heart, MessageCircle } from "lucide-react";
 import type {
   CommunityComment,
@@ -78,6 +81,8 @@ function CommunityCommentEntry({
   onReply: () => void;
   onToggleLike: () => void | Promise<unknown>;
 }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <>
       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
@@ -95,7 +100,11 @@ function CommunityCommentEntry({
           icon={Heart}
           tone="like"
           size="sm"
-          label={entry.isLiked ? "Unlike comment" : "Like comment"}
+          label={
+            entry.isLiked
+              ? translateUi("Unlike comment")
+              : translateUi("Like comment")
+          }
           count={entry.likeCount > 0 ? entry.likeCount : undefined}
           isActive={entry.isLiked}
           onClick={onToggleLike}
@@ -103,14 +112,14 @@ function CommunityCommentEntry({
         <CommunityActionButton
           icon={MessageCircle}
           size="sm"
-          label={`Reply ${entry.author.name}`}
+          label={translateUi("Reply {0}", { 0: entry.author.name })}
           text="Reply"
           onClick={onReply}
         />
         {onDelete && (
           <CommunityDeleteButton
             size="sm"
-            label="Delete comment"
+            label={translateUi("Delete comment")}
             onConfirm={onDelete}
           />
         )}

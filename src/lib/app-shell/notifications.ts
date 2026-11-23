@@ -1,3 +1,4 @@
+import { getDisplayLocale } from "@/lib/i18n/display";
 export type AppNotification = {
   id: string;
   userId: string;
@@ -16,6 +17,9 @@ export type ApiNotification = Omit<AppNotification, "createdAt"> & {
 
 const notificationCategoryByType: Record<string, string> = {
   donation_success: "funding",
+  payment_success: "funding",
+  bill_unpaid: "funding",
+  bill_overdue: "funding",
   project_status: "project",
   comment_reply: "comment",
   system: "system",
@@ -59,5 +63,5 @@ export function formatNotificationTime(date: Date) {
   if (diffHours < 24) return `${diffHours} jam lalu`;
   if (diffDays < 7) return `${diffDays} hari lalu`;
 
-  return date.toLocaleDateString("id-ID");
+  return date.toLocaleDateString(getDisplayLocale());
 }

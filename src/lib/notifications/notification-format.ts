@@ -1,3 +1,4 @@
+import { getDisplayLocale } from "@/lib/i18n/display";
 import type {
   DatabaseNotification,
   NotificationCategory,
@@ -6,6 +7,9 @@ import type {
 
 const categoryByNotificationType: Record<string, NotificationCategory> = {
   donation_success: "funding",
+  payment_success: "funding",
+  bill_unpaid: "funding",
+  bill_overdue: "funding",
   project_status: "project",
   comment_reply: "comment",
   system: "system",
@@ -24,7 +28,7 @@ const dotColorByCategory: Record<NotificationCategory, string> = {
 };
 
 const labelByCategory: Record<NotificationCategory, string> = {
-  funding: "Crowdfunding",
+  funding: "Billing & Care",
   project: "Project",
   comment: "Comment",
   system: "System",
@@ -75,5 +79,5 @@ function formatNotificationTime(date: Date) {
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffWeeks < 4) return `${diffWeeks} weeks ago`;
 
-  return date.toLocaleDateString("id-ID");
+  return date.toLocaleDateString(getDisplayLocale());
 }

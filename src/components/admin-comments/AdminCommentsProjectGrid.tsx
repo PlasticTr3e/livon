@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Badge, Card } from "@/components/ui/primitives";
 import { LoadingState } from "@/components/shared/LoadingState";
 import {
@@ -21,10 +24,12 @@ export function AdminCommentsProjectGrid({
   projects,
   onSelectProject,
 }: AdminCommentsProjectGridProps) {
+  const { t: translateUi } = useLanguage();
+
   if (isLoading) {
     return (
       <LoadingState
-        label="Loading projects..."
+        label={translateUi("Loading projects...")}
         variant="panel"
         className="bg-transparent"
       />
@@ -55,6 +60,8 @@ function AdminCommentsProjectCard({
   project: AdminCommentProjectSummary;
   onSelectProject: (project: AdminCommentSelectedProject) => void;
 }) {
+  const { t: translateUi } = useLanguage();
+
   const neutralCount = getAdminCommentNeutralCount(project);
 
   return (
@@ -69,7 +76,7 @@ function AdminCommentsProjectCard({
         <div className="flex flex-col items-end gap-1">
           {project.flaggedCount > 0 && (
             <Badge className="border-red-100 bg-red-50 px-1.5 text-[9px] text-red-600">
-              {project.flaggedCount} Toxic
+              {project.flaggedCount} {translateUi(" Toxic")}
             </Badge>
           )}
         </div>
@@ -80,7 +87,7 @@ function AdminCommentsProjectCard({
 
       <div className="mt-auto space-y-2">
         <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-white">
-          <span>Sentiment Breakdown</span>
+          <span>{translateUi("Sentiment Breakdown")}</span>
         </div>
         <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
           <div
@@ -112,8 +119,12 @@ function AdminCommentsProjectCard({
           />
         </div>
         <div className="flex items-center justify-between text-[10px] font-semibold">
-          <span className="text-green-600">{project.positiveCount} Pos</span>
-          <span className="text-red-600">{project.negativeCount} Neg</span>
+          <span className="text-green-600">
+            {project.positiveCount} {translateUi(" Pos")}
+          </span>
+          <span className="text-red-600">
+            {project.negativeCount} {translateUi(" Neg")}
+          </span>
         </div>
       </div>
     </Card>
@@ -121,10 +132,14 @@ function AdminCommentsProjectCard({
 }
 
 function AdminCommentsEmptyProjects() {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="col-span-full flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
       <SearchX className="h-12 w-12 opacity-20" />
-      <p className="font-medium">No projects found matching your search.</p>
+      <p className="font-medium">
+        {translateUi("No projects found matching your search.")}
+      </p>
     </div>
   );
 }
