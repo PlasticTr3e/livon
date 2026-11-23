@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { NewsBackBar } from "./NewsBackBar";
 import { NewsGrid } from "./NewsGrid";
 import { NewsHeader } from "./NewsHeader";
@@ -17,6 +20,8 @@ export function NewsPageContent({
   query,
   sort,
 }: NewsPageContentProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto bg-slate-50 dark:bg-[#0B1120]">
       {isSearching && <NewsBackBar />}
@@ -29,7 +34,9 @@ export function NewsPageContent({
           <div className="flex items-center gap-3">
             <div className="h-6 w-1 rounded-full bg-green-500" />
             <h3 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
-              {isSearching ? `Search Results: "${query}"` : "All News"}
+              {isSearching
+                ? translateUi('Search Results: "{0}"', { 0: query })
+                : translateUi("All News")}
             </h3>
           </div>
 

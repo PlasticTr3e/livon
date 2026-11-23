@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { AdminCommentsInsights } from "@/components/admin-comments/AdminCommentsInsights";
 import { AdminCommentsProjectFilters } from "@/components/admin-comments/AdminCommentsProjectFilters";
 import { AdminCommentsProjectGrid } from "@/components/admin-comments/AdminCommentsProjectGrid";
@@ -29,13 +32,15 @@ export function AdminCommentsDashboardView({
   onProjectSortChange,
   onSelectProject,
 }: AdminCommentsDashboardViewProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="space-y-6">
       <AdminCommentsInsights insights={insights} />
 
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <h2 className="text-lg font-medium tracking-tight text-gray-900 dark:text-white">
-          Project Dashboard
+          {translateUi("Project Dashboard")}
         </h2>
         <AdminCommentsProjectFilters
           searchQuery={projectSearchQuery}

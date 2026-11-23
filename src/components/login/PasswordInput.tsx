@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Eye, EyeOff } from "lucide-react";
 
 type PasswordInputProps = {
@@ -17,6 +20,8 @@ export function PasswordInput({
   onChange,
   onToggleVisibility,
 }: PasswordInputProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="relative">
       <input
@@ -32,7 +37,11 @@ export function PasswordInput({
         type="button"
         onClick={onToggleVisibility}
         className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-green-600 dark:text-white dark:hover:text-green-400"
-        aria-label={isVisible ? "Hide password" : "Show password"}
+        aria-label={
+          isVisible
+            ? translateUi("Hide password")
+            : translateUi("Show password")
+        }
       >
         {isVisible ? (
           <EyeOff className="h-4 w-4" />

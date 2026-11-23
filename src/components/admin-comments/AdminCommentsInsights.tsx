@@ -1,4 +1,7 @@
+"use client";
+
 import { Card } from "@/components/ui/primitives";
+import { useLanguage } from "@/context/LanguageContext";
 import type { AdminCommentsInsight } from "@/lib/admin-comments/admin-comments-types";
 import { CheckCircle, MessageSquare, ShieldAlert } from "lucide-react";
 
@@ -9,6 +12,7 @@ type AdminCommentsInsightsProps = {
 export function AdminCommentsInsights({
   insights,
 }: AdminCommentsInsightsProps) {
+  const { t: translateUi } = useLanguage();
   const cards = [
     {
       label: "Total Comments",
@@ -52,7 +56,7 @@ export function AdminCommentsInsights({
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase text-gray-400 dark:text-white">
-                {card.label}
+                {translateUi(card.label)}
               </p>
               <p className="text-xl font-black text-gray-900 dark:text-white">
                 {card.value}

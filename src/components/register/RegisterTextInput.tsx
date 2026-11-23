@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import type { InputHTMLAttributes } from "react";
 
 type RegisterTextInputProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -11,6 +14,8 @@ export function RegisterTextInput({
   errorClassName = "pl-4",
   ...props
 }: RegisterTextInputProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div>
       <input
@@ -19,7 +24,7 @@ export function RegisterTextInput({
       />
       {error && (
         <p className={`mt-1 text-[11px] text-red-500 ${errorClassName}`}>
-          {error}
+          {translateUi(error)}
         </p>
       )}
     </div>

@@ -25,6 +25,8 @@
 .DS_Store
 *.pem
 .agents/
+/.claude/
+/anti-slop/
 skills-lock.json
 
 # debug

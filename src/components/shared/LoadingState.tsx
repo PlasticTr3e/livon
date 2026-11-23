@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Loader2, Leaf } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -19,11 +22,13 @@ export function LoadingState({
   className,
   variant = "page",
 }: LoadingStateProps) {
+  const { t: translateUi } = useLanguage();
+
   if (variant === "inline") {
     return (
       <span className={cn("inline-flex items-center gap-2", className)}>
         <Loader2 className="h-4 w-4 animate-spin text-green-600" />
-        <span>{label}</span>
+        <span>{translateUi(label)}</span>
       </span>
     );
   }
@@ -46,7 +51,7 @@ export function LoadingState({
           <Loader2 className="absolute -right-1 -top-1 h-5 w-5 animate-spin rounded-full bg-white text-green-600 dark:bg-[#111827]" />
         </div>
         <p className="text-sm font-bold text-gray-600 dark:text-white">
-          {label}
+          {translateUi(label)}
         </p>
       </div>
     </div>

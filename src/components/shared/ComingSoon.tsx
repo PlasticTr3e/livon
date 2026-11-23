@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { Clock, Leaf, Wrench } from "lucide-react";
 import Link from "next/link";
@@ -18,6 +19,8 @@ export function ComingSoon({
   backLabel = "Kembali",
   features = [],
 }: ComingSoonProps) {
+  const { t: translateUi } = useLanguage();
+
   const hasFeatures = features.length > 0;
 
   return (
@@ -44,10 +47,10 @@ export function ComingSoon({
 
         <div className="mb-3 flex items-center gap-2 rounded-full border border-green-200 bg-green-100 px-4 py-1.5 dark:border-green-700 dark:bg-green-900/30">
           <span className="text-xs font-black uppercase tracking-widest text-green-700 dark:text-green-400">
-            LIVON
+            {translateUi("LIVON")}
           </span>
           <span className="text-xs text-green-500 dark:text-green-500">
-            Platform
+            {translateUi("Platform")}
           </span>
         </div>
 
@@ -61,7 +64,7 @@ export function ComingSoon({
         {hasFeatures && (
           <div className="mb-8 w-full space-y-3 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm dark:border-slate-700 dark:bg-slate-800">
             <p className="mb-4 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-white">
-              Yang Akan Hadir
+              {translateUi("Yang Akan Hadir")}
             </p>
             {features.map((feature) => (
               <div key={feature} className="flex items-center gap-3">
@@ -79,7 +82,7 @@ export function ComingSoon({
         <div className="mb-6 flex items-center gap-2 rounded-xl border border-yellow-200 bg-yellow-50 px-5 py-3 dark:border-yellow-800 dark:bg-yellow-900/20">
           <Clock className="h-4 w-4 shrink-0 text-yellow-500" />
           <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
-            Sedang dalam pengembangan aktif
+            {translateUi("Sedang dalam pengembangan aktif")}
           </span>
         </div>
 

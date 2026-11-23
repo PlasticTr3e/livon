@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Upload } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
@@ -25,6 +28,8 @@ export function AdminNewsImageDropzone({
   onDrop,
   onFileChange,
 }: AdminNewsImageDropzoneProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div
       onDragOver={onDragOver}
@@ -49,7 +54,7 @@ export function AdminNewsImageDropzone({
         <div className="mx-auto mb-3 h-20 w-28 overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-[#111827]">
           <ImageWithFallback
             src={previewUrl}
-            alt="Thumbnail preview"
+            alt={translateUi("Thumbnail preview")}
             width={112}
             height={80}
             className="h-full w-full object-cover"
@@ -62,12 +67,12 @@ export function AdminNewsImageDropzone({
         {file
           ? file.name
           : previewUrl
-            ? "Click or drag to replace thumbnail"
-            : "Click or drag image here"}
+            ? translateUi("Click or drag to replace thumbnail")
+            : translateUi("Click or drag image here")}
       </p>
       {isUploading && (
         <p className="mt-2 animate-pulse text-xs text-green-500">
-          Uploading...
+          {translateUi("Uploading...")}
         </p>
       )}
     </div>

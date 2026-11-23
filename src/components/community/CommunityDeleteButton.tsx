@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
@@ -17,6 +18,8 @@ export function CommunityDeleteButton({
   size = "md",
   onConfirm,
 }: CommunityDeleteButtonProps) {
+  const { t: translateUi } = useLanguage();
+
   const pending = useRef(false);
   const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -52,8 +55,12 @@ export function CommunityDeleteButton({
   return (
     <button
       type="button"
-      aria-label={isConfirming ? `Confirm ${label.toLowerCase()}` : label}
-      title={label}
+      aria-label={
+        isConfirming
+          ? translateUi("Confirm {0}", { 0: label.toLowerCase() })
+          : translateUi(label)
+      }
+      title={translateUi(label)}
       onClick={handleClick}
       disabled={isPending}
       aria-busy={isPending}
@@ -68,9 +75,9 @@ export function CommunityDeleteButton({
     >
       <Trash2 className={size === "md" ? "h-[18px] w-[18px]" : "h-4 w-4"} />
       {isPending ? (
-        <span>Deleting...</span>
+        <span>{translateUi("Deleting...")}</span>
       ) : (
-        isConfirming && <span>Delete this?</span>
+        isConfirming && <span>{translateUi("Delete this?")}</span>
       )}
     </button>
   );

@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Moon, Sun } from "lucide-react";
 
 type LoginThemeToggleProps = {
@@ -6,6 +9,8 @@ type LoginThemeToggleProps = {
 };
 
 export function LoginThemeToggle({ theme, onToggle }: LoginThemeToggleProps) {
+  const { t: translateUi } = useLanguage();
+
   const isDarkMode = theme === "dark";
 
   return (
@@ -13,8 +18,12 @@ export function LoginThemeToggle({ theme, onToggle }: LoginThemeToggleProps) {
       type="button"
       suppressHydrationWarning
       onClick={onToggle}
-      className="absolute right-6 top-6 rounded-full p-2 text-gray-400 transition-colors hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800"
-      aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+      className="rounded-full p-2 text-gray-400 transition-colors hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800"
+      aria-label={
+        isDarkMode
+          ? translateUi("Switch to light mode")
+          : translateUi("Switch to dark mode")
+      }
     >
       {isDarkMode ? (
         <Sun className="h-4 w-4 text-yellow-400" />

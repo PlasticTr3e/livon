@@ -1,3 +1,4 @@
+import { getDisplayLocale } from "@/lib/i18n/display";
 import type {
   AdminCrowdfundingOverviewStats,
   AdminCrowdfundingProject,
@@ -70,7 +71,7 @@ export function getAdminProjectDisplayStatus(status?: string) {
 }
 
 export function formatAdminCrowdfundingAmount(amount: number) {
-  return amount.toLocaleString("id-ID");
+  return amount.toLocaleString(getDisplayLocale());
 }
 
 export function mapAdminDonationToTransaction(
@@ -85,7 +86,7 @@ export function mapAdminDonationToTransaction(
     projectId: donation.projectId || donation.project?.id || "",
     amount: Number(donation.amount),
     rawDate,
-    date: rawDate.toLocaleDateString("id-ID", {
+    date: rawDate.toLocaleDateString(getDisplayLocale(), {
       day: "numeric",
       month: "short",
       year: "numeric",

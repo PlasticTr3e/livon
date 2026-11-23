@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Card } from "@/components/ui/primitives";
 import { PROJECT_STATUS_COLORS } from "@/lib/admin-dashboard/admin-dashboard-constants";
 import type {
@@ -21,14 +24,16 @@ export function AdminDashboardStatusChart({
   data,
   metrics,
 }: AdminDashboardStatusChartProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <Card className="flex min-h-[350px] flex-col border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#1F2937]">
       <div className="mb-5">
         <h3 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-          Project Status
+          {translateUi("Project Status")}
         </h3>
         <p className="mt-0.5 text-xs text-gray-500 dark:text-white">
-          Current project proportion distribution
+          {translateUi("Current project proportion distribution")}
         </p>
       </div>
       <div className="mt-2 flex flex-1 flex-col">
@@ -66,7 +71,7 @@ export function AdminDashboardStatusChart({
                   {metrics.totalProyek}
                 </span>
                 <span className="mt-0.5 text-[10px] font-bold uppercase text-gray-400 dark:text-white">
-                  Projects
+                  {translateUi("Projects")}
                 </span>
               </div>
             </div>
@@ -91,6 +96,8 @@ function ProjectStatusLegend({
   data: ProjectStatusChartItem[];
   totalProjects: number;
 }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="flex w-full flex-wrap justify-center gap-x-6 gap-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
       {data.map((item) => {
@@ -113,7 +120,7 @@ function ProjectStatusLegend({
                 }}
               />
               <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:text-white">
-                {item.name}
+                {translateUi(item.name)}
               </span>
             </div>
             <div className="flex items-baseline gap-1.5">
@@ -132,10 +139,12 @@ function ProjectStatusLegend({
 }
 
 function EmptyProjectStatus() {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="flex h-full w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-[#111827]">
       <p className="text-sm font-medium text-gray-400 dark:text-white">
-        No project data available
+        {translateUi("No project data available")}
       </p>
     </div>
   );

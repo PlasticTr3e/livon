@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Heart, MessageCircle } from "lucide-react";
 import { getCommunityCommentCount } from "@/lib/community/community-feed";
 import type { CommunityPost } from "@/lib/community/community-types";
@@ -17,25 +20,32 @@ export function CommunityPostActions({
   onDelete,
   onToggleLike,
 }: CommunityPostActionsProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="-mx-1.5 mt-3 flex items-center gap-1 border-t border-gray-100 pt-2 dark:border-gray-800">
       <CommunityActionButton
         icon={Heart}
         tone="like"
-        label={post.isLiked ? "Unlike post" : "Like post"}
+        label={
+          post.isLiked ? translateUi("Unlike post") : translateUi("Like post")
+        }
         count={post.likeCount}
         isActive={post.isLiked}
         onClick={onToggleLike}
       />
       <CommunityActionButton
         icon={MessageCircle}
-        label="Comment on post"
+        label={translateUi("Comment on post")}
         count={getCommunityCommentCount(post)}
         onClick={onComment}
       />
       {onDelete && (
         <div className="ml-auto">
-          <CommunityDeleteButton label="Delete post" onConfirm={onDelete} />
+          <CommunityDeleteButton
+            label={translateUi("Delete post")}
+            onConfirm={onDelete}
+          />
         </div>
       )}
     </div>
