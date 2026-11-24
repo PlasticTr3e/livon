@@ -54,4 +54,7 @@ next-env.d.ts
 /ai-service/.venv/
 /ai-service/data/*.parquet
 /ai-service/data/*.csv
+/ai-service/smsa-ind-classification/data/*.parquet
 /ai-service/.env
+__pycache__/
+*.py[cod]

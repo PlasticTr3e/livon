@@ -138,7 +138,14 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       take: 10,
       include: {
-        user: { include: { citizenProfile: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            citizenProfile: true,
+          },
+        },
         project: true,
       },
     });

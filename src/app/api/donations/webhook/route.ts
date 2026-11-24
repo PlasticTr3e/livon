@@ -1,8 +1,9 @@
-import { NextRequest } from "next/server";
+import crypto from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { invalidate } from "@/lib/cache";
 import { DonationStatus } from "@/generated/prisma/enums";
-import { internalError, notFound, ok } from "@/lib/api-response";
+import { badRequest, internalError, notFound, ok } from "@/lib/api-response";
 
 /**
  * @swagger
@@ -39,17 +40,50 @@ import { internalError, notFound, ok } from "@/lib/api-response";
  */
 export async function POST(req: NextRequest) {
   try {
+    const serverKey = process.env.MIDTRANS_SERVER_KEY;
+    if (!serverKey) {
+      console.error("MIDTRANS_SERVER_KEY is not configured");
+      return internalError("Webhook configuration error");
+    }
+
     const body = await req.json();
 
     const {
       order_id,
-      //   status_code,
-      //   gross_amount,
-      //   signature_key,
+      status_code,
+      gross_amount,
+      signature_key,
       transaction_status,
       transaction_id,
       payment_type,
     } = body;
+
+    if (
+      typeof order_id !== "string" ||
+      typeof status_code !== "string" ||
+      typeof gross_amount !== "string" ||
+      typeof signature_key !== "string" ||
+      typeof transaction_status !== "string"
+    ) {
+      return badRequest("Invalid webhook payload");
+    }
+
+    const expectedSignature = crypto
+      .createHash("sha512")
+      .update(`${order_id}${status_code}${gross_amount}${serverKey}`)
+      .digest("hex");
+
+    const providedBuf = Buffer.from(signature_key, "utf8");
+    const expectedBuf = Buffer.from(expectedSignature, "utf8");
+    if (
+      providedBuf.length !== expectedBuf.length ||
+      !crypto.timingSafeEqual(providedBuf, expectedBuf)
+    ) {
+      return NextResponse.json(
+        { success: false, message: "Invalid webhook signature" },
+        { status: 403 },
+      );
+    }
 
     const donation = await prisma.donation.findUnique({
       where: { orderId: order_id },
@@ -60,6 +94,14 @@ export async function POST(req: NextRequest) {
       return notFound("Order Not Found");
     }
 
+    const reportedAmount = Number(gross_amount);
+    if (
+      !Number.isFinite(reportedAmount) ||
+      reportedAmount !== Number(donation.amount)
+    ) {
+      return badRequest("Webhook amount mismatch");
+    }
+
     if (donation.status === DonationStatus.SUCCESS) {
       return ok("Donation already processed");
     }
@@ -68,30 +110,37 @@ export async function POST(req: NextRequest) {
       transaction_status === "capture" ||
       transaction_status === "settlement"
     ) {
-      const currentAmount = donation.project.currentFunding
-        ? Number(donation.project.currentFunding)
-        : 0;
-      const addedAmount = Number(donation.amount);
-      const newTotalFunding = currentAmount + addedAmount;
-
-      await prisma.$transaction([
-        prisma.donation.update({
-          where: { orderId: order_id },
+      const processed = await prisma.$transaction(async (tx) => {
+        const updated = await tx.donation.updateMany({
+          where: {
+            orderId: order_id,
+            status: { not: DonationStatus.SUCCESS },
+          },
           data: {
             status: DonationStatus.SUCCESS,
             gatewayTransactionId: transaction_id,
             paymentMethod: payment_type,
             paidAt: new Date(),
           },
-        }),
+        });
 
-        prisma.project.update({
+        if (updated.count === 0) {
+          return false;
+        }
+
+        await tx.project.update({
           where: { id: donation.projectId },
           data: {
-            currentFunding: newTotalFunding,
+            currentFunding: { increment: donation.amount },
           },
-        }),
-      ]);
+        });
+
+        return true;
+      });
+
+      if (!processed) {
+        return ok("Donation already processed");
+      }
 
       await prisma.notification.create({
         data: {
@@ -121,14 +170,21 @@ export async function POST(req: NextRequest) {
       transaction_status === "deny" ||
       transaction_status === "expire"
     ) {
-      await prisma.donation.update({
-        where: { orderId: order_id },
+      const updated = await prisma.donation.updateMany({
+        where: {
+          orderId: order_id,
+          status: { not: DonationStatus.SUCCESS },
+        },
         data: {
           status: DonationStatus.FAILED,
           gatewayTransactionId: transaction_id,
           paymentMethod: payment_type,
         },
       });
+
+      if (updated.count === 0) {
+        return ok("Donation already processed");
+      }
 
       await prisma.notification.create({
         data: {

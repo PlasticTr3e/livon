@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { badRequest, notFound } from "@/lib/api-response";
+import { getAppBaseUrl } from "@/lib/url-safety";
 
 export const runtime = "nodejs";
 
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
       where: { token },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = getAppBaseUrl();
     return NextResponse.redirect(`${appUrl}/auth/login?verified=true`);
   } catch (error) {
     console.error("Verification Error:", error);

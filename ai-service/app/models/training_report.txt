@@ -1,50 +1,73 @@
 ============================================================
-livon ai - training report (v2)
+livon ai - training report
 ============================================================
-model        : linearsvc (calibrated, cv=5)
-dataset      : smsa-ind-classification
-best C       : 0.1
-best ngram   : (1, 1)
+model        : svm (C=0.5, class_weight=balanced)
+features     : FeatureUnion(word ngram=(1, 2) + char_wb 3-5)
+dataset      : smsa-ind-classification + livon domain
 stemming     : False
 
 ----------------------------------------
-VALIDATION
+SMSA_VALIDATION
 ----------------------------------------
-accuracy : 1.0000
-roc-auc  : 1.0000
+accuracy : 0.9000
+macro_f1 : 0.8644
+roc-auc  : 0.9705
 
               precision    recall  f1-score   support
 
-    negative       1.00      1.00      1.00         3
-     neutral       1.00      1.00      1.00         2
-    positive       1.00      1.00      1.00         3
+    negative     0.8533    0.8858    0.8692       394
+     neutral     0.8435    0.7405    0.7886       131
+    positive     0.9348    0.9361    0.9354       735
 
-    accuracy                           1.00         8
-   macro avg       1.00      1.00      1.00         8
-weighted avg       1.00      1.00      1.00         8
+    accuracy                         0.9000      1260
+   macro avg     0.8772    0.8541    0.8644      1260
+weighted avg     0.8998    0.9000    0.8995      1260
 
 confusion matrix:
-[[3 0 0]
- [0 2 0]
- [0 0 3]]
+[[349  10  35]
+ [ 21  97  13]
+ [ 39   8 688]]
 
 ----------------------------------------
-TEST
+SMSA_TEST
 ----------------------------------------
-accuracy : 0.7500
-roc-auc  : 0.9333
+accuracy : 0.8420
+macro_f1 : 0.7956
+roc-auc  : 0.9514
 
               precision    recall  f1-score   support
 
-    negative       1.00      0.67      0.80         3
-     neutral       0.67      1.00      0.80         2
-    positive       0.67      0.67      0.67         3
+    negative     0.8066    0.9608    0.8770       204
+     neutral     0.8333    0.5114    0.6338        88
+    positive     0.8867    0.8654    0.8759       208
 
-    accuracy                           0.75         8
-   macro avg       0.78      0.78      0.76         8
-weighted avg       0.79      0.75      0.75         8
+    accuracy                         0.8420       500
+   macro avg     0.8422    0.7792    0.7956       500
+weighted avg     0.8446    0.8420    0.8337       500
 
 confusion matrix:
-[[2 0 1]
- [0 2 0]
- [0 1 2]]
+[[196   1   7]
+ [ 27  45  16]
+ [ 20   8 180]]
+
+----------------------------------------
+DOMAIN_TEST
+----------------------------------------
+accuracy : 0.8519
+macro_f1 : 0.8515
+roc-auc  : 0.9588
+
+              precision    recall  f1-score   support
+
+    negative     0.8750    0.7778    0.8235         9
+     neutral     0.8889    0.8889    0.8889         9
+    positive     0.8000    0.8889    0.8421         9
+
+    accuracy                         0.8519        27
+   macro avg     0.8546    0.8519    0.8515        27
+weighted avg     0.8546    0.8519    0.8515        27
+
+confusion matrix:
+[[7 0 2]
+ [1 8 0]
+ [0 1 8]]
