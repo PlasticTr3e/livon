@@ -1,47 +1,51 @@
 """
-training pipeline for livon sentiment analysis.
+Training pipeline for Livon sentiment analysis (v3).
 
-improvements over v1:
-    - preprocessing benchmark: compare with/without stemming
-    - gridsearchcv on validation set for C and ngram_range tuning
-    - best config is selected before final test evaluation
+Benchmarks Indonesian preprocessing (with/without stemming), word + character
+n-gram TF-IDF features, and calibrated linear/logistic classifiers across
+Indonesian SMSA + housing-domain feedback datasets without validation leakage.
 
-usage:
+Usage:
     python training/train.py
-
-outputs:
-    models/svm_model.pkl        - best calibrated linearsvc
-    models/tfidf_vect.pkl       - best fitted tf-idf vectorizer
-    models/label_encoder.pkl    - label encoder (int <-> string)
-    models/training_report.txt  - full evaluation report
 """
 
+import json
 import os
 import sys
 import time
+import urllib.request
 
 import joblib
 import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
     confusion_matrix,
+    f1_score,
     roc_auc_score,
 )
 from sklearn.model_selection import ParameterGrid, train_test_split
+from sklearn.pipeline import FeatureUnion
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import LinearSVC
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from training.preprocess import IndonesianPreprocessor
 
-ROOT_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR  = os.path.join(ROOT_DIR, "smsa-ind-classification", "data")
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SMSA_DATA_DIR = os.path.join(ROOT_DIR, "smsa-ind-classification", "data")
+CACHE_DATA_DIR = os.path.join(ROOT_DIR, "data")
 MODEL_DIR = os.path.join(ROOT_DIR, "app", "models")
 
+HF_PARQUET_INDEX_URL = (
+    "https://huggingface.co/api/datasets/kornwtp/smsa-ind-classification/parquet"
+)
+
 os.makedirs(MODEL_DIR, exist_ok=True)
+os.makedirs(CACHE_DATA_DIR, exist_ok=True)
 
 LABEL_MAP: dict[int, str] = {
     0: "positive",
@@ -49,54 +53,37 @@ LABEL_MAP: dict[int, str] = {
     2: "negative",
 }
 
-PARAM_GRID: list[dict] = list(ParameterGrid({
-    "C":           [0.1, 0.5, 1.0, 5.0, 10.0],
-    "ngram_range": [(1, 1), (1, 2), (1, 3)],
-}))
+DOMAIN_TRAIN_REPEAT = 5
 
-TFIDF_BASE: dict = {
-    "max_features": 30_000,
-    "sublinear_tf": True,
-    "min_df": 1,
-}
-
-SVM_BASE: dict = {
-    "class_weight": "balanced",
-    "max_iter":     2000,
-    "random_state": 42,
-}
 
 def load_domain_data() -> pd.DataFrame:
-    path = os.path.join(DATA_DIR, "domain_specific.csv")
+    path = os.path.join(SMSA_DATA_DIR, "domain_specific.csv")
     if not os.path.exists(path):
         raise FileNotFoundError(
-            f"domain_specific.csv not found in {DATA_DIR}. "
-            "run training/generate_domain_data.py first."
+            f"domain_specific.csv not found in {SMSA_DATA_DIR}. "
+            "Run training/generate_domain_data.py first."
         )
     df = pd.read_csv(path)
     print(f"  domain data: {len(df):>6} rows")
-    return df
+    return apply_label_map(df)
 
 
-def split_domain_data(domain_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    domain_df = apply_label_map(domain_df)
+def split_domain_data(
+    domain_df: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Splits curated domain examples 70/15/15 stratified with zero leakage."""
     train_df, temp_df = train_test_split(
         domain_df,
-        test_size=0.4,
+        test_size=0.30,
         random_state=42,
         stratify=domain_df["labels"],
     )
     val_df, test_df = train_test_split(
         temp_df,
-        test_size=0.5,
+        test_size=0.50,
         random_state=42,
         stratify=temp_df["labels"],
     )
-
-    print("  parquet splits not found; using domain_specific.csv fallback")
-    print(f"  {'train':>10}: {len(train_df):>6} rows")
-    print(f"  {'validation':>10}: {len(val_df):>6} rows")
-    print(f"  {'test':>10}: {len(test_df):>6} rows")
     return (
         train_df.reset_index(drop=True),
         val_df.reset_index(drop=True),
@@ -104,29 +91,46 @@ def split_domain_data(domain_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFra
     )
 
 
-def load_splits() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    print("loading dataset...")
-    splits = {}
-    for split in ["train", "validation", "test"]:
-        matches = [
-            f for f in os.listdir(DATA_DIR)
+def find_local_parquet(split: str) -> str | None:
+    for directory in (CACHE_DATA_DIR, SMSA_DATA_DIR):
+        if not os.path.isdir(directory):
+            continue
+        matches = sorted(
+            f for f in os.listdir(directory)
             if f.startswith(split) and f.endswith(".parquet")
-        ]
-        if not matches:
-            return split_domain_data(load_domain_data())
+        )
+        if matches:
+            return os.path.join(directory, matches[0])
+    return None
 
-        path = os.path.join(DATA_DIR, matches[0])
-        splits[split] = pd.read_parquet(path)
-        print(f"  {split:>10}: {len(splits[split]):>6} rows")
 
-    domain_df = load_domain_data()
-    train_df = pd.concat([splits["train"], domain_df], ignore_index=True)
-    train_df = train_df.sample(frac=1, random_state=42).reset_index(drop=True)
-    return train_df, splits["validation"], splits["test"]
+def download_smsa_parquets() -> bool:
+    """Downloads kornwtp/smsa-ind-classification parquet splits into ai-service/data/."""
+    if os.environ.get("SKIP_HF_DOWNLOAD") == "1":
+        return False
+
+    print("fetching SMSA parquet index from Hugging Face...")
+    try:
+        with urllib.request.urlopen(HF_PARQUET_INDEX_URL, timeout=15) as resp:
+            index = json.loads(resp.read().decode("utf-8"))
+        default_splits = index.get("default", {})
+        for split in ("train", "validation", "test"):
+            urls = default_splits.get(split) or []
+            if not urls:
+                return False
+            target = os.path.join(CACHE_DATA_DIR, f"{split}-00000.parquet")
+            if not os.path.exists(target):
+                print(f"  downloading {split} split...")
+                urllib.request.urlretrieve(urls[0], target)
+        return True
+    except Exception as exc:
+        print(f"  warning: could not download SMSA splits ({exc})")
+        return False
 
 
 def apply_label_map(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
+
     def normalize_label(value):
         if pd.isna(value):
             return value
@@ -141,248 +145,321 @@ def apply_label_map(df: pd.DataFrame) -> pd.DataFrame:
         return value
 
     df["labels"] = df["labels"].map(normalize_label)
+    return df.dropna(subset=["labels", "texts"])
 
-    df = df.dropna(subset=["labels"])
-    return df
+
+def load_splits() -> dict[str, pd.DataFrame]:
+    print("loading dataset...")
+    domain_df = load_domain_data()
+    domain_train, domain_val, domain_test = split_domain_data(domain_df)
+
+    smsa_paths = {split: find_local_parquet(split) for split in ("train", "validation", "test")}
+    if any(path is None for path in smsa_paths.values()):
+        if download_smsa_parquets():
+            smsa_paths = {
+                split: find_local_parquet(split) for split in ("train", "validation", "test")
+            }
+
+    if all(path is not None for path in smsa_paths.values()):
+        smsa_splits = {}
+        for split, path in smsa_paths.items():
+            df = apply_label_map(pd.read_parquet(path)[["texts", "labels"]])
+            smsa_splits[split] = df
+            print(f"  smsa {split:>10}: {len(df):>6} rows")
+
+        domain_train_weighted = pd.concat(
+            [domain_train] * DOMAIN_TRAIN_REPEAT, ignore_index=True
+        )
+        train_df = pd.concat(
+            [smsa_splits["train"], domain_train_weighted], ignore_index=True
+        ).sample(frac=1, random_state=42).reset_index(drop=True)
+
+        return {
+            "dataset_name": "smsa-ind-classification + livon domain",
+            "train": train_df,
+            "smsa_val": smsa_splits["validation"],
+            "smsa_test": smsa_splits["test"],
+            "domain_val": domain_val,
+            "domain_test": domain_test,
+        }
+
+    print("  parquet splits unavailable; falling back to domain_specific.csv splits")
+    return {
+        "dataset_name": "domain_specific_only",
+        "train": domain_train,
+        "smsa_val": domain_val,
+        "smsa_test": domain_test,
+        "domain_val": domain_val,
+        "domain_test": domain_test,
+    }
 
 
 def calibration_cv(labels) -> int:
     min_class_count = int(pd.Series(labels).value_counts().min())
     return max(2, min(5, min_class_count))
 
-def benchmark_preprocessing(
-    train_df: pd.DataFrame,
-    val_df: pd.DataFrame,
-    encoder: LabelEncoder,
-) -> bool:
-    results = {}
 
-    for use_stemming in [True, False]:
-        label = "with stemming" if use_stemming else "without stemming"
-        print(f"\n  [{label}] preprocessing...")
-
-        preprocessor = IndonesianPreprocessor(use_stemming=use_stemming)
-        train_texts  = preprocessor.transform_batch(train_df["texts"].tolist())
-        val_texts    = preprocessor.transform_batch(val_df["texts"].tolist())
-
-        vectorizer = TfidfVectorizer(**TFIDF_BASE, ngram_range=(1, 2))
-        X_train = vectorizer.fit_transform(train_texts)
-        X_val   = vectorizer.transform(val_texts)
-
-        y_train = encoder.transform(train_df["labels"])
-        y_val   = encoder.transform(val_df["labels"])
-
-        model = CalibratedClassifierCV(
-            LinearSVC(C=1.0, **SVM_BASE),
-            cv=calibration_cv(y_train),
-            method="sigmoid",
-        )
-        model.fit(X_train, y_train)
-
-        acc = accuracy_score(y_val, model.predict(X_val))
-        results[use_stemming] = acc
-        print(f"  [{label}] val accuracy: {acc:.4f}")
-
-    best = max(results, key=results.get)
-    print(f"\n  -> best config: {'with' if best else 'without'} stemming "
-          f"({results[best]:.4f})")
-    return best
-
-def grid_search(
-    train_df: pd.DataFrame,
-    val_df: pd.DataFrame,
-    encoder: LabelEncoder,
-    use_stemming: bool,
-) -> tuple[float, dict, list[str], list[str]]:
-
-    print("\n" + "=" * 60)
-    print(f"grid search - {len(PARAM_GRID)} configs")
-    print("=" * 60)
-
-    preprocessor = IndonesianPreprocessor(use_stemming=use_stemming)
-    train_texts  = preprocessor.transform_batch(train_df["texts"].tolist())
-    val_texts    = preprocessor.transform_batch(val_df["texts"].tolist())
-
-    y_train = encoder.transform(train_df["labels"])
-    y_val   = encoder.transform(val_df["labels"])
-
-    best_acc    = -1.0
-    best_params = {}
-    start_total = time.time()
-
-    for i, params in enumerate(PARAM_GRID, 1):
-        vectorizer = TfidfVectorizer(
-            **TFIDF_BASE,
-            ngram_range=params["ngram_range"],
-        )
-        X_train = vectorizer.fit_transform(train_texts)
-        X_val   = vectorizer.transform(val_texts)
-
-        model = CalibratedClassifierCV(
-            LinearSVC(C=params["C"], **SVM_BASE),
-            cv=calibration_cv(y_train),
-            method="sigmoid",
-        )
-        model.fit(X_train, y_train)
-        acc = accuracy_score(y_val, model.predict(X_val))
-
-        marker = " <-" if acc > best_acc else ""
-        print(f"  [{i:>2}/{len(PARAM_GRID)}] C={params['C']:<5} "
-              f"ngram={str(params['ngram_range']):<8} val_acc={acc:.4f}{marker}")
-
-        if acc > best_acc:
-            best_acc    = acc
-            best_params = params
-
-    elapsed = time.time() - start_total
-    print(f"\n  best params : {best_params}")
-    print(f"  best val acc: {best_acc:.4f}")
-    print(f"  total time  : {elapsed:.1f}s")
-
-    return best_acc, best_params, train_texts, val_texts
-
-def train_best(
-    train_texts: list[str],
-    val_texts: list[str],
-    test_df: pd.DataFrame,
-    encoder: LabelEncoder,
-    best_params: dict,
-    use_stemming: bool,
-) -> tuple[CalibratedClassifierCV, TfidfVectorizer, object, object, object]:
-    """retrain on full train set using best params, then vectorize test."""
-    print("\n" + "=" * 60)
-    print("final training with best config")
-    print("=" * 60)
-
-    preprocessor = IndonesianPreprocessor(use_stemming=use_stemming)
-    test_texts   = preprocessor.transform_batch(test_df["texts"].tolist())
-
-    vectorizer = TfidfVectorizer(
-        **TFIDF_BASE,
-        ngram_range=best_params["ngram_range"],
-    )
-    X_train = vectorizer.fit_transform(train_texts)
-    X_val   = vectorizer.transform(val_texts)
-    X_test  = vectorizer.transform(test_texts)
-
-    y_train = encoder.transform(
-        pd.Series(train_texts).index.map(lambda _: None)  
-    ) if False else None
-
-    return vectorizer, X_train, X_val, X_test, test_texts
-
-
-def train_model(X_train, y_train, best_params: dict) -> CalibratedClassifierCV:
-    print(f"\ntraining with C={best_params['C']}, "
-          f"ngram={best_params['ngram_range']}...")
-    start = time.time()
-
-    model = CalibratedClassifierCV(
-        LinearSVC(C=best_params["C"], **SVM_BASE),
-        cv=calibration_cv(y_train),
-        method="sigmoid",
-    )
-    model.fit(X_train, y_train)
-    print(f"  done in {time.time() - start:.1f}s")
-    return model
-
-
-def evaluate(
-    model: CalibratedClassifierCV,
-    X_val, y_val,
-    X_test, y_test,
-    encoder: LabelEncoder,
-    best_params: dict,
-    use_stemming: bool,
-) -> dict[str, float]:
-    class_names = [str(name) for name in encoder.classes_]
-    class_labels = list(range(len(class_names)))
-    results     = {}
-
-    lines: list[str] = [
-        "=" * 60,
-        "livon ai - training report (v2)",
-        "=" * 60,
-        f"model        : linearsvc (calibrated, cv=5)",
-        f"dataset      : smsa-ind-classification",
-        f"best C       : {best_params['C']}",
-        f"best ngram   : {best_params['ngram_range']}",
-        f"stemming     : {use_stemming}",
-        "",
+def build_vectorizer(word_ngram: tuple[int, int], use_char: bool) -> FeatureUnion:
+    transformers = [
+        (
+            "word",
+            TfidfVectorizer(
+                ngram_range=word_ngram,
+                sublinear_tf=True,
+                min_df=2,
+                max_features=35_000,
+                token_pattern=r"(?u)\b\w+\b",
+            ),
+        ),
     ]
-
-    for split_name, X, y in [("validation", X_val, y_val), ("test", X_test, y_test)]:
-        y_pred  = model.predict(X)
-        y_prob  = model.predict_proba(X)
-        acc     = accuracy_score(y, y_pred)
-        if y_prob.ndim == 2 and y_prob.shape[1] == len(class_names) and len(set(y)) == len(class_names):
-            roc_auc = roc_auc_score(y, y_prob, multi_class="ovr", average="macro")
-        else:
-            roc_auc = float("nan")
-            print(
-                f"  warning: skipping roc-auc for {split_name} set because "
-                f"y_true has {len(set(y))} classes and y_score has {y_prob.shape[1]} columns"
+    if use_char:
+        transformers.append(
+            (
+                "char",
+                TfidfVectorizer(
+                    analyzer="char_wb",
+                    ngram_range=(3, 5),
+                    sublinear_tf=True,
+                    min_df=3,
+                    max_features=35_000,
+                ),
             )
-        report  = classification_report(
-            y,
-            y_pred,
-            labels=class_labels,
-            target_names=class_names,
-            zero_division=0,
         )
-        cm      = confusion_matrix(y, y_pred)
+    return FeatureUnion(transformers)
 
-        results[f"{split_name}_accuracy"] = acc
-        results[f"{split_name}_roc_auc"]  = roc_auc
 
-        print(f"\n{split_name} set:")
-        print(f"  accuracy : {acc:.4f}")
-        print(f"  roc-auc  : {roc_auc:.4f}")
-        print(f"\n{report}")
+def build_classifier(config: dict, y_train):
+    if config["family"] == "svm":
+        base = LinearSVC(
+            C=config["C"],
+            class_weight=config["class_weight"],
+            max_iter=3000,
+            random_state=42,
+        )
+        return CalibratedClassifierCV(
+            base,
+            cv=calibration_cv(y_train),
+            method="sigmoid",
+        )
+    return LogisticRegression(
+        C=config["C"],
+        class_weight=config["class_weight"],
+        max_iter=1000,
+        random_state=42,
+    )
 
-        lines += [
-            "-" * 40,
-            split_name.upper(),
-            "-" * 40,
-            f"accuracy : {acc:.4f}",
-            f"roc-auc  : {roc_auc:.4f}",
-            "",
-            report,
-            f"confusion matrix:\n{cm}",
-            "",
-        ]
 
-    report_path = os.path.join(MODEL_DIR, "training_report.txt")
-    with open(report_path, "w") as f:
-        f.write("\n".join(lines))
-    print(f"\nreport saved -> {report_path}")
+def benchmark_stemming(
+    splits: dict[str, pd.DataFrame],
+    encoder: LabelEncoder,
+) -> tuple[bool, dict[bool, dict[str, list[str]]]]:
+    tokenized: dict[bool, dict[str, list[str]]] = {}
+    scores: dict[bool, float] = {}
 
-    return results
+    y_train = encoder.transform(splits["train"]["labels"])
+    y_smsa_val = encoder.transform(splits["smsa_val"]["labels"])
+    y_domain_val = encoder.transform(splits["domain_val"]["labels"])
 
+    for use_stemming in (False, True):
+        label = "with stemming" if use_stemming else "without stemming"
+        start = time.time()
+        print(f"\n  [{label}] preprocessing...")
+        preprocessor = IndonesianPreprocessor(use_stemming=use_stemming)
+        prepped = {
+            name: preprocessor.transform_batch(splits[name]["texts"].tolist())
+            for name in ("train", "smsa_val", "smsa_test", "domain_val", "domain_test")
+        }
+        tokenized[use_stemming] = prepped
+
+        vectorizer = build_vectorizer(word_ngram=(1, 2), use_char=True)
+        X_train = vectorizer.fit_transform(prepped["train"])
+        X_smsa_val = vectorizer.transform(prepped["smsa_val"])
+        X_domain_val = vectorizer.transform(prepped["domain_val"])
+
+        model = LogisticRegression(C=2.0, class_weight="balanced", max_iter=1000, random_state=42)
+        model.fit(X_train, y_train)
+
+        smsa_f1 = f1_score(y_smsa_val, model.predict(X_smsa_val), average="macro")
+        domain_f1 = f1_score(y_domain_val, model.predict(X_domain_val), average="macro")
+        combined = 0.65 * smsa_f1 + 0.35 * domain_f1
+        scores[use_stemming] = combined
+        print(
+            f"  [{label}] smsa_val_f1={smsa_f1:.4f}, "
+            f"domain_val_f1={domain_f1:.4f}, combined={combined:.4f} ({time.time() - start:.1f}s)"
+        )
+
+    best_stemming = max(scores, key=scores.get)
+    print(f"  -> selected stemming={best_stemming}")
+    return best_stemming, tokenized
+
+
+def search_best_model(
+    prepped: dict[str, list[str]],
+    splits: dict[str, pd.DataFrame],
+    encoder: LabelEncoder,
+):
+    param_grid = list(
+        ParameterGrid(
+            [
+                {
+                    "family": ["svm"],
+                    "C": [0.25, 0.5, 1.0],
+                    "class_weight": [None, "balanced"],
+                    "word_ngram": [(1, 2)],
+                    "use_char": [True],
+                },
+                {
+                    "family": ["logreg"],
+                    "C": [1.0, 2.0, 5.0],
+                    "class_weight": [None, "balanced"],
+                    "word_ngram": [(1, 2)],
+                    "use_char": [True],
+                },
+            ]
+        )
+    )
+
+    y_train = encoder.transform(splits["train"]["labels"])
+    y_smsa_val = encoder.transform(splits["smsa_val"]["labels"])
+    y_domain_val = encoder.transform(splits["domain_val"]["labels"])
+
+    vectorizer = build_vectorizer(word_ngram=(1, 2), use_char=True)
+    X_train = vectorizer.fit_transform(prepped["train"])
+    X_smsa_val = vectorizer.transform(prepped["smsa_val"])
+    X_domain_val = vectorizer.transform(prepped["domain_val"])
+
+    print("\n" + "=" * 60)
+    print(f"model selection - {len(param_grid)} configs")
+    print("=" * 60)
+
+    best_score = -1.0
+    best_config = None
+    best_model = None
+
+    for idx, config in enumerate(param_grid, 1):
+        model = build_classifier(config, y_train)
+        model.fit(X_train, y_train)
+
+        smsa_pred = model.predict(X_smsa_val)
+        domain_pred = model.predict(X_domain_val)
+        smsa_f1 = f1_score(y_smsa_val, smsa_pred, average="macro")
+        smsa_acc = accuracy_score(y_smsa_val, smsa_pred)
+        domain_f1 = f1_score(y_domain_val, domain_pred, average="macro")
+        score = 0.65 * smsa_f1 + 0.35 * domain_f1
+
+        marker = " <-" if score > best_score else ""
+        print(
+            f"  [{idx:>2}/{len(param_grid)}] {config['family']:<6} C={config['C']:<4} "
+            f"cw={str(config['class_weight']):<8} smsa_f1={smsa_f1:.4f} (acc={smsa_acc:.4f}) "
+            f"dom_f1={domain_f1:.4f}{marker}"
+        )
+
+        if score > best_score:
+            best_score = score
+            best_config = config
+            best_model = model
+
+    return best_model, vectorizer, best_config
+
+
+def evaluate_split(
+    name: str,
+    model,
+    vectorizer,
+    texts: list[str],
+    labels: pd.Series,
+    encoder: LabelEncoder,
+) -> dict:
+    X = vectorizer.transform(texts)
+    y_true = encoder.transform(labels)
+    y_pred = model.predict(X)
+    y_proba = model.predict_proba(X)
+
+    acc = accuracy_score(y_true, y_pred)
+    macro_f1 = f1_score(y_true, y_pred, average="macro")
+    try:
+        auc = roc_auc_score(y_true, y_proba, multi_class="ovr", average="macro")
+    except ValueError:
+        auc = float("nan")
+    report = classification_report(
+        y_true,
+        y_pred,
+        target_names=encoder.classes_,
+        digits=4,
+        zero_division=0,
+    )
+    cm = confusion_matrix(y_true, y_pred)
+
+    print(f"\n[{name}] accuracy={acc:.4f} macro_f1={macro_f1:.4f} roc_auc={auc:.4f}")
+    print(report)
+    return {
+        "accuracy": acc,
+        "macro_f1": macro_f1,
+        "roc_auc": auc,
+        "report": report,
+        "cm": cm,
+    }
 
 
 def save_artifacts(
-    model: CalibratedClassifierCV,
-    vectorizer: TfidfVectorizer,
+    model,
+    vectorizer,
     encoder: LabelEncoder,
     use_stemming: bool,
+    best_config: dict,
+    dataset_name: str,
+    metrics: dict[str, dict],
 ) -> None:
-    artifacts = {
-        "svm_model.pkl":              model,
-        "tfidf_vect.pkl":             vectorizer,
-        "label_encoder.pkl":          encoder,
-        "preprocessing_config.pkl":   {"use_stemming": use_stemming},
-    }
-    print("\nsaving artifacts...")
-    for filename, obj in artifacts.items():
-        path = os.path.join(MODEL_DIR, filename)
-        joblib.dump(obj, path)
-        print(f"  saved {filename}")
+    joblib.dump(model, os.path.join(MODEL_DIR, "svm_model.pkl"))
+    joblib.dump(vectorizer, os.path.join(MODEL_DIR, "tfidf_vect.pkl"))
+    joblib.dump(encoder, os.path.join(MODEL_DIR, "label_encoder.pkl"))
+    joblib.dump(
+        {
+            "use_stemming": use_stemming,
+            "model_family": best_config["family"],
+            "config": best_config,
+            "version": "3.0",
+        },
+        os.path.join(MODEL_DIR, "preprocessing_config.pkl"),
+    )
+
+    lines = [
+        "=" * 60,
+        "livon ai - training report (v3)",
+        "=" * 60,
+        f"model        : {best_config['family']} (C={best_config['C']}, class_weight={best_config['class_weight']})",
+        f"features     : FeatureUnion(word ngram={best_config['word_ngram']} + char_wb 3-5)",
+        f"dataset      : {dataset_name}",
+        f"stemming     : {use_stemming}",
+        "",
+    ]
+    for split_name, res in metrics.items():
+        lines.extend(
+            [
+                "-" * 40,
+                split_name.upper(),
+                "-" * 40,
+                f"accuracy : {res['accuracy']:.4f}",
+                f"macro_f1 : {res['macro_f1']:.4f}",
+                f"roc-auc  : {res['roc_auc']:.4f}",
+                "",
+                res["report"].rstrip(),
+                "",
+                "confusion matrix:",
+                str(res["cm"]),
+                "",
+            ]
+        )
+
+    report_path = os.path.join(MODEL_DIR, "training_report.txt")
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines).rstrip() + "\n")
+    print(f"\nsaved artifacts + report -> {MODEL_DIR}")
 
 
 def sanity_check(
-    model: CalibratedClassifierCV,
-    vectorizer: TfidfVectorizer,
+    model,
+    vectorizer,
     encoder: LabelEncoder,
     use_stemming: bool,
 ) -> None:
@@ -390,76 +467,59 @@ def sanity_check(
     samples = [
         "jalanan di blok A sudah rusak parah, tolong segera perbaiki!",
         "terima kasih sudah memperbaiki trotoar, warga sangat senang",
-        "pengerjaan sedang berlangsung minggu ini",
-        "ga guna jelek",
-        "ganggu banget ga berguna",
-        "ini terlalu menghabiskan anggaran",
-        "sangat dibutuhkan",
-        "bagus tolong kembangkan",
+        "kapan proyek ini mulai dikerjakan?",
+        "proyek ini tidak bagus dan membuang anggaran",
+        "pembangunan ini tidak mengganggu warga justru membantu",
+        "konsepnya bagus tapi jalan masih banjir",
+        "sebab aja masih menunggu rapat warga",
         "b aja",
     ]
     print("\nsanity check:")
     for text in samples:
-        cleaned  = preprocessor.transform(text)
-        X        = vectorizer.transform([cleaned])
-        idx      = model.predict(X)[0]
-        prob     = max(model.predict_proba(X)[0])
-        label    = str(encoder.inverse_transform([idx])[0])
-        print(f"  [{label.upper():8} {prob:.2f}] {text[:65]}")
+        cleaned = preprocessor.transform(text)
+        X = vectorizer.transform([cleaned])
+        probs = model.predict_proba(X)[0]
+        idx = int(probs.argmax())
+        label = str(encoder.inverse_transform([idx])[0])
+        print(f"  [{label.upper():8} {probs[idx]:.2f}] {text}")
+
 
 def main() -> None:
     print("=" * 60)
-    print("livon ai - training pipeline v2")
+    print("livon ai - training pipeline v3")
     print("=" * 60)
 
-    # load
-    train_df, val_df, test_df = load_splits()
-    train_df = apply_label_map(train_df)
-    val_df   = apply_label_map(val_df)
-    test_df  = apply_label_map(test_df)
-
+    splits = load_splits()
     encoder = LabelEncoder()
-    encoder.fit(train_df["labels"])
-    print(f"\nlabel classes: {encoder.classes_}")
+    encoder.fit(["negative", "neutral", "positive"])
 
-    y_train = encoder.transform(train_df["labels"])
-    y_val   = encoder.transform(val_df["labels"])
-    y_test  = encoder.transform(test_df["labels"])
+    use_stemming, tokenized = benchmark_stemming(splits, encoder)
+    prepped = tokenized[use_stemming]
 
-    use_stemming = benchmark_preprocessing(train_df, val_df, encoder)
+    model, vectorizer, best_config = search_best_model(prepped, splits, encoder)
 
-    _, best_params, train_texts, val_texts = grid_search(
-        train_df, val_df, encoder, use_stemming
+    metrics = {
+        "smsa_validation": evaluate_split(
+            "smsa_validation", model, vectorizer, prepped["smsa_val"], splits["smsa_val"]["labels"], encoder
+        ),
+        "smsa_test": evaluate_split(
+            "smsa_test", model, vectorizer, prepped["smsa_test"], splits["smsa_test"]["labels"], encoder
+        ),
+        "domain_test": evaluate_split(
+            "domain_test", model, vectorizer, prepped["domain_test"], splits["domain_test"]["labels"], encoder
+        ),
+    }
+
+    save_artifacts(
+        model,
+        vectorizer,
+        encoder,
+        use_stemming,
+        best_config,
+        splits["dataset_name"],
+        metrics,
     )
-
-    preprocessor = IndonesianPreprocessor(use_stemming=use_stemming)
-    test_texts   = preprocessor.transform_batch(test_df["texts"].tolist())
-
-    final_train_texts = train_texts + val_texts
-    y_final_train = encoder.transform(
-        pd.concat([train_df["labels"], val_df["labels"]], ignore_index=True)
-    )
-
-    vectorizer = TfidfVectorizer(**TFIDF_BASE, ngram_range=best_params["ngram_range"])
-    X_train = vectorizer.fit_transform(final_train_texts)
-    X_val   = vectorizer.transform(val_texts)
-    X_test  = vectorizer.transform(test_texts)
-
-    model   = train_model(X_train, y_final_train, best_params)
-    results = evaluate(model, X_val, y_val, X_test, y_test, encoder, best_params, use_stemming)
-
-    save_artifacts(model, vectorizer, encoder, use_stemming)
     sanity_check(model, vectorizer, encoder, use_stemming)
-
-    print("\n" + "=" * 60)
-    print("training complete")
-    print(f"  best params   : {best_params}")
-    print(f"  use stemming  : {use_stemming}")
-    print(f"  val accuracy  : {results['validation_accuracy']:.4f}")
-    print(f"  val roc-auc   : {results['validation_roc_auc']:.4f}")
-    print(f"  test accuracy : {results['test_accuracy']:.4f}")
-    print(f"  test roc-auc  : {results['test_roc_auc']:.4f}")
-    print("=" * 60)
 
 
 if __name__ == "__main__":

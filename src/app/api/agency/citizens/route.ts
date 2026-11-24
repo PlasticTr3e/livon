@@ -2,7 +2,7 @@ import { canManage } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
-import { ok, badRequest } from "@/lib/api-response";
+import { ok, internalError } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
 
 /**
@@ -124,6 +124,6 @@ export async function GET(req: NextRequest) {
     return ok("Citizens retrieved successfully", { data: citizens });
   } catch (error: unknown) {
     console.error("[AGENCY_CITIZENS_GET]", error);
-    return badRequest("Failed to retrieve citizens", error);
+    return internalError("Failed to retrieve citizens");
   }
 }

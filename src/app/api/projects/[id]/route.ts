@@ -1,11 +1,33 @@
 import { canManageProjects } from "@/lib/permissions";
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { cached, invalidate } from "@/lib/cache";
 import { ok, internalError, notFound, badRequest } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { Prisma } from "@/generated/prisma/client";
 import { PROJECT_ADDRESS_MAX_LENGTH } from "@/lib/project-address";
+import { isSafeMediaUrl } from "@/lib/url-safety";
+
+const updateProjectSchema = z.object({
+  status: z.enum(["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"]).optional(),
+  notes: z.string().trim().max(2000).optional(),
+  documentUrl: z
+    .array(z.string().trim().refine(isSafeMediaUrl, "Invalid document URL"))
+    .optional(),
+  title: z.string().trim().min(1).optional(),
+  description: z.string().trim().min(1).optional(),
+  budgetTarget: z.number().positive().optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  address: z.string().trim().max(PROJECT_ADDRESS_MAX_LENGTH).nullish(),
+  estimatedDurationDays: z.number().int().positive().optional(),
+  categoryId: z.number().int().optional(),
+  startDate: z.coerce.date().nullish(),
+  imageUrls: z
+    .array(z.string().trim().refine(isSafeMediaUrl, "Invalid image URL"))
+    .optional(),
+});
 
 /**
  * @swagger
@@ -123,7 +145,11 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const body = await req.json();
+    const validation = updateProjectSchema.safeParse(await req.json());
+    if (!validation.success) {
+      return badRequest("Validation failed", z.treeifyError(validation.error));
+    }
+
     const {
       status,
       notes,
@@ -138,38 +164,22 @@ export async function PATCH(
       categoryId,
       startDate,
       imageUrls,
-    } = body;
+    } = validation.data;
 
     const updateData: Record<string, unknown> = {};
 
-    if (status) {
-      const validStatuses = ["USULAN", "DISETUJUI", "BERJALAN", "SELESAI"];
-      if (!validStatuses.includes(status)) {
-        return badRequest("Invalid status provided");
-      }
-      updateData.status = status;
-    }
+    if (status) updateData.status = status;
 
     if (title) updateData.title = title;
     if (description) updateData.description = description;
     if (budgetTarget !== undefined) updateData.budgetTarget = budgetTarget;
     if (latitude !== undefined) updateData.latitude = latitude;
     if (longitude !== undefined) updateData.longitude = longitude;
-    if (address !== undefined) {
-      if (
-        address !== null &&
-        (typeof address !== "string" ||
-          address.trim().length > PROJECT_ADDRESS_MAX_LENGTH)
-      ) {
-        return badRequest("Invalid project address");
-      }
-      updateData.address = address?.trim() || null;
-    }
+    if (address !== undefined) updateData.address = address || null;
     if (estimatedDurationDays !== undefined)
       updateData.estimatedDurationDays = estimatedDurationDays;
     if (categoryId !== undefined) updateData.categoryId = categoryId;
-    if (startDate !== undefined)
-      updateData.startDate = startDate ? new Date(startDate) : null;
+    if (startDate !== undefined) updateData.startDate = startDate;
     if (imageUrls !== undefined) updateData.imageUrls = imageUrls;
     if (documentUrl !== undefined) updateData.documentUrl = documentUrl;
 
@@ -185,14 +195,12 @@ export async function PATCH(
       data: updateData,
     });
 
-    // Update spatial location if coordinates provided
     if (latitude !== undefined && longitude !== undefined) {
-      await prisma.$executeRawUnsafe(
-        `UPDATE projects SET "locationGeom" = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
-        longitude,
-        latitude,
-        id,
-      );
+      await prisma.$executeRaw`
+        UPDATE projects
+        SET "locationGeom" = ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)
+        WHERE id = ${id}
+      `;
     }
 
     // Record activity if status changes

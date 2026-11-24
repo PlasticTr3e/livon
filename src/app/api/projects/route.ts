@@ -8,6 +8,7 @@ import { getAuthUser } from "@/lib/auth";
 import { ProjectStatus, Role } from "@/generated/prisma/enums";
 import { broadcastNotification } from "@/lib/notifications";
 import { PROJECT_ADDRESS_MAX_LENGTH } from "@/lib/project-address";
+import { isSafeMediaUrl } from "@/lib/url-safety";
 
 /**
  * @swagger
@@ -96,10 +97,14 @@ const createProjectSchema = z.object({
   title: z.string().min(5),
   description: z.string().min(10),
   budgetTarget: z.number().positive(),
-  imageUrls: z.array(z.string()).optional(),
-  documentUrls: z.array(z.string()).optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  imageUrls: z
+    .array(z.string().trim().refine(isSafeMediaUrl, "Invalid image URL"))
+    .optional(),
+  documentUrls: z
+    .array(z.string().trim().refine(isSafeMediaUrl, "Invalid document URL"))
+    .optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
   address: z.string().trim().max(PROJECT_ADDRESS_MAX_LENGTH).nullish(),
   estimatedDurationDays: z.number().int().positive().optional(),
   categoryId: z.number().int().optional(),
@@ -192,13 +197,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (data.latitude && data.longitude) {
-      await prisma.$executeRawUnsafe(
-        `UPDATE projects SET "locationGeom" = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
-        data.longitude,
-        data.latitude,
-        project.id,
-      );
+    if (data.latitude !== undefined && data.longitude !== undefined) {
+      await prisma.$executeRaw`
+        UPDATE projects
+        SET "locationGeom" = ST_SetSRID(ST_MakePoint(${data.longitude}, ${data.latitude}), 4326)
+        WHERE id = ${project.id}
+      `;
     }
 
     await broadcastNotification({

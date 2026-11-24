@@ -8,6 +8,7 @@ import { Role } from "@/generated/prisma/enums";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import { broadcastNotification } from "@/lib/notifications";
+import { getAppBaseUrl } from "@/lib/url-safety";
 
 const registerSchema = z.object({
   email: z.email(),
@@ -171,7 +172,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = getAppBaseUrl();
     const verificationUrl = `${appUrl}/api/auth/verify?token=${token}`;
 
     try {

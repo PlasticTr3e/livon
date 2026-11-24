@@ -1,5 +1,6 @@
 "use client";
 import { useLanguage } from "@/context/LanguageContext";
+import { sanitizeHref } from "@/lib/url-safety";
 
 import { Download, ExternalLink, FileText, X } from "lucide-react";
 
@@ -10,6 +11,7 @@ type ProjectPdfViewerProps = {
 
 export function ProjectPdfViewer({ url, onClose }: ProjectPdfViewerProps) {
   const { t: translateUi } = useLanguage();
+  const safeUrl = sanitizeHref(url);
 
   return (
     <div
@@ -35,12 +37,16 @@ export function ProjectPdfViewer({ url, onClose }: ProjectPdfViewerProps) {
           </button>
         </div>
         <div className="flex min-h-0 w-full flex-1 flex-col bg-gray-100 dark:bg-slate-950">
-          <MobileDocumentFallback url={url} />
-          <iframe
-            src={`${url}#toolbar=0`}
-            className="hidden h-full w-full border-none md:block"
-            title={translateUi("PDF Reader")}
-          />
+          {safeUrl && (
+            <>
+              <MobileDocumentFallback url={safeUrl} />
+              <iframe
+                src={`${safeUrl}#toolbar=0`}
+                className="hidden h-full w-full border-none md:block"
+                title={translateUi("PDF Reader")}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
