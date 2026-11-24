@@ -1,9 +1,18 @@
-/** Payment rules and formatters shared by the IPL & donation pages and the Snap server action. */
+import {
+  getDisplayLocale,
+  getDisplayLanguage,
+  translateDisplay,
+} from "@/lib/i18n/display";
+/** Billing rules shared by the IPL & donation pages and the Snap server action. */
 
 export type CheckoutKind = "ipl" | "donation";
 
 /** Billing period in `YYYY-MM` form. */
 export type BillingPeriod = string;
+
+export const IPL_MONTHLY_FEE = 150_000;
+export const IPL_MAX_MONTHS = 12;
+export const IPL_RESIDENCE_LABEL = "Cluster Arunika A-12";
 
 export const DONATION_PRESETS = [25_000, 50_000, 100_000, 250_000];
 export const DONATION_DEFAULT = 100_000;
@@ -30,13 +39,42 @@ export function getCheckoutKindFromSlug(slug: string): CheckoutKind | null {
   return null;
 }
 
+export function isBillingPeriod(value: string): value is BillingPeriod {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
 export function toBillingPeriod(date: Date): BillingPeriod {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
+export function shiftBillingPeriod(
+  period: BillingPeriod,
+  months: number,
+): BillingPeriod {
+  const [year, month] = period.split("-").map(Number);
+  return toBillingPeriod(new Date(year, month - 1 + months, 1));
+}
+
+/** Months after `paidThrough` up to and including the current month. */
+export function getOutstandingPeriods(
+  paidThrough: BillingPeriod,
+  now = new Date(),
+): BillingPeriod[] {
+  const current = toBillingPeriod(now);
+  const periods: BillingPeriod[] = [];
+  let next = shiftBillingPeriod(paidThrough, 1);
+
+  while (next <= current && periods.length < IPL_MAX_MONTHS) {
+    periods.push(next);
+    next = shiftBillingPeriod(next, 1);
+  }
+
+  return periods;
+}
+
 export function formatBillingPeriod(period: BillingPeriod) {
   const [year, month] = period.split("-").map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString("id-ID", {
+  return new Date(year, month - 1, 1).toLocaleDateString(getDisplayLocale(), {
     month: "long",
     year: "numeric",
   });
@@ -48,21 +86,29 @@ export function formatBillingPeriods(periods: BillingPeriod[]) {
   return `${formatBillingPeriod(periods[0])} – ${formatBillingPeriod(periods[periods.length - 1])}`;
 }
 
+/** Month name only, e.g. "November". */
+export function formatBillingMonth(period: BillingPeriod) {
+  const [year, month] = period.split("-").map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString(getDisplayLocale(), {
+    month: "long",
+  });
+}
+
 export function formatRupiah(amount: number) {
-  return `Rp ${amount.toLocaleString("id-ID")}`;
+  return `Rp ${amount.toLocaleString(getDisplayLocale())}`;
 }
 
 /** Short form for stat tiles, e.g. `Rp 35,25 jt`. */
 export function formatCompactRupiah(amount: number) {
   if (Math.abs(amount) >= 1_000_000) {
-    return `Rp ${(amount / 1_000_000).toLocaleString("id-ID", { maximumFractionDigits: 2 })} jt`;
+    return `Rp ${(amount / 1_000_000).toLocaleString(getDisplayLocale(), { maximumFractionDigits: 2 })} ${getDisplayLanguage() === "en" ? "m" : "jt"}`;
   }
   return formatRupiah(amount);
 }
 
 /** `05 Mar 2026` */
 export function formatShortDate(date: Date | string) {
-  return new Date(date).toLocaleDateString("id-ID", {
+  return new Date(date).toLocaleDateString(getDisplayLocale(), {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -77,13 +123,13 @@ export function formatActivityTime(date: Date | string, now = new Date()) {
   const diffDays = Math.round(
     (startOfDay(now) - startOfDay(target)) / 86_400_000,
   );
-  const time = target.toLocaleTimeString("id-ID", {
+  const time = target.toLocaleTimeString(getDisplayLocale(), {
     hour: "2-digit",
     minute: "2-digit",
   });
 
-  if (diffDays === 0) return `Hari ini, ${time}`;
-  if (diffDays === 1) return `Kemarin, ${time}`;
+  if (diffDays === 0) return translateDisplay("Hari ini, {0}", { 0: time });
+  if (diffDays === 1) return translateDisplay("Kemarin, {0}", { 0: time });
   return formatShortDate(target);
 }
 
@@ -94,16 +140,20 @@ export function parseAmountInput(value: string) {
 }
 
 export function formatAmountInput(amount: number) {
-  return amount > 0 ? amount.toLocaleString("id-ID") : "";
+  return amount > 0 ? amount.toLocaleString(getDisplayLocale()) : "";
 }
 
 export function getDonationAmountError(amount: number) {
   if (amount === 0) return null;
   if (amount < DONATION_MIN) {
-    return `Minimal donasi ${formatRupiah(DONATION_MIN)}`;
+    return translateDisplay("Minimal donasi {0}", {
+      0: formatRupiah(DONATION_MIN),
+    });
   }
   if (amount > DONATION_MAX) {
-    return `Maksimal donasi ${formatRupiah(DONATION_MAX)}`;
+    return translateDisplay("Maksimal donasi {0}", {
+      0: formatRupiah(DONATION_MAX),
+    });
   }
   return null;
 }
@@ -120,5 +170,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 export function formatPaymentMethod(paymentType?: string) {
   if (!paymentType) return "Midtrans";
-  return PAYMENT_METHOD_LABELS[paymentType] ?? paymentType.replace(/_/g, " ");
+  return translateDisplay(
+    PAYMENT_METHOD_LABELS[paymentType] ?? paymentType.replace(/_/g, " "),
+  );
 }

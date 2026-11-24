@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { ok, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
+import { syncBillingNotifications } from "@/services/finance/billing-notifications";
 
 /**
  * @swagger
@@ -27,6 +28,9 @@ export async function GET(req: NextRequest) {
       return badRequest("Unauthorized: Invalid or missing token");
     }
 
+    await prisma.$transaction((tx) =>
+      syncBillingNotifications(tx, authUser.userId),
+    );
     const notifications = await prisma.notification.findMany({
       where: { userId: authUser.userId },
       orderBy: [{ isRead: "asc" }, { createdAt: "desc" }],

@@ -1,40 +1,50 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
+import { HandCoins } from "lucide-react";
 import { PaymentPageShell } from "@/components/payment/PaymentPageShell";
-import { PaymentSubHeader } from "@/components/payment/PaymentSubHeader";
+import { PaymentFlowHeader } from "@/components/payment/PaymentFlowHeader";
+import { FeatureCard } from "@/components/shared/FeatureCard";
+import { BackBar } from "@/components/shared/BackBar";
 import { PAYMENT_ROUTES } from "@/lib/payment/billing";
-import { useDonationFeed, useFinanceSummary } from "@/lib/payment/finance-data";
 import { DonationForm } from "./DonationForm";
-import { DonationHero } from "./DonationHero";
-import { RecentDonorsList } from "./RecentDonorsList";
-
-const RECENT_DONOR_LIMIT = 5;
+import { useFinanceHub } from "./useFinanceHub";
+import { FinanceLoadState } from "./FinanceLoadState";
 
 export function DonationPageContent() {
-  const finance = useFinanceSummary();
-  const feed = useDonationFeed(RECENT_DONOR_LIMIT);
+  const { t: translateUi } = useLanguage();
 
+  const { data, error, refresh } = useFinanceHub();
   return (
     <PaymentPageShell
-      header={<PaymentSubHeader backHref={PAYMENT_ROUTES.hub} badge="secure" />}
+      width="narrow"
+      header={
+        <>
+          <BackBar
+            href={`${PAYMENT_ROUTES.hub}#donasi`}
+            label={translateUi("Kembali ke Kantong Donasi")}
+          />
+          <PaymentFlowHeader
+            title={translateUi("Donasi warga")}
+            description={translateUi(
+              "Kontribusi sukarela untuk dana sosial lingkungan. Donasi tidak menggantikan kewajiban IPL.",
+            )}
+            icon={HandCoins}
+          />
+        </>
+      }
     >
-      <div className="space-y-5">
-        <DonationHero
-          balance={finance.summary?.donationBalance ?? 0}
-          donationCount={feed.donationCount}
-          isLoading={
-            (finance.isLoading && !finance.summary) ||
-            (feed.isLoading && !feed.data)
-          }
-        />
-        <DonationForm />
-        <RecentDonorsList
-          donations={feed.donations}
-          isLoading={feed.isLoading && !feed.data}
-          error={feed.error}
-          onRetry={feed.reload}
-        />
-      </div>
+      {!data ? (
+        <FeatureCard>
+          <FinanceLoadState error={error} retry={() => void refresh()} />
+        </FeatureCard>
+      ) : (
+        <div className="space-y-5 pb-6">
+          <FeatureCard>
+            <DonationForm />
+          </FeatureCard>
+        </div>
+      )}
     </PaymentPageShell>
   );
 }

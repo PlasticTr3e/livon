@@ -1,3 +1,4 @@
+import { UiText } from "@/context/LanguageContext";
 import { memo } from "react";
 import Script from "next/script";
 import { ChevronDown, Filter, Search } from "lucide-react";
@@ -35,13 +36,27 @@ export const AdminUsersFilters = memo(function AdminUsersFilters({
             data-auto-submit="true"
             className="h-11 w-full cursor-pointer appearance-none rounded-xl border border-green-200 bg-white pl-9 pr-8 text-xs font-bold text-gray-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-green-500/50 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white"
           >
-            <option value="ALL">All Users</option>
-            <option value="admin">Admin</option>
-            <option value="warga">Warga</option>
-            <option value="developer">Developer</option>
-            <option value="Verified">Verified</option>
-            <option value="Pending">Pending</option>
-            <option value="Blocked">Blocked</option>
+            <option value="ALL">
+              <UiText>All Users</UiText>
+            </option>
+            <option value="agency">
+              <UiText>Agency</UiText>
+            </option>
+            <option value="developer">
+              <UiText>Developer</UiText>
+            </option>
+            <option value="resident">
+              <UiText>Resident</UiText>
+            </option>
+            <option value="Verified">
+              <UiText>Verified</UiText>
+            </option>
+            <option value="Pending">
+              <UiText>Pending</UiText>
+            </option>
+            <option value="Blocked">
+              <UiText>Blocked</UiText>
+            </option>
           </select>
           <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-green-600">
             <Filter className="h-3.5 w-3.5" />
@@ -50,7 +65,9 @@ export const AdminUsersFilters = memo(function AdminUsersFilters({
             <ChevronDown className="h-4 w-4" />
           </div>
         </div>
-        <button className="sr-only">Apply filters</button>
+        <button className="sr-only">
+          <UiText>Apply filters</UiText>
+        </button>
       </form>
       <Script id="users-filter-auto-submit" strategy="afterInteractive">
         {`

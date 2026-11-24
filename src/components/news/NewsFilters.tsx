@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -14,6 +15,8 @@ export function NewsFilters({
   initialQuery = "",
   initialSort = "latest",
 }: NewsFiltersProps) {
+  const { t: translateUi } = useLanguage();
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -55,7 +58,7 @@ export function NewsFilters({
             name="q"
             type="text"
             defaultValue={initialQuery}
-            placeholder="Search news..."
+            placeholder={translateUi("Search news...")}
             className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-4 text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-green-500 dark:border-gray-800 dark:bg-[#111827]"
           />
         </div>
@@ -67,8 +70,8 @@ export function NewsFilters({
           onChange={(event) => updateFilters({ sort: event.target.value })}
           className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-white pl-4 pr-10 text-sm font-semibold text-gray-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-green-500/50 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white md:w-32"
         >
-          <option value="latest">Latest</option>
-          <option value="oldest">Oldest</option>
+          <option value="latest">{translateUi("Latest")}</option>
+          <option value="oldest">{translateUi("Oldest")}</option>
         </select>
         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
           {initialSort === "latest" ? (

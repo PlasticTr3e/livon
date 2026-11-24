@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Newspaper } from "lucide-react";
 import { NewsFilters } from "./NewsFilters";
 import type { NewsSortOption } from "@/lib/news/news-types";
@@ -8,6 +11,8 @@ type NewsHeaderProps = {
 };
 
 export function NewsHeader({ query, sort }: NewsHeaderProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="flex flex-col items-start justify-between gap-6 border-b border-gray-200 pb-6 dark:border-gray-800 md:flex-row md:items-end">
       <div>
@@ -16,12 +21,13 @@ export function NewsHeader({ query, sort }: NewsHeaderProps) {
             <Newspaper className="h-5 w-5 text-white" />
           </div>
           <h1 className="text-3xl font-black text-gray-900 dark:text-white">
-            News & Updates
+            {translateUi("News & Updates")}
           </h1>
         </div>
         <p className="ml-[52px] max-w-md text-sm leading-relaxed text-gray-500 dark:text-white">
-          Stay informed about the latest developments and stories from our
-          community projects.
+          {translateUi(
+            "Stay informed about the latest developments and stories from our community projects.",
+          )}
         </p>
       </div>
 

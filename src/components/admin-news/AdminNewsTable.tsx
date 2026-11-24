@@ -1,3 +1,6 @@
+"use client";
+
+import { UiText, useLanguage } from "@/context/LanguageContext";
 import { memo, useCallback, useMemo } from "react";
 import { Edit2, Image as ImageIcon, Star, Trash2 } from "lucide-react";
 import { Badge, Card, cn } from "@/components/ui/primitives";
@@ -37,11 +40,21 @@ export const AdminNewsTable = memo(function AdminNewsTable({
           <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
               <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
-                <th className="px-8 py-4">News Details</th>
-                <th className="px-4 py-4 text-center">Status</th>
-                <th className="px-4 py-4">Publication Date</th>
-                <th className="px-4 py-4">Author</th>
-                <th className="px-8 py-4 text-right">Actions</th>
+                <th className="px-8 py-4">
+                  <UiText>News Details</UiText>
+                </th>
+                <th className="px-4 py-4 text-center">
+                  <UiText>Status</UiText>
+                </th>
+                <th className="px-4 py-4">
+                  <UiText>Publication Date</UiText>
+                </th>
+                <th className="px-4 py-4">
+                  <UiText>Author</UiText>
+                </th>
+                <th className="px-8 py-4 text-right">
+                  <UiText>Actions</UiText>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
@@ -73,10 +86,14 @@ const AdminNewsTableRow = memo(function AdminNewsTableRow({
   onEdit: (item: AdminNewsWithExtras) => void;
   onToggleHeadline: (id: string) => void;
 }) {
+  const { t: translateUi, locale: uiLocale } = useLanguage();
+
   const publishedDate = useMemo(
     () =>
-      item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : "-",
-    [item.publishedAt],
+      item.publishedAt
+        ? new Date(item.publishedAt).toLocaleDateString(uiLocale)
+        : "-",
+    [item.publishedAt, uiLocale],
   );
   const handleToggleHeadline = useCallback(() => {
     onToggleHeadline(item.id);
@@ -116,7 +133,7 @@ const AdminNewsTableRow = memo(function AdminNewsTableRow({
             </span>
             {item.isHeadline && (
               <span className="mt-1 inline-flex rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-yellow-700 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
-                Headline
+                <UiText>Headline</UiText>
               </span>
             )}
           </div>
@@ -132,7 +149,7 @@ const AdminNewsTableRow = memo(function AdminNewsTableRow({
                 : "border-gray-300 bg-gray-100 text-gray-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white",
             )}
           >
-            {item.publishedAt ? "Published" : "Draft"}
+            {item.publishedAt ? translateUi("Published") : translateUi("Draft")}
           </Badge>
         </div>
       </td>

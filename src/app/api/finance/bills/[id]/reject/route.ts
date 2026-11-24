@@ -1,7 +1,7 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import { ok, badRequest } from "@/lib/api-response";
-import { Role } from "@/generated/prisma/enums";
 import { rejectResidentBill } from "@/services/finance/finance-service";
 
 export const dynamic = "force-dynamic";
@@ -57,12 +57,12 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
       );
     }
 
-    if (authUser.role !== Role.ADMIN) {
+    if (!canManage(authUser.role)) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Forbidden: Hanya role ADMIN yang memiliki izin untuk menolak pembayaran tagihan warga.",
+            "Forbidden: Hanya role AGENCY yang memiliki izin untuk menolak pembayaran tagihan warga.",
         },
         { status: 403 },
       );

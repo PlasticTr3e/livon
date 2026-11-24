@@ -1,26 +1,4 @@
-export type ProfileTab = "personal" | "activity";
-
 export type ProfileRole = "resident" | "agency";
-
-export type ProfileActivityType =
-  | "voted"
-  | "commented"
-  | "donated"
-  | "project_created"
-  | "project_updated"
-  | "news_created"
-  | "news_updated"
-  | "warga_verified";
-
-export type ProfileActivityItem = {
-  id: string | number;
-  type: ProfileActivityType;
-  project: string;
-  targetTitle: string;
-  time: string;
-  createdAt: string;
-  actionDesc: string;
-};
 
 export type CitizenProfile = {
   fullName?: string | null;
@@ -52,22 +30,4 @@ export type UserWithProfile = {
   noRumah?: string | null;
   citizenProfile?: CitizenProfile | null;
   agencyProfile?: AgencyProfile | null;
-};
-
-export type ProjectActivitySource = {
-  id: string;
-  title: string;
-  agencyId?: string | null;
-  createdAt?: string;
-};
-
-export type NewsActivitySource = {
-  id: string;
-  title: string;
-  createdById: string;
-  createdAt?: string;
-};
-
-export type NewsListResponse = {
-  items?: NewsActivitySource[];
 };

@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useMemo } from "react";
 import Link from "next/link";
@@ -14,6 +15,8 @@ type NewsHeadlineProps = {
 };
 
 export function NewsHeadline({ newsItems, isSearching }: NewsHeadlineProps) {
+  const { t: translateUi } = useLanguage();
+
   const headlineId = useHeadlineNewsId();
   const headline = useMemo(() => {
     if (isSearching || !headlineId) return null;
@@ -51,7 +54,8 @@ export function NewsHeadline({ newsItems, isSearching }: NewsHeadlineProps) {
           </p>
           <div className="mt-auto flex items-center justify-between">
             <span className="flex items-center gap-2 rounded-full border border-green-500 px-4 py-2 text-sm font-semibold text-white transition-colors group-hover:border-yellow-400 group-hover:bg-yellow-400 group-hover:text-yellow-900">
-              Baca Selengkapnya <ChevronRight className="h-4 w-4" />
+              {translateUi("Baca Selengkapnya ")}
+              <ChevronRight className="h-4 w-4" />
             </span>
           </div>
         </div>

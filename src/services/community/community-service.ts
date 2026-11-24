@@ -1,3 +1,4 @@
+import { canManage } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import { Role } from "@/generated/prisma/enums";
 import type { UserRole } from "@/context/UserContext";
@@ -56,14 +57,19 @@ type UserWithProfiles = {
  * Maps Prisma User with profiles to CommunityAuthorDto.
  */
 function mapCommunityAuthor(user: UserWithProfiles): CommunityAuthorDto {
-  const isAgency = user.role === Role.ADMIN;
+  const isAgency = user.role === Role.AGENCY;
   const displayName =
     user.citizenProfile?.fullName ||
     user.agencyProfile?.agencyName ||
     user.email.split("@")[0] ||
     "User";
 
-  const role: UserRole = isAgency ? "agency" : "resident";
+  const role: UserRole =
+    user.role === Role.DEVELOPER
+      ? "developer"
+      : isAgency
+        ? "agency"
+        : "resident";
 
   return {
     name: displayName,
@@ -542,7 +548,7 @@ export async function createCommunityPost(
 }
 
 /**
- * Soft deletes a community post. Allowed by author or admin (AGENCY).
+ * Soft deletes a community post. Allowed by author or admin.
  */
 export async function deleteCommunityPost(
   postId: string,
@@ -559,7 +565,7 @@ export async function deleteCommunityPost(
   }
 
   const isAuthor = post.userId === userId;
-  const isAdmin = userRole === Role.ADMIN;
+  const isAdmin = canManage(userRole);
 
   if (!isAuthor && !isAdmin) {
     return {
@@ -692,7 +698,7 @@ export async function addCommunityComment(
 }
 
 /**
- * Soft deletes a community comment. Allowed by author or admin (AGENCY).
+ * Soft deletes a community comment. Allowed by author or admin.
  */
 export async function deleteCommunityComment(
   commentId: string,
@@ -709,7 +715,7 @@ export async function deleteCommunityComment(
   }
 
   const isAuthor = comment.userId === userId;
-  const isAdmin = userRole === Role.ADMIN;
+  const isAdmin = canManage(userRole);
 
   if (!isAuthor && !isAdmin) {
     return {

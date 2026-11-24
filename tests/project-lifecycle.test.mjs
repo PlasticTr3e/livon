@@ -57,6 +57,17 @@ const map = load("src/lib/map/map-format.ts");
 const admin = load("src/lib/admin-projects/admin-projects-format.ts");
 const sentiment = load("src/lib/project-sentiment.ts");
 const mapApi = load("src/lib/map/map-api.ts");
+const { formatProjectAddress } = load("src/lib/project-address.ts");
+
+test("project addresses take precedence and older projects keep their coordinates", () => {
+  const coordinates = { latitude: -6.941299, longitude: 107.776877 };
+  assert.equal(
+    formatProjectAddress({ ...coordinates, address: "  Jl. Permaisuri Blok 22  " }),
+    "Jl. Permaisuri Blok 22",
+  );
+  assert.equal(formatProjectAddress({ ...coordinates, address: " " }), "-6.9413, 107.7769");
+  assert.equal(formatProjectAddress({}), "-");
+});
 
 test("project stages expose exactly planning, construction, and completion", () => {
   assert.deepEqual(Array.from(lifecycle.PROJECT_STAGES), [

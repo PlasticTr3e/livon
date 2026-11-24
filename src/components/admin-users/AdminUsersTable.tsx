@@ -1,4 +1,5 @@
 "use client";
+import { UiText, useLanguage } from "@/context/LanguageContext";
 
 import { Ban, CheckCircle, Eye, Loader2 } from "lucide-react";
 import { memo, useActionState, useCallback, useEffect, useState } from "react";
@@ -22,6 +23,7 @@ import { AdminUserDetailsDialog } from "./AdminUserDetailsDialog";
 
 type AdminUsersTableProps = {
   users: AdminUser[];
+  onChange: () => void;
 };
 
 const initialAdminUserActionState: AdminUserActionState = {
@@ -31,27 +33,30 @@ const initialAdminUserActionState: AdminUserActionState = {
 
 export const AdminUsersTable = memo(function AdminUsersTable({
   users,
+  onChange,
 }: AdminUsersTableProps) {
-  const [verifierUserId] = useState(() => getCurrentVerifierUserId());
-
   return (
     <div className="-mx-5 overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-left">
         <thead>
           <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
-            <th className="px-8 py-4">User Details</th>
-            <th className="px-4 py-4 text-center">Role</th>
-            <th className="px-4 py-4 text-center">Status</th>
-            <th className="px-8 py-4 text-right">Actions</th>
+            <th className="px-8 py-4">
+              <UiText>User Details</UiText>
+            </th>
+            <th className="px-4 py-4 text-center">
+              <UiText>Role</UiText>
+            </th>
+            <th className="px-4 py-4 text-center">
+              <UiText>Status</UiText>
+            </th>
+            <th className="px-8 py-4 text-right">
+              <UiText>Actions</UiText>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
           {users.map((user) => (
-            <AdminUsersTableRow
-              key={user.id}
-              user={user}
-              verifierUserId={verifierUserId}
-            />
+            <AdminUsersTableRow key={user.id} user={user} onChange={onChange} />
           ))}
         </tbody>
       </table>
@@ -61,19 +66,31 @@ export const AdminUsersTable = memo(function AdminUsersTable({
 
 const AdminUsersTableRow = memo(function AdminUsersTableRow({
   user,
-  verifierUserId,
+  onChange,
 }: {
   user: AdminUser;
-  verifierUserId: string;
+  onChange: () => void;
 }) {
+  const { t: translateUi } = useLanguage();
+
   const toast = useToast();
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [verifyState, verifyAction, isVerifying] = useActionState(
-    verifyAdminUser,
+    (state: AdminUserActionState, formData: FormData) =>
+      verifyAdminUser(
+        state,
+        formData,
+        localStorage.getItem("livon-token") ?? "",
+      ),
     initialAdminUserActionState,
   );
   const [blockState, blockAction, isTogglingBlock] = useActionState(
-    toggleAdminUserBlock,
+    (state: AdminUserActionState, formData: FormData) =>
+      toggleAdminUserBlock(
+        state,
+        formData,
+        localStorage.getItem("livon-token") ?? "",
+      ),
     initialAdminUserActionState,
   );
   const role = getAdminUserRole(user);
@@ -85,22 +102,24 @@ const AdminUsersTableRow = memo(function AdminUsersTableRow({
   useEffect(() => {
     if (verifyState.status === "success") {
       toast.success("Success", verifyState.message);
+      onChange();
     }
 
     if (verifyState.status === "error") {
       toast.error("Verification failed", verifyState.message);
     }
-  }, [toast, verifyState]);
+  }, [toast, verifyState, onChange]);
 
   useEffect(() => {
     if (blockState.status === "success") {
       toast.success("Success", blockState.message);
+      onChange();
     }
 
     if (blockState.status === "error") {
       toast.error("Action failed", blockState.message);
     }
-  }, [blockState, toast]);
+  }, [blockState, toast, onChange]);
 
   return (
     <tr className="group transition-colors hover:bg-green-50/50 dark:hover:bg-green-900/20">
@@ -126,7 +145,7 @@ const AdminUsersTableRow = memo(function AdminUsersTableRow({
           <span
             className={`inline-flex items-center justify-center rounded-full px-4 py-1 text-[10px] font-semibold ${getAdminUserRoleStyle(role)}`}
           >
-            {getAdminUserRoleLabel(role)}
+            {translateUi(getAdminUserRoleLabel(role))}
           </span>
         </div>
       </td>
@@ -135,7 +154,7 @@ const AdminUsersTableRow = memo(function AdminUsersTableRow({
           <Badge
             className={`rounded-full px-4 py-1 text-[10px] font-semibold ${getAdminUserStatusStyle(status)}`}
           >
-            {status}
+            {translateUi(status)}
           </Badge>
         </div>
       </td>
@@ -171,11 +190,6 @@ const AdminUsersTableRow = memo(function AdminUsersTableRow({
           {status === "Pending" && (
             <form action={verifyAction}>
               <input type="hidden" name="userId" value={user.id} />
-              <input
-                type="hidden"
-                name="verifierUserId"
-                value={verifierUserId}
-              />
               <ActionIconButton
                 disabled={isVerifying}
                 title="Verify user"
@@ -189,7 +203,7 @@ const AdminUsersTableRow = memo(function AdminUsersTableRow({
               </ActionIconButton>
             </form>
           )}
-          {role === "warga" && (
+          {role === "resident" && (
             <form action={blockAction}>
               <input type="hidden" name="userId" value={user.id} />
               <input
@@ -214,28 +228,6 @@ const AdminUsersTableRow = memo(function AdminUsersTableRow({
     </tr>
   );
 });
-
-function getCurrentVerifierUserId() {
-  if (typeof window === "undefined") return "";
-
-  const token = localStorage.getItem("livon-token");
-  if (!token) return "";
-
-  try {
-    const [, payload] = token.split(".");
-    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const paddedPayload = normalizedPayload.padEnd(
-      Math.ceil(normalizedPayload.length / 4) * 4,
-      "=",
-    );
-    const decodedPayload = JSON.parse(atob(paddedPayload)) as {
-      userId?: string;
-    };
-    return decodedPayload.userId || "";
-  } catch {
-    return "";
-  }
-}
 
 const ActionIconButton = memo(function ActionIconButton({
   children,

@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useMemo } from "react";
 import Link from "next/link";
@@ -19,6 +20,8 @@ export function NewsGrid({
   isSearching,
   currentSort = "latest",
 }: NewsGridProps) {
+  const { t: translateUi } = useLanguage();
+
   const headlineId = useHeadlineNewsId();
   const sortedNews = useMemo(() => {
     if (isSearching || currentSort !== "latest" || !headlineId) {
@@ -36,8 +39,8 @@ export function NewsGrid({
         <SearchX className="h-12 w-12 opacity-20" />
         <p className="font-medium">
           {isSearching
-            ? "No news matches your search."
-            : "There are no news updates yet."}
+            ? translateUi("No news matches your search.")
+            : translateUi("There are no news updates yet.")}
         </p>
       </div>
     );
@@ -72,7 +75,8 @@ export function NewsGrid({
                 <Clock className="h-3 w-3" /> {formatNewsDate(news.publishedAt)}
               </span>
               <span className="flex items-center gap-0.5 text-green-600 transition-all group-hover:gap-1.5 dark:text-green-400">
-                Read More <ChevronRight className="h-3 w-3" />
+                {translateUi("Read More ")}
+                <ChevronRight className="h-3 w-3" />
               </span>
             </div>
           </div>

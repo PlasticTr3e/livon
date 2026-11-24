@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Eye, EyeOff } from "lucide-react";
 import { RegisterTextInput } from "./RegisterTextInput";
 
@@ -18,6 +21,8 @@ export function RegisterPasswordInput({
   onChange,
   onToggleVisibility,
 }: RegisterPasswordInputProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div>
       <div className="relative">
@@ -32,7 +37,11 @@ export function RegisterPasswordInput({
           type="button"
           onClick={onToggleVisibility}
           className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          aria-label={isVisible ? "Hide password" : "Show password"}
+          aria-label={
+            isVisible
+              ? translateUi("Hide password")
+              : translateUi("Show password")
+          }
         >
           {isVisible ? (
             <EyeOff className="h-4 w-4" />
@@ -41,7 +50,11 @@ export function RegisterPasswordInput({
           )}
         </button>
       </div>
-      {error && <p className="mt-1 pl-4 text-[11px] text-red-500">{error}</p>}
+      {error && (
+        <p className="mt-1 pl-4 text-[11px] text-red-500">
+          {translateUi(error)}
+        </p>
+      )}
     </div>
   );
 }

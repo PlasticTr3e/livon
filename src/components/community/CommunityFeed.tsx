@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { MessagesSquare, SearchX } from "lucide-react";
 import type { CommunityPost } from "@/lib/community/community-types";
 import { CommunityPostCard } from "./CommunityPostCard";
@@ -21,6 +24,8 @@ export function CommunityFeed({
   onOpenPost,
   onToggleLike,
 }: CommunityFeedProps) {
+  const { t: translateUi } = useLanguage();
+
   if (posts.length === 0) {
     const EmptyIcon = isSearching ? SearchX : MessagesSquare;
 
@@ -29,8 +34,8 @@ export function CommunityFeed({
         <EmptyIcon className="h-12 w-12 opacity-20" />
         <p className="text-sm font-medium">
           {isSearching
-            ? "No posts match your search."
-            : "No posts yet. Be the first to share your ideas."}
+            ? translateUi("No posts match your search.")
+            : translateUi("No posts yet. Be the first to share your ideas.")}
         </p>
       </div>
     );

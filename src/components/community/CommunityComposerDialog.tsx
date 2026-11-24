@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -34,6 +35,8 @@ export function CommunityComposerDialog({
   onOpenChange,
   onSubmit,
 }: CommunityComposerDialogProps) {
+  const { t: translateUi } = useLanguage();
+
   const submitting = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const firstTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -130,10 +133,10 @@ export function CommunityComposerDialog({
                 disabled={isSubmitting}
                 className="-ml-2 justify-self-start rounded-lg px-2 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
               >
-                Cancel
+                {translateUi("Cancel")}
               </Dialog.Close>
               <Dialog.Title className="text-sm font-black text-gray-900 dark:text-white">
-                New post
+                {translateUi("New post")}
               </Dialog.Title>
               <Button
                 variant="primary"
@@ -141,7 +144,7 @@ export function CommunityComposerDialog({
                 disabled={!canSubmit || isSubmitting}
                 className="justify-self-end rounded-full px-5 py-1.5 text-sm font-bold disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Posting..." : "Send"}
+                {isSubmitting ? translateUi("Posting...") : translateUi("Send")}
               </Button>
             </div>
 
@@ -179,7 +182,7 @@ export function CommunityComposerDialog({
                         className="opacity-60 transition-opacity group-hover:opacity-100"
                       />
                     </span>
-                    Add to post
+                    {translateUi("Add to post")}
                   </button>
                 )}
               </div>

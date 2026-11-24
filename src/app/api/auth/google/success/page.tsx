@@ -5,6 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { fetchSessionDisplayName } from "@/lib/app-shell/session-profile";
+import {
+  getLoginRedirectPath,
+  mapApiRoleToLoginRole,
+} from "@/lib/login/login-auth";
 
 function GoogleSuccessContent() {
   const router = useRouter();
@@ -21,16 +25,12 @@ function GoogleSuccessContent() {
           const payload = token.split(".")[1];
           const decodedPayload = JSON.parse(atob(payload));
 
-          const userRole = decodedPayload.role === "WARGA" ? "WARGA" : "AGENCY";
+          const userRole = mapApiRoleToLoginRole(decodedPayload.role);
           const userName = await fetchSessionDisplayName(token);
 
           login(userRole, userName);
 
-          if (userRole === "AGENCY") {
-            router.push("/admin/users");
-          } else {
-            router.push("/map");
-          }
+          router.push(getLoginRedirectPath(userRole));
         } catch {
           router.push("/auth/login?error=InvalidToken");
         }

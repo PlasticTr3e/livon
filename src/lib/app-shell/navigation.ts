@@ -29,14 +29,16 @@ const agencyNavLinks: AppNavLink[] = [
 
 export function getAppNavLinks(userRole: string) {
   const r = userRole?.toLowerCase();
-  return r === "agency" || r === "admin" ? agencyNavLinks : residentNavLinks;
+  return r === "agency" || r === "developer"
+    ? agencyNavLinks
+    : residentNavLinks;
 }
 
 export function getHomeHref(userRole: string) {
   const r = userRole?.toLowerCase();
-  return r === "agency" || r === "admin" ? "/admin/dashboard" : "/map";
+  return r === "agency" || r === "developer" ? "/admin/dashboard" : "/map";
 }
 
 export function canToggleRouteSidebar(pathname: string) {
-  return pathname === "/map" || pathname === "/profile";
+  return pathname === "/map";
 }

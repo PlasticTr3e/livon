@@ -1,12 +1,10 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
-import { useId, useState } from "react";
+import { useId } from "react";
 import { useRouter } from "next/navigation";
-import { HandHeart, HeartHandshake } from "lucide-react";
-import {
-  primaryButtonClass,
-  sectionCardClass,
-} from "@/components/payment/payment-styles";
+import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
+import { primaryButtonClass } from "@/components/payment/payment-styles";
 import {
   DONATION_DEFAULT,
   DONATION_MESSAGE_MAX,
@@ -17,83 +15,93 @@ import { buildDonationCheckoutHref } from "@/lib/payment/checkout-query";
 import { DonationAmountPicker } from "./DonationAmountPicker";
 
 export function DonationForm() {
+  const { t: translateUi } = useLanguage();
+
   const router = useRouter();
   const messageId = useId();
-  const [selectedPreset, setSelectedPreset] = useState<number | null>(
-    DONATION_DEFAULT,
+  const [amount, setAmount] = useQueryState(
+    "jumlah",
+    parseAsInteger.withDefault(DONATION_DEFAULT),
   );
-  const [customAmount, setCustomAmount] = useState(0);
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const amount = customAmount || selectedPreset || 0;
+  const [mode, setMode] = useQueryState(
+    "nominal",
+    parseAsString.withDefault("preset"),
+  );
+  const [anonymous, setAnonymous] = useQueryState(
+    "anonim",
+    parseAsString.withDefault("0"),
+  );
+  const [message, setMessage] = useQueryState(
+    "pesan",
+    parseAsString.withDefault(""),
+  );
+  const selectedPreset =
+    mode === "preset" && DONATION_PRESETS.includes(amount) ? amount : null;
   const canDonate = amount > 0 && !getDonationAmountError(amount);
-
-  function handleSelectPreset(preset: number) {
-    setSelectedPreset(preset);
-    setCustomAmount(0);
-  }
-
-  function handleCustomAmountChange(value: number) {
-    setCustomAmount(value);
-    if (value > 0) setSelectedPreset(null);
-  }
-
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!canDonate) return;
-    router.push(
-      buildDonationCheckoutHref({ amount, anonymous: isAnonymous, message }),
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className={sectionCardClass}>
-      <div className="flex items-center gap-2">
-        <HandHeart aria-hidden="true" className="h-5 w-5 text-green-600" />
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-          Pilih jumlah donasi
-        </h2>
-      </div>
-
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (canDonate)
+          router.push(
+            buildDonationCheckoutHref({
+              amount,
+              anonymous: anonymous === "1",
+              message,
+            }),
+          );
+      }}
+    >
+      <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
+        {translateUi("Pilih nominal")}
+      </h2>
       <DonationAmountPicker
         presets={DONATION_PRESETS}
         selectedPreset={selectedPreset}
-        customAmount={customAmount}
-        onSelectPreset={handleSelectPreset}
-        onCustomAmountChange={handleCustomAmountChange}
+        customAmount={selectedPreset ? 0 : amount}
+        onSelectPreset={(value) => {
+          void setMode("preset");
+          void setAmount(value);
+        }}
+        onCustomAmountChange={(value) => {
+          void setMode("custom");
+          void setAmount(value);
+        }}
       />
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <label className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 text-sm text-slate-800 transition-colors hover:border-green-300 dark:border-slate-700 dark:text-slate-200">
-          <input
-            type="checkbox"
-            checked={isAnonymous}
-            onChange={(event) => setIsAnonymous(event.target.checked)}
-            className="h-5 w-5 accent-green-600"
-          />
-          Tampilkan sebagai anonim
-        </label>
-        <label htmlFor={messageId} className="sr-only">
-          Pesan untuk komunitas
-        </label>
+      <label className="mt-5 flex min-h-11 cursor-pointer items-center gap-3 text-sm text-slate-800 dark:text-slate-200">
         <input
-          id={messageId}
-          value={message}
-          maxLength={DONATION_MESSAGE_MAX}
-          onChange={(event) => setMessage(event.target.value)}
-          placeholder="Pesan untuk komunitas (opsional)"
-          className="h-14 rounded-xl border border-slate-200 bg-white px-4 text-base text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-green-500 md:text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+          type="checkbox"
+          checked={anonymous === "1"}
+          onChange={(event) =>
+            void setAnonymous(event.target.checked ? "1" : "0")
+          }
+          className="h-5 w-5 accent-green-800"
         />
-      </div>
-
+        {translateUi("Tampilkan sebagai anonim")}
+      </label>
+      <label
+        htmlFor={messageId}
+        className="mt-4 block text-sm text-slate-700 dark:text-slate-200"
+      >
+        {translateUi("Pesan untuk komunitas (opsional)")}
+      </label>
+      <textarea
+        id={messageId}
+        rows={3}
+        value={message}
+        maxLength={DONATION_MESSAGE_MAX}
+        onChange={(event) => void setMessage(event.target.value)}
+        className="mt-2 w-full rounded-lg border border-slate-400 bg-white p-3 text-base text-slate-950 dark:border-slate-600 dark:bg-slate-950 dark:text-white"
+      />
+      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+        {message.length}/{DONATION_MESSAGE_MAX} {translateUi(" karakter")}
+      </p>
       <button
         type="submit"
         disabled={!canDonate}
-        className={`${primaryButtonClass} mt-5 text-base`}
+        className={`${primaryButtonClass} mt-6`}
       >
-        <HeartHandshake aria-hidden="true" className="h-5 w-5" />
-        Donasi Rp {amount.toLocaleString("id-ID")}
+        {translateUi("Tinjau donasi")}
       </button>
     </form>
   );

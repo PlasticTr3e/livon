@@ -1,9 +1,9 @@
+import { canManageProjects } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { cached, invalidate } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
-import { ok, created, badRequest, internalError } from "@/lib/api-response";
-import { Role } from "@/generated/prisma/enums";
+import { ok, created, badRequest } from "@/lib/api-response";
 
 /**
  * @swagger
@@ -41,7 +41,8 @@ import { Role } from "@/generated/prisma/enums";
  *       400:
  *         description: Failed to retrieve project categories
  */
-export async function GET() {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function GET(req: NextRequest) {
   try {
     const categories = await cached("categories", "all", 3600, () =>
       prisma.projectCategory.findMany({
@@ -56,7 +57,10 @@ export async function GET() {
     });
   } catch (error: unknown) {
     console.error("[PROJECT_CATEGORIES_GET]", error);
-    return internalError("Failed to retrieve project categories");
+    return badRequest(
+      "Failed to retrieve project categories",
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 }
 
@@ -65,7 +69,7 @@ export async function GET() {
  * /api/projects/categories:
  *   post:
  *     summary: Create a new project category
- *     description: Create a new project category. Only accessible by admins (AGENCY role).
+ *     description: Create a new project category. Requires the DEVELOPER role.
  *     tags:
  *       - Project Categories
  *     security:
@@ -113,13 +117,13 @@ export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
 
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || !canManageProjects(authUser.role)) {
       return NextResponse.json(
         {
           success: false,
-          message: "Unauthorized access. Only admins can create categories.",
+          message: "Forbidden: Only developers can manage projects",
         },
-        { status: 401 },
+        { status: authUser ? 403 : 401 },
       );
     }
 
@@ -157,6 +161,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("[PROJECT_CATEGORIES_POST]", error);
-    return internalError("Failed to create project category");
+    return badRequest(
+      "Failed to create project category",
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 }

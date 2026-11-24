@@ -1,5 +1,4 @@
-/** Mirrors the database `enum Role` (ADMIN, WARGA, DEVELOPER). */
-export type AdminUserRole = "admin" | "warga" | "developer";
+export type AdminUserRole = "agency" | "developer" | "resident";
 
 export type AdminUserStatus = "Verified" | "Pending" | "Blocked";
 

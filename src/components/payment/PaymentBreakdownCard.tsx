@@ -1,19 +1,28 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/components/ui/primitives";
-import { formatBillingPeriod, formatRupiah } from "@/lib/payment/billing";
+import {
+  formatBillingPeriod,
+  formatRupiah,
+  IPL_MONTHLY_FEE,
+} from "@/lib/payment/billing";
 import type { CheckoutOrder } from "./checkout-order";
 import { sectionCardClass } from "./payment-styles";
 import { SummaryRows, type SummaryRow } from "./SummaryRows";
 
 export function PaymentBreakdownCard({ order }: { order: CheckoutOrder }) {
-  const bills = order.bills ?? [];
+  const { t: translateUi } = useLanguage();
+
+  const periods = order.periods ?? [];
   const itemRows: SummaryRow[] =
     order.kind === "ipl"
-      ? bills.map((bill) => ({
+      ? periods.map((period) => ({
           label:
-            bills.length > 1
-              ? `IPL ${formatBillingPeriod(bill.period)}`
-              : bill.title,
-          value: formatRupiah(bill.amount),
+            periods.length > 1
+              ? `IPL ${formatBillingPeriod(period)}`
+              : "Tagihan IPL",
+          value: formatRupiah(IPL_MONTHLY_FEE),
         }))
       : [{ label: "Jumlah donasi", value: formatRupiah(order.amount) }];
   const message = order.donation?.message;
@@ -21,7 +30,7 @@ export function PaymentBreakdownCard({ order }: { order: CheckoutOrder }) {
   return (
     <section className={cn(sectionCardClass, "md:p-5")}>
       <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
-        Rincian pembayaran
+        {translateUi("Rincian pembayaran")}
       </h2>
       <SummaryRows
         className="mt-4"
@@ -34,9 +43,9 @@ export function PaymentBreakdownCard({ order }: { order: CheckoutOrder }) {
       {message && (
         <p className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
           <span className="block text-xs font-bold text-slate-400">
-            Pesan untuk komunitas
+            {translateUi("Pesan untuk komunitas")}
           </span>
-          {message}
+          {translateUi(message)}
         </p>
       )}
     </section>

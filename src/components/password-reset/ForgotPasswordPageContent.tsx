@@ -1,4 +1,6 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
+import { LanguageSwitch } from "@/components/shared/LanguageSwitch";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -13,6 +15,8 @@ type ForgotPasswordPayload = {
 };
 
 export function ForgotPasswordPageContent() {
+  const { t: translateUi } = useLanguage();
+
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -48,14 +52,19 @@ export function ForgotPasswordPageContent() {
   return (
     <div className="flex min-h-screen bg-white dark:bg-[#0B1120]">
       <div className="relative flex w-full flex-col justify-center bg-white px-10 py-16 dark:bg-[#111827] lg:w-[45%]">
+        <div className="absolute right-6 top-6">
+          <LanguageSwitch />
+        </div>
         <div className="mx-auto w-full max-w-85">
           <LoginBrandMark className="mb-8 lg:hidden" />
 
           <h1 className="mb-2 text-[2.2rem] font-extrabold leading-tight text-gray-900 dark:text-white">
-            Forgot password?
+            {translateUi("Forgot password?")}
           </h1>
           <p className="mb-6 text-sm leading-relaxed text-gray-400 dark:text-white">
-            Enter your email and we&apos;ll send you a secure reset link.
+            {translateUi(
+              "Enter your email and we'll send you a secure reset link.",
+            )}
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -63,7 +72,7 @@ export function ForgotPasswordPageContent() {
               <input
                 type="email"
                 name="email"
-                placeholder="Email address"
+                placeholder={translateUi("Email address")}
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 className="h-12 w-full rounded-full border border-gray-200 bg-slate-50 px-5 pr-12 text-sm text-gray-800 transition-colors placeholder:text-gray-400 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-400 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white dark:placeholder:text-slate-500"
@@ -83,13 +92,15 @@ export function ForgotPasswordPageContent() {
                   Sending link...
                 </>
               ) : (
-                "Send Reset Link"
+                translateUi("Send Reset Link")
               )}
             </button>
 
             {isSubmitted ? (
               <p className="text-center text-xs leading-relaxed text-gray-400 dark:text-white">
-                If the email exists, the reset link has been sent.
+                {translateUi(
+                  "If the email exists, the reset link has been sent.",
+                )}
               </p>
             ) : null}
 
@@ -97,7 +108,7 @@ export function ForgotPasswordPageContent() {
               href="/auth/login"
               className="mt-2 text-center text-xs font-semibold text-green-600 hover:underline dark:text-green-400"
             >
-              Back to login
+              {translateUi("Back to login")}
             </Link>
           </form>
         </div>

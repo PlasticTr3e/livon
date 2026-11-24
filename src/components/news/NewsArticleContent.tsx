@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Clock, Tag, User } from "lucide-react";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import type { NewsArticleContent as NewsArticleContentType } from "@/lib/news/news-types";
@@ -19,6 +22,8 @@ export function NewsArticleContent({
   thumbnailUrl,
   title,
 }: NewsArticleContentProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <article className="min-w-0 flex-1">
       <h1 className="mb-4 text-2xl font-bold leading-tight text-gray-900 dark:text-white md:text-3xl">
@@ -61,7 +66,9 @@ export function NewsArticleContent({
             </p>
           ))
         ) : (
-          <p className="italic text-gray-400">Tidak ada konten tambahan.</p>
+          <p className="italic text-gray-400">
+            {translateUi("Tidak ada konten tambahan.")}
+          </p>
         )}
       </div>
 

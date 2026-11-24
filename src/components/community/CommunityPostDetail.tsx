@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useRef, useState } from "react";
 import { Card } from "@/components/ui/primitives";
@@ -46,6 +47,8 @@ export function CommunityPostDetail({
   onToggleCommentLike,
   onToggleLike,
 }: CommunityPostDetailProps) {
+  const { t: translateUi } = useLanguage();
+
   const submitting = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -122,7 +125,8 @@ export function CommunityPostDetail({
 
           <section className="border-t border-gray-100 dark:border-gray-800">
             <h2 className="px-4 pt-4 text-xs font-bold uppercase tracking-wider text-gray-400">
-              Comments{commentCount > 0 && ` · ${commentCount}`}
+              {translateUi("Comments")}
+              {commentCount > 0 && ` · ${commentCount}`}
             </h2>
             <CommunityCommentList
               canModerate={canModerate}

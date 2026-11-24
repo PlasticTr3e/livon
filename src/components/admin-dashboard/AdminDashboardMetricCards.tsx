@@ -1,3 +1,5 @@
+"use client";
+import { useLanguage } from "@/context/LanguageContext";
 import { Card } from "@/components/ui/primitives";
 import { ADMIN_DASHBOARD_STAT_STYLES } from "@/lib/admin-dashboard/admin-dashboard-constants";
 import { formatDashboardStats } from "@/lib/admin-dashboard/admin-dashboard-format";
@@ -30,6 +32,8 @@ type DashboardMetricCardProps = {
 };
 
 function DashboardMetricCard({ stat }: DashboardMetricCardProps) {
+  const { t: translateUi } = useLanguage();
+
   const StatIcon = stat.icon;
 
   return (
@@ -45,7 +49,7 @@ function DashboardMetricCard({ stat }: DashboardMetricCardProps) {
       </div>
       <div className="flex-1 truncate">
         <p className="mb-0.5 truncate text-[9px] font-bold uppercase text-gray-400 dark:text-white">
-          {stat.title}
+          {translateUi(stat.title)}
         </p>
         <p className="truncate text-xl font-black text-gray-900 dark:text-white">
           {stat.value}

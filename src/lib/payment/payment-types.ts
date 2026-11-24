@@ -13,6 +13,7 @@ export type MidtransResult = {
 };
 
 export type MidtransSnapOptions = {
+  language?: "id" | "en";
   onSuccess?: (result: MidtransResult) => void;
   onPending?: (result: MidtransResult) => void;
   onError?: (result: MidtransResult) => void;

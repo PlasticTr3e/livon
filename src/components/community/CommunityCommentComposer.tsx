@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import type { Ref } from "react";
 import { Send, X } from "lucide-react";
 import type {
@@ -27,20 +30,22 @@ export function CommunityCommentComposer({
   onChange,
   onSubmit,
 }: CommunityCommentComposerProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="sticky bottom-0 z-10 mt-auto border-t border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-[#111827]/95">
       <div className="mx-auto w-full max-w-2xl px-4 py-2.5">
         {replyTarget && (
           <div className="mb-2 flex items-center justify-between gap-2 pl-11 text-xs text-gray-500 dark:text-gray-400">
             <p className="truncate">
-              Replying to{" "}
+              {translateUi("Replying to")}{" "}
               <span className="font-semibold text-gray-800 dark:text-white">
                 {replyTarget.authorName}
               </span>
             </p>
             <button
               type="button"
-              aria-label="Cancel reply"
+              aria-label={translateUi("Cancel reply")}
               onClick={onCancelReply}
               disabled={isSubmitting}
               className="-my-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-slate-100 hover:text-gray-800 dark:hover:bg-slate-800 dark:hover:text-white"
@@ -65,15 +70,23 @@ export function CommunityCommentComposer({
             disabled={isSubmitting}
             enterKeyHint="send"
             autoComplete="off"
-            aria-label={replyTarget ? "Write a reply" : "Write a comment"}
-            placeholder={replyTarget ? "Write a reply..." : "Add a comment..."}
+            aria-label={
+              replyTarget
+                ? translateUi("Write a reply")
+                : translateUi("Write a comment")
+            }
+            placeholder={
+              replyTarget
+                ? translateUi("Write a reply...")
+                : translateUi("Add a comment...")
+            }
             value={value}
             onChange={(event) => onChange(event.target.value)}
             className="h-11 min-w-0 flex-1 rounded-full border border-transparent bg-slate-100 px-4 text-base text-gray-900 transition-all placeholder:text-gray-400 focus:border-green-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500/20 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-900 sm:text-sm"
           />
           <button
             type="submit"
-            aria-label="Send"
+            aria-label={translateUi("Send")}
             disabled={!value.trim() || isSubmitting}
             aria-busy={isSubmitting}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-600 text-white transition duration-150 hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 active:scale-95 disabled:bg-slate-200 disabled:text-gray-400 disabled:active:scale-100 dark:disabled:bg-slate-800 dark:disabled:text-gray-600"

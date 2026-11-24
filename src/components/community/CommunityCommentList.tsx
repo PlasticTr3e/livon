@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import type {
   CommunityComment,
   CommunityCommentTarget,
@@ -20,10 +23,12 @@ export function CommunityCommentList({
   onReply,
   onToggleLike,
 }: CommunityCommentListProps) {
+  const { t: translateUi } = useLanguage();
+
   if (comments.length === 0) {
     return (
       <p className="px-4 py-8 text-center text-sm text-gray-400">
-        No comments yet. Be the first to comment!
+        {translateUi("No comments yet. Be the first to comment!")}
       </p>
     );
   }

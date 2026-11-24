@@ -1,3 +1,4 @@
+import { getDisplayLocale } from "@/lib/i18n/display";
 import { apiFetch } from "@/lib/api-client";
 
 export type AdminNotification = {
@@ -54,5 +55,5 @@ export function formatAdminNotificationTime(date: Date) {
   if (diffHours < 24) return `${diffHours} jam lalu`;
   if (diffDays < 7) return `${diffDays} hari lalu`;
 
-  return new Date(date).toLocaleDateString("id-ID");
+  return new Date(date).toLocaleDateString(getDisplayLocale());
 }

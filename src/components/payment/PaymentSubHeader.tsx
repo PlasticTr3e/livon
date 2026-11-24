@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import Link from "next/link";
 import { ArrowLeft, LockKeyhole, ShieldCheck } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
@@ -23,6 +26,8 @@ export function PaymentSubHeader({
   badge,
   width = "default",
 }: PaymentSubHeaderProps) {
+  const { t: translateUi } = useLanguage();
+
   const { icon: Icon, label } = badges[badge];
 
   return (
@@ -38,11 +43,11 @@ export function PaymentSubHeader({
           className="-ml-2 flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-bold text-slate-700 transition-colors hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 dark:text-slate-300 dark:hover:text-emerald-400"
         >
           <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          Kembali
+          {translateUi("Kembali")}
         </Link>
         <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
           <Icon aria-hidden="true" className="h-4 w-4" />
-          {label}
+          {translateUi(label)}
         </span>
       </div>
     </header>

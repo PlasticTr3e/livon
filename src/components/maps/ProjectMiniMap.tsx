@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useEffect, useRef } from "react";
 import L from "leaflet";
@@ -42,6 +43,8 @@ export default function ProjectMiniMap({
   lng,
   status,
 }: ProjectMiniMapProps) {
+  const { t: translateUi } = useLanguage();
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -94,7 +97,7 @@ export default function ProjectMiniMap({
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 text-slate-400">
         <MapPin className="h-8 w-8 opacity-20" />
         <span className="text-[10px] font-bold uppercase tracking-widest">
-          Location Unavailable
+          {translateUi("Location Unavailable")}
         </span>
       </div>
     );
