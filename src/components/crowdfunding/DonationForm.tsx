@@ -51,7 +51,7 @@ export function DonationForm() {
     <form onSubmit={handleSubmit} className={sectionCardClass}>
       <div className="flex items-center gap-2">
         <HandHeart aria-hidden="true" className="h-5 w-5 text-green-600" />
-        <h2 className="text-lg font-black text-slate-900 dark:text-white">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
           Pilih jumlah donasi
         </h2>
       </div>

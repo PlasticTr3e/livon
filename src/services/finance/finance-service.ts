@@ -23,11 +23,33 @@ import type {
   TransactionListItem,
 } from "./finance-types";
 import { Prisma } from "@/generated/prisma/client";
-import {
-  getOutstandingPeriods,
-  shiftBillingPeriod,
-  toBillingPeriod,
-} from "@/lib/payment/billing";
+import { toBillingPeriod, type BillingPeriod } from "@/lib/payment/billing";
+
+const IPL_MAX_OUTSTANDING_MONTHS = 12;
+
+function shiftBillingPeriod(
+  period: BillingPeriod,
+  months: number,
+): BillingPeriod {
+  const [year, month] = period.split("-").map(Number);
+  return toBillingPeriod(new Date(year, month - 1 + months, 1));
+}
+
+function getOutstandingPeriods(
+  paidThrough: BillingPeriod,
+  now = new Date(),
+): BillingPeriod[] {
+  const current = toBillingPeriod(now);
+  const periods: BillingPeriod[] = [];
+  let next = shiftBillingPeriod(paidThrough, 1);
+
+  while (next <= current && periods.length < IPL_MAX_OUTSTANDING_MONTHS) {
+    periods.push(next);
+    next = shiftBillingPeriod(next, 1);
+  }
+
+  return periods;
+}
 
 /**
  * Retrieves the 4 realtime KPI Cards:
@@ -55,7 +77,6 @@ export async function getFinanceSummary(
     999,
   );
 
-  // 1. Fetch Realtime Fund Balances and Aggregates
   const [summaries, monthlyExpenseAgg, monthlyIncomeAgg, donationCount] =
     await Promise.all([
       prisma.financeSummary.findMany({
@@ -112,7 +133,6 @@ export async function getFinanceSummary(
     ? Number(monthlyIncomeAgg._sum.amount)
     : 0;
 
-  // 4. Fetch Active Citizen Bill Status & Periods for the logged-in user
   let residentBill: ResidentBillSummary | null = null;
   let iplPaidThrough: string = shiftBillingPeriod(currentPeriod, -1);
   let outstandingIplPeriods: string[] = [];
@@ -223,7 +243,6 @@ export async function getFinanceTransactions(
   let resolvedFundType: FundType | undefined;
   let resolvedTransactionType: TransactionType | undefined;
 
-  // 1. Resolve fund type filter (IPL vs DONATION/DONASI)
   if (rawFund === "IPL" || rawType === "IPL") {
     resolvedFundType = FundType.IPL;
   } else if (
@@ -235,7 +254,6 @@ export async function getFinanceTransactions(
     resolvedFundType = FundType.DONASI;
   }
 
-  // 2. Resolve transaction type filter (PEMASUKAN vs PENGELUARAN)
   if (rawType === "PEMASUKAN" || rawType === "INCOME") {
     resolvedTransactionType = TransactionType.PEMASUKAN;
   } else if (rawType === "PENGELUARAN" || rawType === "EXPENSE") {
@@ -368,7 +386,6 @@ export async function createExpenseReport(
   const amountDecimal = new Prisma.Decimal(input.amount);
 
   return prisma.$transaction(async (tx) => {
-    // 1. Create the financial expense transaction
     const transaction = await tx.financialTransaction.create({
       data: {
         title: input.title,
@@ -393,7 +410,6 @@ export async function createExpenseReport(
       },
     });
 
-    // 2. Atomically update the respective fund balance in FinanceSummary
     await tx.financeSummary.upsert({
       where: { fundType: input.fundType },
       update: {

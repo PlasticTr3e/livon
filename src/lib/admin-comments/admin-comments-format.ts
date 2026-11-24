@@ -13,31 +13,6 @@ import type {
 } from "@/lib/admin-comments/admin-comments-types";
 import { getUserProfileDisplayName } from "@/lib/app-shell/user";
 
-// const POSITIVE_WORDS = [
-//   "bagus",
-//   "setuju",
-//   "mendukung",
-//   "alhamdulillah",
-//   "terima kasih",
-//   "bermanfaat",
-//   "selesai",
-//   "jernih",
-//   "hebat",
-//   "mantap",
-// ];
-
-// const NEGATIVE_WORDS = [
-//   "berbahaya",
-//   "hilang",
-//   "rusak",
-//   "masalah",
-//   "kecewa",
-//   "tidak",
-//   "waste",
-//   "dangerous",
-//   "jelek",
-// ];
-
 export function formatAdminCommentDateTime(dateString: string) {
   return new Date(dateString).toLocaleString("en-GB", {
     day: "numeric",

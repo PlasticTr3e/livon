@@ -6,6 +6,7 @@ import nodemailer from "nodemailer";
 import prisma from "@/lib/prisma";
 import { ok, badRequest, internalError } from "@/lib/api-response";
 import { RATE_LIMITS, getClientIp, rateLimit } from "@/lib/rate-limit";
+import { getAppBaseUrl } from "@/lib/url-safety";
 
 export const runtime = "nodejs";
 
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = getAppBaseUrl();
     const resetUrl = `${appUrl}/auth/reset-password?token=${token}`;
 
     const transporter = nodemailer.createTransport({

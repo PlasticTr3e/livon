@@ -3,31 +3,27 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { Role } from "@/generated/prisma/enums";
 import { getAuthUser } from "@/lib/auth";
 import { snap } from "@/lib/midtrans";
-import {
-  DONATION_MAX,
-  DONATION_MIN,
-  formatBillingPeriod,
-  IPL_MAX_MONTHS,
-  IPL_MONTHLY_FEE,
-  isBillingPeriod,
-} from "@/lib/payment/billing";
+import { DONATION_MAX, DONATION_MIN } from "@/lib/payment/billing";
+import { getResidentBills } from "@/services/finance/finance-service";
 
 /**
  * Snap checkout for IPL & community donations. The amount is always computed
- * here (never trusted from the client) and the server key never leaves the server.
+ * here (IPL from the resident's unpaid bills in the database, never from the
+ * client) and the server key never leaves the server.
  */
+
+const MAX_BILLS_PER_CHECKOUT = 24;
+const SNAP_ITEM_NAME_MAX = 50;
 
 const customerName = z.string().trim().max(80).optional();
 
 const checkoutSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("ipl"),
-    periods: z
-      .array(z.string().refine(isBillingPeriod))
-      .min(1)
-      .max(IPL_MAX_MONTHS),
+    billIds: z.array(z.uuid()).min(1).max(MAX_BILLS_PER_CHECKOUT),
     customerName,
   }),
   z.object({
@@ -40,7 +36,13 @@ const checkoutSchema = z.discriminatedUnion("kind", [
 export type SnapCheckoutInput = z.input<typeof checkoutSchema>;
 
 export type SnapCheckoutResult =
-  | { ok: true; token: string; orderId: string; amount: number }
+  | {
+      ok: true;
+      token: string;
+      redirectUrl: string;
+      orderId: string;
+      amount: number;
+    }
   | { ok: false; error: string };
 
 export type SnapCheckoutStatus = {
@@ -58,20 +60,39 @@ type SnapTransactionApi = {
   };
 };
 
-async function isSignedIn(authToken: string | null) {
-  if (!authToken) return false;
+async function getSignedInUser(authToken: string | null) {
+  if (!authToken) return null;
 
   const request = new NextRequest("http://livon.local/payment", {
     headers: { authorization: `Bearer ${authToken}` },
   });
-  return Boolean(await getAuthUser(request));
+  return getAuthUser(request);
+}
+
+/** Line items for the given bills, only if every one is the user's own and unpaid. */
+async function getUnpaidBillItems(userId: string, billIds: string[]) {
+  const { bills } = await getResidentBills(
+    { userId, role: Role.WARGA },
+    { status: "BELUM_BAYAR", page: 1, limit: 100 },
+  );
+  const wanted = new Set(billIds);
+  const selected = bills.filter((bill) => wanted.has(bill.id));
+  if (selected.length !== wanted.size) return null;
+
+  return selected.map<SnapItem>((bill) => ({
+    id: bill.id,
+    name: bill.title.slice(0, SNAP_ITEM_NAME_MAX),
+    price: Math.round(bill.amount),
+    quantity: 1,
+  }));
 }
 
 export async function createSnapCheckout(
   authToken: string | null,
   input: SnapCheckoutInput,
 ): Promise<SnapCheckoutResult> {
-  if (!(await isSignedIn(authToken))) {
+  const user = await getSignedInUser(authToken);
+  if (!user) {
     return {
       ok: false,
       error: "Sesi Anda berakhir. Silakan masuk kembali untuk membayar.",
@@ -84,22 +105,27 @@ export async function createSnapCheckout(
   }
 
   const data = parsed.data;
-  const items: SnapItem[] =
-    data.kind === "ipl"
-      ? [...new Set(data.periods)].sort().map((period) => ({
-          id: `IPL-${period}`,
-          name: `IPL ${formatBillingPeriod(period)}`,
-          price: IPL_MONTHLY_FEE,
-          quantity: 1,
-        }))
-      : [
-          {
-            id: "DONASI-SOLIDARITAS",
-            name: "Donasi Kantong Solidaritas",
-            price: data.amount,
-            quantity: 1,
-          },
-        ];
+  let items: SnapItem[];
+
+  if (data.kind === "ipl") {
+    const billItems = await getUnpaidBillItems(user.userId, data.billIds);
+    if (!billItems) {
+      return {
+        ok: false,
+        error: "Tagihan sudah berubah. Muat ulang halaman lalu coba lagi.",
+      };
+    }
+    items = billItems;
+  } else {
+    items = [
+      {
+        id: "DONASI-SOLIDARITAS",
+        name: "Donasi Kantong Solidaritas",
+        price: data.amount,
+        quantity: 1,
+      },
+    ];
+  }
 
   const amount = items.reduce((total, item) => total + item.price, 0);
   const prefix = data.kind === "ipl" ? "IPL" : "DON";
@@ -113,7 +139,13 @@ export async function createSnapCheckout(
 
   try {
     const transaction = await snap.createTransaction(parameter);
-    return { ok: true, token: transaction.token, orderId, amount };
+    return {
+      ok: true,
+      token: transaction.token,
+      redirectUrl: transaction.redirect_url,
+      orderId,
+      amount,
+    };
   } catch (error) {
     console.error("Snap checkout error:", error);
     return {
@@ -127,7 +159,7 @@ export async function getSnapCheckoutStatus(
   authToken: string | null,
   orderId: string,
 ): Promise<SnapCheckoutStatus> {
-  if (!orderId.startsWith("LIVON-") || !(await isSignedIn(authToken))) {
+  if (!orderId.startsWith("LIVON-") || !(await getSignedInUser(authToken))) {
     return { status: "unknown" };
   }
 

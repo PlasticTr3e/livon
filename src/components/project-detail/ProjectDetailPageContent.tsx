@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button, Badge, Card, cn } from "@/components/ui/primitives";
 import { useUser } from "@/context/UserContext";
 import { isApiSuccess } from "@/lib/api-types";
+import { sanitizeHref } from "@/lib/url-safety";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { useToast } from "@/components/shared/AppToaster";
 import { useState, useRef, useEffect } from "react";
@@ -452,7 +453,6 @@ export function ProjectDetailPageContent() {
     }
 
     try {
-      // 1. Upload files
       const uploadPromises = Array.from(files).map(async (file) => {
         const formData = new FormData();
         formData.append("file", file);
@@ -468,13 +468,11 @@ export function ProjectDetailPageContent() {
 
       const newUrls = await Promise.all(uploadPromises);
 
-      // 2. Map existing documents to URLs
       const existingUrls = documents
         .map((d) => d.url)
         .filter(Boolean) as string[];
       const updatedUrls = [...existingUrls, ...newUrls];
 
-      // 3. Save to database
       const patchRes = await fetch(`/api/projects/${id}`, {
         method: "PATCH",
         headers: {
@@ -486,7 +484,6 @@ export function ProjectDetailPageContent() {
 
       if (!patchRes.ok) throw new Error("Failed to save document.");
 
-      // 4. Update UI state
       const newDocs: ProjectDocument[] = newUrls.map((url, i) => {
         const parts = url.split("/");
         const filename = parts[parts.length - 1];
@@ -908,7 +905,7 @@ export function ProjectDetailPageContent() {
                           </button>
                         )}
                         <a
-                          href={doc.url || "#"}
+                          href={sanitizeHref(doc.url) ?? "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"

@@ -1,25 +1,43 @@
 import { z } from "zod";
 import { FundType } from "@/generated/prisma/enums";
+import { isSafeMediaUrl } from "@/lib/url-safety";
+
+function normalizeFundType(value: unknown): FundType | unknown {
+  if (typeof value === "string") {
+    const u = value.trim().toUpperCase();
+    if (u === "DONATION" || u === "DONASI") return FundType.DONASI;
+    if (u === "IPL") return FundType.IPL;
+  }
+  return value;
+}
 
 export const createExpenseSchema = z
   .object({
-    title: z.string().trim().max(255).optional(),
-    description: z.string().trim().max(1000).optional().nullable(),
+    title: z
+      .string()
+      .trim()
+      .max(255, "Judul pengeluaran maksimal 255 karakter")
+      .optional(),
+    description: z
+      .string()
+      .trim()
+      .max(1000, "Deskripsi maksimal 1000 karakter")
+      .optional()
+      .nullable(),
     amount: z
       .number({ message: "Nominal pengeluaran harus berupa angka" })
       .positive("Nominal pengeluaran harus berupa angka positif")
       .min(1, "Nominal pengeluaran minimal Rp 1"),
     fund: z.string().trim().optional(),
-    fundType: z
-      .preprocess((val) => {
-        if (typeof val === "string") {
-          const u = val.toUpperCase();
-          if (u === "DONATION" || u === "DONASI") return FundType.DONASI;
-          if (u === "IPL") return FundType.IPL;
-        }
-        return val;
-      }, z.nativeEnum(FundType).optional())
-      .optional(),
+    fundType: z.preprocess(
+      normalizeFundType,
+      z
+        .nativeEnum(FundType, {
+          message:
+            "Jenis dana tidak valid. Pilihan: IPL atau DONASI (DONATION)",
+        })
+        .optional(),
+    ),
     category: z
       .string()
       .trim()
@@ -27,32 +45,41 @@ export const createExpenseSchema = z
       .max(100, "Kategori pengeluaran maksimal 100 karakter"),
     proofUrl: z
       .string()
-      .url("Format URL bukti kuitansi/struk tidak valid")
+      .trim()
+      .refine(isSafeMediaUrl, "Format URL bukti kuitansi/struk tidak valid")
       .optional()
       .nullable(),
     date: z.coerce.date().optional(),
     transactionDate: z.coerce.date().optional(),
     note: z.string().trim().max(500).optional().nullable(),
   })
-  .transform((data) => {
+  .transform((data, ctx) => {
     const rawTitle = (data.title || data.description || "").trim();
     if (rawTitle.length < 3) {
-      throw new z.ZodError([
-        {
-          code: "custom",
-          message: "Judul atau deskripsi pengeluaran minimal 3 karakter",
-          path: ["title"],
-        },
-      ]);
+      ctx.addIssue({
+        code: "custom",
+        message: "Judul atau deskripsi pengeluaran minimal 3 karakter",
+        path: ["title"],
+      });
+      return z.NEVER;
     }
 
     let resolvedFundType = data.fundType;
     if (!resolvedFundType && data.fund) {
-      const u = data.fund.trim().toUpperCase();
-      if (u === "DONATION" || u === "DONASI")
-        resolvedFundType = FundType.DONASI;
-      else if (u === "IPL") resolvedFundType = FundType.IPL;
+      const normalized = normalizeFundType(data.fund);
+      if (normalized === FundType.IPL || normalized === FundType.DONASI) {
+        resolvedFundType = normalized;
+      } else {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Jenis dana tidak valid. Pilihan: IPL atau DONASI (DONATION)",
+          path: ["fund"],
+        });
+        return z.NEVER;
+      }
     }
+
     if (!resolvedFundType) {
       resolvedFundType = FundType.IPL;
     }
@@ -100,7 +127,8 @@ export const createDonationSchema = z.object({
     .nullable(),
   proofUrl: z
     .string()
-    .url("Format URL bukti transfer tidak valid")
+    .trim()
+    .refine(isSafeMediaUrl, "Format URL bukti transfer tidak valid")
     .optional()
     .nullable(),
   isAnonymous: z.boolean().default(false),
@@ -118,7 +146,10 @@ export const generateBillsSchema = z.object({
 });
 
 export const payBillSchema = z.object({
-  paymentProofUrl: z.string().url("Format URL bukti pembayaran tidak valid"),
+  paymentProofUrl: z
+    .string()
+    .trim()
+    .refine(isSafeMediaUrl, "Format URL bukti pembayaran tidak valid"),
   notes: z.string().trim().max(500).optional().nullable(),
 });
 

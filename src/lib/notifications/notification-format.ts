@@ -6,6 +6,7 @@ import type {
 
 const categoryByNotificationType: Record<string, NotificationCategory> = {
   donation_success: "funding",
+  ipl_bill: "funding",
   project_status: "project",
   comment_reply: "comment",
   system: "system",
