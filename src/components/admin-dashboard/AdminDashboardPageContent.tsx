@@ -18,7 +18,6 @@ import {
 import type {
   AdminDashboardMetrics,
   AdminDashboardProject,
-  AdminDashboardSortMode,
   ProjectStatusChartItem,
 } from "@/lib/admin-dashboard/admin-dashboard-types";
 
@@ -46,7 +45,6 @@ const AdminDashboardStatusChart = dynamic(
 
 export function AdminDashboardPageContent() {
   const [isLoading, setIsLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<AdminDashboardSortMode>("viral");
   const [metrics, setMetrics] = useState<AdminDashboardMetrics>(
     EMPTY_DASHBOARD_METRICS,
   );
@@ -89,8 +87,8 @@ export function AdminDashboardPageContent() {
   }, []);
 
   const sortedPriorityProjects = useMemo(
-    () => sortPriorityProjects(priorityProjects, sortBy),
-    [priorityProjects, sortBy],
+    () => sortPriorityProjects(priorityProjects, "sentiment"),
+    [priorityProjects],
   );
   const sentimentChartData = useMemo(
     () => getSentimentChartData(sortedPriorityProjects),
@@ -111,11 +109,7 @@ export function AdminDashboardPageContent() {
         <AdminDashboardStatusChart data={projectStatusData} metrics={metrics} />
       </div>
 
-      <AdminDashboardPriorityProjects
-        projects={sortedPriorityProjects}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-      />
+      <AdminDashboardPriorityProjects projects={sortedPriorityProjects} />
       <AdminDashboardQuickActions />
     </div>
   );

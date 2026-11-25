@@ -183,11 +183,11 @@ function validatePasswordUpdate(formData: FormData) {
   const currentPassword = String(formData.get("currentPassword") || "");
   const newPassword = String(formData.get("newPassword") || "");
   const confirmPassword = String(formData.get("confirmPassword") || "");
-  const hasPasswordInput = Boolean(
-    currentPassword || newPassword || confirmPassword,
-  );
+  // Current password alone (often browser-autofilled) does not mean the user
+  // wants to change their password; only a new password does.
+  const wantsPasswordChange = Boolean(newPassword || confirmPassword);
 
-  if (!hasPasswordInput) return null;
+  if (!wantsPasswordChange) return null;
   if (!currentPassword || !newPassword || !confirmPassword) {
     return "Current password, new password, and confirmation are required.";
   }

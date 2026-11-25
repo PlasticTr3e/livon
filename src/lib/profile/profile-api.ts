@@ -78,6 +78,13 @@ function getProfileUpdateBody(user: UserWithProfile, formData: FormData) {
 }
 
 function getPasswordUpdateBody(formData: FormData) {
+  const wantsPasswordChange = Boolean(
+    formData.get("newPassword") || formData.get("confirmPassword"),
+  );
+
+  // Skip password fields entirely when only profile info is being updated.
+  if (!wantsPasswordChange) return {};
+
   return {
     currentPassword: formData.get("currentPassword") || undefined,
     newPassword: formData.get("newPassword") || undefined,

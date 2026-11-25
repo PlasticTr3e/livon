@@ -7,22 +7,14 @@ import {
   getProjectStatusBadgeClass,
   getProjectStatusLabel,
 } from "@/lib/admin-dashboard/admin-dashboard-format";
-import type {
-  AdminDashboardProject,
-  AdminDashboardSortMode,
-} from "@/lib/admin-dashboard/admin-dashboard-types";
-import { ChevronDown, Filter } from "lucide-react";
+import type { AdminDashboardProject } from "@/lib/admin-dashboard/admin-dashboard-types";
 
 type AdminDashboardPriorityProjectsProps = {
   projects: AdminDashboardProject[];
-  sortBy: AdminDashboardSortMode;
-  onSortChange: (sortBy: AdminDashboardSortMode) => void;
 };
 
 export function AdminDashboardPriorityProjects({
   projects,
-  sortBy,
-  onSortChange,
 }: AdminDashboardPriorityProjectsProps) {
   const { t: translateUi } = useLanguage();
 
@@ -35,14 +27,10 @@ export function AdminDashboardPriorityProjects({
           </h3>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-white">
             {translateUi(
-              "Most active projects based on popularity and AI sentiment analysis",
+              "Projects ranked by positive sentiment from AI analysis",
             )}
           </p>
         </div>
-        <PriorityProjectSortControl
-          sortBy={sortBy}
-          onSortChange={onSortChange}
-        />
       </div>
 
       <div className="-mx-5 overflow-x-auto">
@@ -51,7 +39,6 @@ export function AdminDashboardPriorityProjects({
             <tr className="border-b border-gray-50 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:border-gray-800 dark:text-white">
               <th className="px-8 py-4">{translateUi("Project Details")}</th>
               <th className="px-4 py-4 text-center">{translateUi("Status")}</th>
-              <th className="px-4 py-4">{translateUi("Total Votes")}</th>
               <th className="px-8 py-4 text-center">
                 {translateUi("Dominant Sentiment")}
               </th>
@@ -65,7 +52,7 @@ export function AdminDashboardPriorityProjects({
             ) : (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={3}
                   className="py-24 text-center text-[10px] font-medium uppercase tracking-widest text-gray-400 dark:text-white"
                 >
                   {translateUi("No projects meet the criteria")}
@@ -77,39 +64,6 @@ export function AdminDashboardPriorityProjects({
       </div>
     </Card>
   );
-}
-
-function PriorityProjectSortControl({
-  sortBy,
-  onSortChange,
-}: {
-  sortBy: AdminDashboardSortMode;
-  onSortChange: (sortBy: AdminDashboardSortMode) => void;
-}) {
-  const { t: translateUi } = useLanguage();
-
-  return (
-    <div className="relative w-full md:w-48">
-      <select
-        value={sortBy}
-        onChange={(event) => onSortChange(getSortMode(event.target.value))}
-        className="h-11 w-full cursor-pointer appearance-none rounded-xl border border-green-200 bg-white pl-9 pr-8 text-xs font-bold text-gray-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-green-500/50 dark:border-gray-800 dark:bg-[#1F2937] dark:text-white"
-      >
-        <option value="viral">{translateUi("Most Viral")}</option>
-        <option value="sentiment">{translateUi("Positive Sentiment")}</option>
-      </select>
-      <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-green-600">
-        <Filter className="h-3.5 w-3.5" />
-      </div>
-      <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-        <ChevronDown className="h-4 w-4" />
-      </div>
-    </div>
-  );
-}
-
-function getSortMode(value: string): AdminDashboardSortMode {
-  return value === "sentiment" ? "sentiment" : "viral";
 }
 
 function PriorityProjectRow({ project }: { project: AdminDashboardProject }) {
@@ -139,9 +93,6 @@ function PriorityProjectRow({ project }: { project: AdminDashboardProject }) {
             {translateUi(getProjectStatusLabel(project.status))}
           </Badge>
         </div>
-      </td>
-      <td className="px-4 py-6 text-xs font-semibold text-gray-700 dark:text-white">
-        {project.totalVotes || 0} {translateUi(" Votes")}
       </td>
       <td className="px-8 py-6">
         <div className="flex justify-center">

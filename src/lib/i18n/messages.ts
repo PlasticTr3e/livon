@@ -258,6 +258,7 @@ Address details (optional) => Detail alamat (opsional)
 Invalid project address => Alamat proyek tidak valid
 Project Management => Pengelolaan Proyek
 Project Sentiment Distribution => Distribusi Sentimen Proyek
+Projects ranked by positive sentiment from AI analysis => Proyek diurutkan berdasarkan sentimen positif dari analisis AI
 Project Status => Status Proyek
 Project Title => Judul Proyek
 Project thumbnail => Gambar sampul proyek
