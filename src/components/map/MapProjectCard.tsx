@@ -1,3 +1,6 @@
+"use client";
+
+import { UiText, useLanguage } from "@/context/LanguageContext";
 import { memo, useCallback } from "react";
 import { ChevronRight } from "lucide-react";
 import { cn, Badge, Button, Card } from "@/components/ui/primitives";
@@ -21,6 +24,8 @@ export const MapProjectCard = memo(function MapProjectCard({
   project,
   onSelect,
 }: MapProjectCardProps) {
+  const { t: translateUi } = useLanguage();
+
   const handleClick = useCallback(() => {
     onSelect(project);
   }, [onSelect, project]);
@@ -45,7 +50,7 @@ export const MapProjectCard = memo(function MapProjectCard({
             getMapStatusStyle(project.status),
           )}
         >
-          {project.status}
+          {translateUi(project.status)}
         </Badge>
       </div>
 
@@ -55,7 +60,9 @@ export const MapProjectCard = memo(function MapProjectCard({
 
       <div className="mb-2">
         <div className="mb-1 flex justify-between text-[10px] text-gray-500 dark:text-white">
-          <span>Stage progress</span>
+          <span>
+            <UiText>Stage progress</UiText>
+          </span>
           <span className="font-semibold text-gray-700 dark:text-white">
             {project.progress}%
           </span>

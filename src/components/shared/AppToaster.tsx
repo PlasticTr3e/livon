@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import * as Toast from "@radix-ui/react-toast";
 import { X, AlertCircle, CheckCircle2, Info } from "lucide-react";
@@ -125,6 +126,8 @@ function AppToast({
   toast: ToastItem;
   onDismiss: (toastId: string) => void;
 }) {
+  const { t: translateUi } = useLanguage();
+
   const styles = TOAST_STYLES[toast.variant];
   const Icon = styles.icon;
 
@@ -141,11 +144,11 @@ function AppToast({
       <Icon className={cn("mt-0.5 h-5 w-5", styles.iconColor)} />
       <div className="min-w-0">
         <Toast.Title className="text-sm font-bold text-gray-900 dark:text-white">
-          {toast.title}
+          {translateUi(toast.title)}
         </Toast.Title>
         {toast.description && (
           <Toast.Description className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-200">
-            {toast.description}
+            {translateUi(toast.description)}
           </Toast.Description>
         )}
       </div>

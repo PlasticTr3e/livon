@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Card, cn } from "@/components/ui/primitives";
 import {
   ADMIN_PROJECT_STATUSES,
@@ -15,6 +18,8 @@ export function AdminProjectsStats({
   isLoading,
   projects,
 }: AdminProjectsStatsProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {ADMIN_PROJECT_STATUSES.map((status) => {
@@ -39,7 +44,7 @@ export function AdminProjectsStats({
             </div>
             <div>
               <p className="mb-0.5 text-[10px] font-medium uppercase tracking-widest text-gray-400 dark:text-white">
-                {config.label}
+                {translateUi(config.label)}
               </p>
               <p className="text-2xl font-black leading-none text-gray-900 dark:text-white">
                 {isLoading ? "..." : count}

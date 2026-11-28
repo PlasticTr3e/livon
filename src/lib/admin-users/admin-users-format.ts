@@ -5,26 +5,18 @@ import type {
   AdminUserStatus,
 } from "./admin-users-types";
 
-const ADMIN_USER_ROLES: AdminUserRole[] = ["admin", "warga", "developer"];
-
-const ADMIN_USER_ROLE_LABELS: Record<AdminUserRole, string> = {
-  admin: "Admin",
-  warga: "Warga",
-  developer: "Developer",
-};
-
-/** Reads the database role; unknown values fall back to warga. */
-export function getAdminUserRole(user: Pick<AdminUser, "role">): AdminUserRole {
-  const role = user.role?.toLowerCase();
-  return ADMIN_USER_ROLES.find((item) => item === role) ?? "warga";
-}
-
-export function isAdminUserRole(value: string): value is AdminUserRole {
-  return ADMIN_USER_ROLES.some((role) => role === value);
+export function getAdminUserRole(
+  user: Pick<AdminUser, "role" | "agencyProfile">,
+): AdminUserRole {
+  if (user.role?.toUpperCase() === "DEVELOPER") return "developer";
+  return user.role?.toUpperCase() === "AGENCY" || user.agencyProfile
+    ? "agency"
+    : "resident";
 }
 
 export function getAdminUserRoleLabel(role: AdminUserRole) {
-  return ADMIN_USER_ROLE_LABELS[role];
+  if (role === "developer") return "Developer";
+  return role === "agency" ? "Agency" : "Resident";
 }
 
 export function getAdminUserStatus(
@@ -78,10 +70,10 @@ export function getAdminUserStatusStyle(status: string) {
 
 export function getAdminUserRoleStyle(role: string) {
   switch (role) {
-    case "admin":
-      return "text-blue-700 bg-blue-50 border border-blue-300";
     case "developer":
-      return "text-purple-700 bg-purple-50 border border-purple-300";
+      return "border border-purple-300 bg-purple-50 text-purple-800 dark:border-purple-700 dark:bg-purple-950 dark:text-purple-300";
+    case "agency":
+      return "text-blue-700 bg-blue-50 border border-blue-300";
     default:
       return "text-green-700 bg-green-50 border border-green-300";
   }
@@ -139,7 +131,8 @@ function getAdminUserFilterMatch(
   status: AdminUserStatus,
 ) {
   if (filter === "ALL") return true;
-  if (isAdminUserRole(filter)) return role === filter;
+  if (filter === "resident" || filter === "agency" || filter === "developer")
+    return role === filter;
   return status === filter;
 }
 

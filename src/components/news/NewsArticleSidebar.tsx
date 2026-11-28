@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import Link from "next/link";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { formatNewsDate } from "@/lib/news/news-format";
@@ -14,17 +17,19 @@ export function NewsArticleSidebar({
   date,
   relatedNews,
 }: NewsArticleSidebarProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <aside className="w-full flex-shrink-0 lg:w-72">
       <div className="space-y-6 lg:sticky lg:top-0">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-[#1F2937]">
           <p className="mb-4 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-white">
-            About this news
+            {translateUi("About this news")}
           </p>
           <dl className="space-y-3 text-sm">
             <div>
               <dt className="mb-0.5 text-xs uppercase tracking-wider text-gray-400 dark:text-white">
-                Author
+                {translateUi("Author")}
               </dt>
               <dd className="font-semibold text-gray-800 dark:text-white">
                 {author}
@@ -32,7 +37,7 @@ export function NewsArticleSidebar({
             </div>
             <div>
               <dt className="mb-0.5 text-xs uppercase tracking-wider text-gray-400 dark:text-white">
-                Published
+                {translateUi("Published")}
               </dt>
               <dd className="font-semibold text-gray-800 dark:text-white">
                 {date}
@@ -43,7 +48,7 @@ export function NewsArticleSidebar({
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-[#1F2937]">
           <p className="mb-4 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-white">
-            Related News
+            {translateUi("Related News")}
           </p>
           <div className="space-y-4">
             {relatedNews.map((related) => (

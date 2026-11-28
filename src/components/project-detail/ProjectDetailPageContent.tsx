@@ -1,10 +1,14 @@
 "use client";
+import { getDisplayLocale } from "@/lib/i18n/display";
+
+import { useLanguage } from "@/context/LanguageContext";
+
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button, Badge, Card, cn } from "@/components/ui/primitives";
 import { useUser } from "@/context/UserContext";
 import { isApiSuccess } from "@/lib/api-types";
-import { sanitizeHref } from "@/lib/url-safety";
+import { formatProjectAddress } from "@/lib/project-address";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { useToast } from "@/components/shared/AppToaster";
 import { useState, useRef, useEffect } from "react";
@@ -164,7 +168,7 @@ function formatDate(dateString?: string) {
   if (!dateString) return "-";
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("id-ID", {
+  return date.toLocaleDateString(getDisplayLocale(), {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -172,7 +176,7 @@ function formatDate(dateString?: string) {
 }
 
 const formatRupiah = (value: number) => {
-  return new Intl.NumberFormat("id-ID", {
+  return new Intl.NumberFormat(getDisplayLocale(), {
     style: "currency",
     currency: "IDR",
     minimumFractionDigits: 0,
@@ -190,22 +194,24 @@ function computeProgress(
   return Math.min(Math.round((fundsCollected / budget) * 100), 100);
 }
 
-function formatDurationDays(durationDays?: number) {
-  if (!durationDays || durationDays < 1) return "Duration TBD";
+function formatDurationDays(locale: string, durationDays?: number) {
+  if (!durationDays || durationDays < 1) return null;
 
-  if (durationDays >= 30) {
-    const months = Math.floor(durationDays / 30);
-    return `${months} ${months > 1 ? "Months" : "Month"}`;
-  }
-
-  return `${durationDays} ${durationDays > 1 ? "Days" : "Day"}`;
+  const inMonths = durationDays >= 30;
+  return new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: inMonths ? "month" : "day",
+    unitDisplay: "long",
+  }).format(inMonths ? Math.floor(durationDays / 30) : durationDays);
 }
 
 function ProjectModalLoading({ label }: { label: string }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <LoadingState
-        label={label}
+        label={translateUi(label)}
         variant="panel"
         className="min-h-32 w-full max-w-sm rounded-2xl bg-white shadow-2xl dark:bg-[#111827]"
       />
@@ -260,6 +266,8 @@ const EMPTY_PROJECT: Project = {
 };
 
 export function ProjectDetailPageContent() {
+  const { t: translateUi, locale } = useLanguage();
+
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const fromAdmin = searchParams.get("from") === "admin";
@@ -269,6 +277,9 @@ export function ProjectDetailPageContent() {
     ...EMPTY_PROJECT,
     id: id as string,
   });
+  const durationLabel =
+    formatDurationDays(locale, project.estimatedDurationDays) ??
+    translateUi("Duration TBD");
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -317,7 +328,7 @@ export function ProjectDetailPageContent() {
             description: String(payload.description || ""),
             status: getProjectStage(String(payload.status)),
             category: String(payload.category?.name || "-"),
-            address: String(payload.address || "-"),
+            address: payload.address ?? "",
             contractor: payload.agency?.agencyProfile?.agencyName
               ? String(payload.agency.agencyProfile.agencyName)
               : undefined,
@@ -453,6 +464,7 @@ export function ProjectDetailPageContent() {
     }
 
     try {
+      // 1. Upload files
       const uploadPromises = Array.from(files).map(async (file) => {
         const formData = new FormData();
         formData.append("file", file);
@@ -468,11 +480,13 @@ export function ProjectDetailPageContent() {
 
       const newUrls = await Promise.all(uploadPromises);
 
+      // 2. Map existing documents to URLs
       const existingUrls = documents
         .map((d) => d.url)
         .filter(Boolean) as string[];
       const updatedUrls = [...existingUrls, ...newUrls];
 
+      // 3. Save to database
       const patchRes = await fetch(`/api/projects/${id}`, {
         method: "PATCH",
         headers: {
@@ -484,6 +498,7 @@ export function ProjectDetailPageContent() {
 
       if (!patchRes.ok) throw new Error("Failed to save document.");
 
+      // 4. Update UI state
       const newDocs: ProjectDocument[] = newUrls.map((url, i) => {
         const parts = url.split("/");
         const filename = parts[parts.length - 1];
@@ -522,7 +537,9 @@ export function ProjectDetailPageContent() {
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           <span className="font-medium text-sm">
-            {fromAdmin ? "Back to Menu" : "Back to Map"}
+            {fromAdmin
+              ? translateUi("Back to Menu")
+              : translateUi("Back to Map")}
           </span>
         </Link>
       </div>
@@ -531,7 +548,7 @@ export function ProjectDetailPageContent() {
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge className={cn("py-1 px-3", STATUS_STYLES[project.status])}>
-              {project.status}
+              {translateUi(project.status)}
             </Badge>
             <Badge className={cn("py-1 px-3", CATEGORY_BADGE_STYLE)}>
               {project.category}
@@ -543,15 +560,13 @@ export function ProjectDetailPageContent() {
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-white">
             <span className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-green-600" />
-              {project.latitude && project.longitude
-                ? `${project.latitude.toFixed(4)}, ${project.longitude.toFixed(4)}`
-                : project.address}
+              {formatProjectAddress(project)}
             </span>
             {["Under Construction", "Completed"].includes(project.status) && (
               <span className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-4 duration-500">
                 <Clock className="w-4 h-4 text-green-600" />
                 <span className="font-semibold text-gray-700 dark:text-white">
-                  {formatDurationDays(project.estimatedDurationDays)}
+                  {durationLabel}
                 </span>
               </span>
             )}
@@ -580,15 +595,15 @@ export function ProjectDetailPageContent() {
                 <div className="w-10 h-10 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
                   <FileText className="w-5 h-5 text-green-600" />
                 </div>
-                Project Description
+                {translateUi("Project Description")}
               </h2>
               <p className="text-gray-700 dark:text-white leading-relaxed">
                 {project.description}
               </p>
               <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800">
                 <h3 className="font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2.5 text-sm tracking-tight">
-                  <Clock className="w-4 h-4 text-green-600" /> Development
-                  Stages
+                  <Clock className="w-4 h-4 text-green-600" />{" "}
+                  {translateUi(" Development Stages")}
                 </h3>
                 <div className="relative pb-2">
                   <div className="absolute top-3 left-[16.666%] right-[16.666%] h-1 bg-gray-200 dark:bg-slate-700 -z-0">
@@ -647,22 +662,24 @@ export function ProjectDetailPageContent() {
               </div>
             </Card>
 
-            {userRole === "agency" && (
+            {userRole === "developer" && (
               <ProjectSentimentBar feedback={comments} />
             )}
 
-            {(userRole === "resident" || userRole === "agency") && (
+            {(userRole === "resident" ||
+              userRole === "agency" ||
+              userRole === "developer") && (
               <Card className="p-6 border-green-100">
                 <div id="comments">
                   <h3 className="font-bold text-gray-900 dark:text-white flex items-center justify-between gap-3 mb-4 text-lg tracking-tight">
                     <span className="flex min-w-0 items-center gap-2.5">
                       <MessageSquare className="w-5 h-5 shrink-0 text-green-600" />{" "}
                       <span className="min-w-0 whitespace-nowrap">
-                        Community Discussion
+                        {translateUi("Community Discussion")}
                       </span>
                     </span>
                     <span className="shrink-0 whitespace-nowrap text-[10px] text-gray-500 font-normal bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full sm:px-2 sm:text-xs">
-                      {comments.length} comments
+                      {comments.length} {translateUi(" comments")}
                     </span>
                   </h3>
                   <div className="flex gap-3 mb-5">
@@ -679,7 +696,10 @@ export function ProjectDetailPageContent() {
                     <div className="flex-1">
                       <textarea
                         className="w-full p-3 border border-green-200 dark:border-slate-600 rounded-xl bg-green-50 dark:bg-[#111827] focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 text-xs resize-none h-20 text-gray-800 dark:text-white transition-all sm:text-sm"
-                        placeholder={`Share your thoughts about this project, ${userName}...`}
+                        placeholder={translateUi(
+                          "Share your thoughts about this project, {0}...",
+                          { 0: userName },
+                        )}
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         onKeyDown={(e) => {
@@ -689,7 +709,7 @@ export function ProjectDetailPageContent() {
                       />
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-[11px] text-gray-400 sm:text-xs">
-                          Ctrl+Enter to send
+                          {translateUi("Ctrl+Enter to send")}
                         </span>
                         <Button
                           variant="primary"
@@ -697,7 +717,8 @@ export function ProjectDetailPageContent() {
                           onClick={handlePostComment}
                           disabled={!newComment.trim() || loading}
                         >
-                          <Send className="w-3.5 h-3.5" /> Send
+                          <Send className="w-3.5 h-3.5" />{" "}
+                          {translateUi(" Send")}
                         </Button>
                       </div>
                     </div>
@@ -721,20 +742,18 @@ export function ProjectDetailPageContent() {
                             <span
                               className={cn(
                                 "shrink-0 text-[9px] px-1.5 py-0.5 rounded-full font-medium border sm:text-[10px]",
-                                comment.role?.toLowerCase() === "admin" ||
-                                  comment.role?.toLowerCase() === "agency"
+                                comment.role?.toLowerCase() === "agency"
                                   ? "bg-blue-100 text-blue-700 border-blue-300"
                                   : comment.role?.toLowerCase() === "developer"
                                     ? "bg-purple-100 text-purple-700 border-purple-300"
                                     : "bg-green-100 text-green-700 border-green-300",
                               )}
                             >
-                              {comment.role?.toUpperCase() === "ADMIN" ||
-                              comment.role?.toUpperCase() === "AGENCY"
-                                ? "Admin"
+                              {comment.role?.toUpperCase() === "AGENCY"
+                                ? translateUi("Admin")
                                 : comment.role?.toUpperCase() === "DEVELOPER"
-                                  ? "Developer"
-                                  : "Resident"}
+                                  ? translateUi("Developer")
+                                  : translateUi("Resident")}
                             </span>
                             <span className="shrink-0 text-[10px] text-gray-400 dark:text-white sm:text-xs">
                               {comment.timestamp}
@@ -758,16 +777,20 @@ export function ProjectDetailPageContent() {
                 <div className="w-8 h-8 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
                   <Clock className="w-4 h-4 text-green-600" />
                 </div>
-                Estimated Duration
+                {translateUi("Estimated Duration")}
               </h2>
               <div className="rounded-2xl border border-green-100 bg-green-50/70 p-4 dark:border-green-900/40 dark:bg-green-900/10">
                 <p className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
-                  {formatDurationDays(project.estimatedDurationDays)}
+                  {durationLabel}
                 </p>
                 <p className="mt-1 text-xs font-medium text-gray-500 dark:text-slate-300">
                   {["Under Construction", "Completed"].includes(project.status)
-                    ? "Timeline estimate for the current project work."
-                    : "Available once the project enters construction."}
+                    ? translateUi(
+                        "Timeline estimate for the current project work.",
+                      )
+                    : translateUi(
+                        "Available once the project enters construction.",
+                      )}
                 </p>
               </div>
             </Card>
@@ -778,7 +801,7 @@ export function ProjectDetailPageContent() {
                   <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
                     <DollarSign className="w-4 h-4 text-green-100" />
                   </div>
-                  Project Budget
+                  {translateUi("Project Budget")}
                 </h3>
                 <p className="text-2xl md:text-3xl font-bold mb-5 tracking-tight">
                   {formatRupiah(project.budget)}
@@ -797,20 +820,20 @@ export function ProjectDetailPageContent() {
                   <span className="w-7 h-7 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
                     <MapPin className="w-3.5 h-3.5 text-green-600" />
                   </span>
-                  Project Location
+                  {translateUi("Project Location")}
                 </p>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none group-hover:from-black/10 transition-all" />
             </Card>
 
             {/* Quick Actions Moved to Sidebar */}
-            {userRole === "agency" && (
+            {userRole === "developer" && (
               <Card className="p-8 border-slate-100 shadow-sm bg-white dark:bg-[#111827] rounded-[2rem]">
                 <h2 className="font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2.5 text-sm tracking-tight">
                   <div className="w-8 h-8 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
                     <TrendingUp className="w-4 h-4 text-green-600" />
                   </div>
-                  Quick Actions
+                  {translateUi("Quick Actions")}
                 </h2>
                 <div className="flex flex-col gap-3">
                   <Link
@@ -822,7 +845,7 @@ export function ProjectDetailPageContent() {
                       className="w-full h-13 border-slate-100 bg-slate-50/50 dark:bg-[#1F2937]/50 text-slate-600 dark:text-white hover:bg-white dark:hover:bg-slate-800 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-sm"
                     >
                       <Edit2 className="w-3.5 h-3.5 mr-2.5 text-green-600" />{" "}
-                      Edit Details
+                      {translateUi("Edit Details")}
                     </Button>
                   </Link>
                   <Button
@@ -830,7 +853,8 @@ export function ProjectDetailPageContent() {
                     className="w-full h-14 bg-slate-900 dark:bg-green-600 hover:bg-black dark:hover:bg-green-700 text-white font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl shadow-xl shadow-slate-200 dark:shadow-green-900/20 transition-all active:scale-[0.98]"
                     onClick={() => setIsStatusModalOpen(true)}
                   >
-                    <CheckCircle2 className="w-4 h-4 mr-3" /> Update Status
+                    <CheckCircle2 className="w-4 h-4 mr-3" />{" "}
+                    {translateUi(" Update Status")}
                   </Button>
                 </div>
               </Card>
@@ -843,18 +867,19 @@ export function ProjectDetailPageContent() {
                   <div className="w-8 h-8 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
                     <FileText className="w-4 h-4 text-green-600" />
                   </div>
-                  Documents
+                  {translateUi("Documents")}
                   <span className="text-[10px] text-gray-500 font-black bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                     {documents.length}
                   </span>
                 </h2>
-                {userRole === "agency" && (
+                {userRole === "developer" && (
                   <Button
                     variant="outline"
                     className="h-8 text-[10px] flex items-center gap-1.5 font-black uppercase tracking-widest px-3 border-green-200"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <UploadCloud className="w-3.5 h-3.5" /> Upload
+                    <UploadCloud className="w-3.5 h-3.5" />{" "}
+                    {translateUi(" Upload")}
                   </Button>
                 )}
                 <input
@@ -871,7 +896,7 @@ export function ProjectDetailPageContent() {
                 <div className="text-center py-10 bg-gray-50 dark:bg-[#1F2937]/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
                   <File className="w-8 h-8 mx-auto mb-2 opacity-20" />
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    No Documents
+                    {translateUi("No Documents")}
                   </p>
                 </div>
               ) : (
@@ -898,22 +923,22 @@ export function ProjectDetailPageContent() {
                         {doc.type === "PDF" && (
                           <button
                             className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
-                            title="Lihat PDF"
+                            title={translateUi("Lihat PDF")}
                             onClick={() => setPdfViewerUrl(doc.url || null)}
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                         )}
                         <a
-                          href={sanitizeHref(doc.url) ?? "#"}
+                          href={doc.url || "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
-                          title="Download"
+                          title={translateUi("Download")}
                         >
                           <Download className="w-4 h-4" />
                         </a>
-                        {userRole === "agency" && (
+                        {userRole === "developer" && (
                           <button
                             className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                             onClick={async () => {

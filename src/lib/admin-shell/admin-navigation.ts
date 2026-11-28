@@ -23,11 +23,7 @@ export type AdminNavigationLink = {
 export const adminSidebarLinks: AdminNavigationLink[] = [
   { name: "Dashboard", href: "/admin/dashboard", icon: BarChart2 },
   { name: "Projects", href: "/admin/projects", icon: FolderKanban },
-  {
-    name: "Financial Management",
-    href: "/admin/crowdfunding",
-    icon: DollarSign,
-  },
+  { name: "Billing & Care", href: "/admin/billing", icon: DollarSign },
   { name: "Comments", href: "/admin/comments", icon: MessageSquare },
   { name: "News", href: "/admin/news", icon: Newspaper },
   { name: "Users", href: "/admin/users", icon: Users },

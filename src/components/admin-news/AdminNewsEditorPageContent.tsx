@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -44,6 +45,8 @@ export function AdminNewsEditorPageContent({
   mode,
   newsId,
 }: AdminNewsEditorPageContentProps) {
+  const { t: translateUi } = useLanguage();
+
   const router = useRouter();
   const toast = useToast();
   const isCreate = mode === "create";
@@ -189,7 +192,7 @@ export function AdminNewsEditorPageContent({
   if (isLoading) {
     return (
       <LoadingState
-        label="Loading news editor..."
+        label={translateUi("Loading news editor...")}
         className="h-full min-h-[500px]"
       />
     );
@@ -209,7 +212,7 @@ export function AdminNewsEditorPageContent({
           className="inline-flex items-center gap-2 text-sm font-semibold text-green-600 transition-colors hover:text-green-700 dark:text-green-400"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to News
+          {translateUi("Back to News")}
         </Link>
       </div>
 
@@ -217,12 +220,12 @@ export function AdminNewsEditorPageContent({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-gray-900 dark:text-white">
-              {isCreate ? "Create News" : "Edit News"}
+              {isCreate ? translateUi("Create News") : translateUi("Edit News")}
             </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-slate-300">
               {isCreate
-                ? "Publish a community update."
-                : "Update the article content and thumbnail."}
+                ? translateUi("Publish a community update.")
+                : translateUi("Update the article content and thumbnail.")}
             </p>
           </div>
           <Button
@@ -245,32 +248,34 @@ export function AdminNewsEditorPageContent({
             <div className="flex items-center gap-2 border-b border-gray-100 pb-4 dark:border-gray-800">
               <FileText className="h-4 w-4 text-green-600" />
               <h2 className="text-sm font-black text-gray-900 dark:text-white">
-                News Content
+                {translateUi("News Content")}
               </h2>
             </div>
 
             <AdminNewsEditorField
               id="news-title"
-              label="News Name"
+              label={translateUi("News Name")}
               value={formData.title}
-              placeholder="Enter news title..."
+              placeholder={translateUi("Enter news title...")}
               onChange={(value) => updateFormData("title", value)}
             />
 
             <AdminNewsEditorTextarea
               id="news-hook"
-              label="Hook Sentence"
+              label={translateUi("Hook Sentence")}
               value={formData.hook}
-              placeholder="Write the opening sentence that will be visually highlighted..."
+              placeholder={translateUi(
+                "Write the opening sentence that will be visually highlighted...",
+              )}
               rows={3}
               onChange={(value) => updateFormData("hook", value)}
             />
 
             <AdminNewsEditorTextarea
               id="news-content"
-              label="Content"
+              label={translateUi("Content")}
               value={formData.content}
-              placeholder="Write the full news content..."
+              placeholder={translateUi("Write the full news content...")}
               rows={12}
               onChange={(value) => updateFormData("content", value)}
             />
@@ -280,7 +285,7 @@ export function AdminNewsEditorPageContent({
             <div className="mb-4 flex items-center gap-2 border-b border-gray-100 pb-4 dark:border-gray-800">
               <ImageIcon className="h-4 w-4 text-green-600" />
               <h2 className="text-sm font-black text-gray-900 dark:text-white">
-                Thumbnail
+                {translateUi("Thumbnail")}
               </h2>
             </div>
             <AdminNewsImageDropzone
@@ -322,13 +327,15 @@ function AdminNewsEditorField({
   placeholder: string;
   value: string;
 }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="space-y-2">
       <label
         htmlFor={id}
         className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400"
       >
-        {label}
+        {translateUi(label)}
       </label>
       <input
         id={id}
@@ -356,13 +363,15 @@ function AdminNewsEditorTextarea({
   rows: number;
   value: string;
 }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="space-y-2">
       <label
         htmlFor={id}
         className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400"
       >
-        {label}
+        {translateUi(label)}
       </label>
       <textarea
         id={id}

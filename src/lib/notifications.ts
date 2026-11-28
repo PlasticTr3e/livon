@@ -2,16 +2,22 @@ import prisma from "@/lib/prisma";
 import { Role } from "@/generated/prisma/enums";
 
 type BroadcastNotificationInput = {
-  recipientRole: Role;
   title: string;
   type: string;
   message: string;
   projectId?: string;
   referenceId?: string;
-};
+} & (
+  | { recipientRole: Role; recipientRoles?: never }
+  | {
+      recipientRole?: never;
+      recipientRoles: Role[];
+    }
+);
 
 export async function broadcastNotification({
   recipientRole,
+  recipientRoles,
   title,
   type,
   message,
@@ -21,7 +27,7 @@ export async function broadcastNotification({
   return prisma.$transaction(async (tx) => {
     const recipients = await tx.user.findMany({
       where: {
-        role: recipientRole,
+        role: recipientRoles ? { in: recipientRoles } : recipientRole,
         deletedAt: null,
       },
       select: { id: true },

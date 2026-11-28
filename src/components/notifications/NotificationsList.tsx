@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Bell } from "lucide-react";
 import { LoadingState } from "@/components/shared/LoadingState";
 import type {
@@ -19,10 +22,12 @@ export function NotificationsList({
   notifications,
   onMarkAsRead,
 }: NotificationsListProps) {
+  const { t: translateUi } = useLanguage();
+
   if (isLoading) {
     return (
       <LoadingState
-        label="Loading notifications..."
+        label={translateUi("Loading notifications...")}
         variant="panel"
         className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-[#111827]"
       />
@@ -34,7 +39,9 @@ export function NotificationsList({
       <NotificationStateCard>
         <Bell className="mx-auto mb-4 h-16 w-16 text-gray-300 dark:text-white" />
         <p className="font-medium text-gray-500 dark:text-white">
-          {filter === "unread" ? "No unread notifications" : "No notifications"}
+          {filter === "unread"
+            ? translateUi("No unread notifications")
+            : translateUi("No notifications")}
         </p>
       </NotificationStateCard>
     );

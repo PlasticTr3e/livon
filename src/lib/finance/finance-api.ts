@@ -115,7 +115,7 @@ export async function createExpenseTransaction(
   data: CreateExpenseInput,
 ): Promise<TransactionListItem> {
   return request<TransactionListItem>(
-    "/api/admin/finance/transactions",
+    "/api/finance/transactions",
     {
       method: "POST",
       body: JSON.stringify(data),
@@ -136,7 +136,7 @@ export async function recordDonation(
       method: "POST",
       body: JSON.stringify(data),
     },
-    true,
+    false,
   );
 }
 

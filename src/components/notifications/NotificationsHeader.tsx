@@ -1,6 +1,11 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Bell } from "lucide-react";
 
 export function NotificationsHeader() {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="mb-6">
       <div className="mb-2 flex items-center gap-3">
@@ -8,11 +13,11 @@ export function NotificationsHeader() {
           <Bell className="h-5 w-5 text-white" />
         </div>
         <h1 className="text-3xl font-black text-gray-900 dark:text-white">
-          Notifications
+          {translateUi("Notifications")}
         </h1>
       </div>
       <p className="ml-[52px] text-sm text-gray-500 dark:text-white">
-        Monitor all community project activities and updates
+        {translateUi("Monitor all community project activities and updates")}
       </p>
     </div>
   );

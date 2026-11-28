@@ -1,3 +1,4 @@
+import { getDisplayLocale } from "@/lib/i18n/display";
 import type {
   NewsArticle,
   NewsArticleContent,
@@ -20,7 +21,7 @@ export function formatNewsDate(date?: string | Date | null) {
   const newsDate = typeof date === "string" ? new Date(date) : date;
   return Number.isNaN(newsDate.getTime())
     ? ""
-    : newsDate.toLocaleDateString("id-ID");
+    : newsDate.toLocaleDateString(getDisplayLocale());
 }
 
 export function getNewsAuthorName(article: NewsArticle) {

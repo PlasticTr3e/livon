@@ -1,4 +1,7 @@
+import { canManage } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
+import { notifyPaidPayment } from "./billing-notifications";
+import { parseBillItems } from "@/lib/finance/bill-items";
 import {
   BillStatus,
   FundType,
@@ -77,6 +80,7 @@ export async function getFinanceSummary(
     999,
   );
 
+  // 1. Fetch Realtime Fund Balances and Monthly Aggregates
   const [summaries, monthlyExpenseAgg, monthlyIncomeAgg, donationCount] =
     await Promise.all([
       prisma.financeSummary.findMany({
@@ -133,6 +137,7 @@ export async function getFinanceSummary(
     ? Number(monthlyIncomeAgg._sum.amount)
     : 0;
 
+  // 4. Fetch Active Citizen Bill Status for the logged-in user
   let residentBill: ResidentBillSummary | null = null;
   let iplPaidThrough: string = shiftBillingPeriod(currentPeriod, -1);
   let outstandingIplPeriods: string[] = [];
@@ -243,6 +248,7 @@ export async function getFinanceTransactions(
   let resolvedFundType: FundType | undefined;
   let resolvedTransactionType: TransactionType | undefined;
 
+  // 1. Resolve fund type filter (IPL vs DONATION/DONASI)
   if (rawFund === "IPL" || rawType === "IPL") {
     resolvedFundType = FundType.IPL;
   } else if (
@@ -254,6 +260,7 @@ export async function getFinanceTransactions(
     resolvedFundType = FundType.DONASI;
   }
 
+  // 2. Resolve transaction type filter (PEMASUKAN vs PENGELUARAN)
   if (rawType === "PEMASUKAN" || rawType === "INCOME") {
     resolvedTransactionType = TransactionType.PEMASUKAN;
   } else if (rawType === "PENGELUARAN" || rawType === "EXPENSE") {
@@ -378,6 +385,19 @@ export async function getFinanceTransactions(
  * Creates a new expense report in an atomic database transaction.
  * Deducts the amount from the respective FinanceSummary balance and increments totalExpense.
  */
+/** Thrown when a withdrawal would push a fund balance below zero. */
+export class InsufficientFundError extends Error {
+  constructor(
+    public readonly fundType: FundType,
+    public readonly balance: number,
+  ) {
+    super(
+      `Saldo kas ${fundType === FundType.DONASI ? "donasi" : "IPL"} tidak cukup. Saldo tersedia Rp ${balance.toLocaleString("id-ID")}.`,
+    );
+    this.name = "InsufficientFundError";
+  }
+}
+
 export async function createExpenseReport(
   adminId: string,
   input: CreateExpenseInput,
@@ -386,6 +406,20 @@ export async function createExpenseReport(
   const amountDecimal = new Prisma.Decimal(input.amount);
 
   return prisma.$transaction(async (tx) => {
+    // 0. Lock the fund row so concurrent withdrawals cannot overdraw the balance.
+    const [fund] = await tx.$queryRaw<{ balance: Prisma.Decimal }[]>`
+      SELECT balance FROM finance_summaries
+      WHERE "fundType" = ${input.fundType}::"FundType"
+      FOR UPDATE
+    `;
+    const available = fund
+      ? new Prisma.Decimal(fund.balance)
+      : new Prisma.Decimal(0);
+    if (available.lessThan(amountDecimal)) {
+      throw new InsufficientFundError(input.fundType, available.toNumber());
+    }
+
+    // 1. Create the financial expense transaction
     const transaction = await tx.financialTransaction.create({
       data: {
         title: input.title,
@@ -410,6 +444,7 @@ export async function createExpenseReport(
       },
     });
 
+    // 2. Atomically update the respective fund balance in FinanceSummary
     await tx.financeSummary.upsert({
       where: { fundType: input.fundType },
       update: {
@@ -551,9 +586,9 @@ export async function recordDonation(
 
 /**
  * Retrieves resident bills with role-based access control:
- * - ADMIN can view all resident bills, with filters for status, month, year, or citizen search.
+ * - Managers can view all resident bills, with filters for status, month, year, or citizen search.
  * - WARGA can only view their own bills.
- * - DEVELOPER cannot view private citizen bills (returns empty).
+ * - Other roles cannot view private citizen bills (returns empty).
  */
 export async function getResidentBills(
   viewer: { userId: string; role: Role },
@@ -564,7 +599,7 @@ export async function getResidentBills(
 
   if (viewer.role === Role.WARGA) {
     whereClause.userId = viewer.userId;
-  } else if (viewer.role === Role.DEVELOPER) {
+  } else if (!canManage(viewer.role)) {
     return {
       bills: [],
       pagination: { total: 0, page, limit, totalPages: 1 },
@@ -582,7 +617,7 @@ export async function getResidentBills(
   if (month) whereClause.month = month;
   if (year) whereClause.year = year;
 
-  if (search && viewer.role === Role.ADMIN) {
+  if (search && canManage(viewer.role)) {
     whereClause.OR = [
       { title: { contains: search, mode: "insensitive" } },
       {
@@ -635,6 +670,7 @@ export async function getResidentBills(
     paidAt: b.paidAt ? b.paidAt.toISOString() : null,
     paymentProofUrl: b.paymentProofUrl,
     notes: b.notes,
+    items: parseBillItems(b.items, Number(b.amount)),
     createdAt: b.createdAt.toISOString(),
     residentName: b.user?.citizenProfile?.fullName || undefined,
     blockHouse: b.user?.citizenProfile?.blockHouse || null,
@@ -665,7 +701,7 @@ export async function generateMonthlyBills(
   const amountDecimal = new Prisma.Decimal(amount);
 
   const citizens = await prisma.citizenProfile.findMany({
-    where: { isVerified: true },
+    where: { isVerified: true, user: { deletedAt: null, role: Role.WARGA } },
     select: { userId: true },
   });
 
@@ -677,34 +713,18 @@ export async function generateMonthlyBills(
     };
   }
 
-  let generatedCount = 0;
-
-  for (const citizen of citizens) {
-    const existing = await prisma.residentBill.findUnique({
-      where: {
-        userId_month_year: {
-          userId: citizen.userId,
-          month,
-          year,
-        },
-      },
-    });
-
-    if (!existing) {
-      await prisma.residentBill.create({
-        data: {
-          userId: citizen.userId,
-          title: billTitle,
-          month,
-          year,
-          amount: amountDecimal,
-          status: BillStatus.BELUM_BAYAR,
-          dueDate: dueDate || new Date(year, month - 1, 15),
-        },
-      });
-      generatedCount++;
-    }
-  }
+  const { count: generatedCount } = await prisma.residentBill.createMany({
+    data: citizens.map((citizen) => ({
+      userId: citizen.userId,
+      title: billTitle,
+      month,
+      year,
+      amount: amountDecimal,
+      status: BillStatus.BELUM_BAYAR,
+      dueDate: dueDate || new Date(year, month - 1, 15),
+    })),
+    skipDuplicates: true,
+  });
 
   return {
     generatedCount,
@@ -720,29 +740,29 @@ export async function payResidentBill(
   billId: string,
   input: PayBillInput,
 ): Promise<ResidentBillItem> {
-  const bill = await prisma.residentBill.findUnique({
-    where: { id: billId },
-  });
-
-  if (!bill) {
-    throw new Error("Tagihan tidak ditemukan");
-  }
-
-  if (bill.userId !== userId) {
-    throw new Error("Anda tidak memiliki akses ke tagihan ini");
-  }
-
-  if (bill.status === BillStatus.LUNAS) {
-    throw new Error("Tagihan ini sudah lunas");
-  }
-
-  const updated = await prisma.residentBill.update({
-    where: { id: billId },
-    data: {
-      status: BillStatus.MENUNGGU_VERIFIKASI,
-      paymentProofUrl: input.paymentProofUrl,
-      notes: input.notes,
-    },
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "resident_bills" WHERE "id" = ${billId} FOR UPDATE`;
+    const bill = await tx.residentBill.findUnique({ where: { id: billId } });
+    if (!bill) throw new Error("Tagihan tidak ditemukan");
+    if (bill.userId !== userId)
+      throw new Error("Anda tidak memiliki akses ke tagihan ini");
+    if (bill.status !== BillStatus.BELUM_BAYAR)
+      throw new Error("Tagihan sudah lunas atau sedang diverifikasi");
+    const activeOrder = await tx.paymentOrder.findFirst({
+      where: { billId, status: { in: ["CREATING", "PENDING"] } },
+    });
+    if (activeOrder)
+      throw new Error(
+        "Ada pembayaran online yang masih aktif. Periksa riwayat pembayaran Anda.",
+      );
+    return tx.residentBill.update({
+      where: { id: billId },
+      data: {
+        status: BillStatus.MENUNGGU_VERIFIKASI,
+        paymentProofUrl: input.paymentProofUrl,
+        notes: input.notes,
+      },
+    });
   });
 
   return {
@@ -792,6 +812,15 @@ export async function verifyResidentBill(
   const citizenName = bill.user?.citizenProfile?.fullName || "Warga";
 
   return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "resident_bills" WHERE "id" = ${billId} FOR UPDATE`;
+    const currentBill = await tx.residentBill.findUniqueOrThrow({
+      where: { id: billId },
+    });
+    if (currentBill.status !== BillStatus.MENUNGGU_VERIFIKASI) {
+      throw new Error(
+        "Hanya bukti pembayaran yang menunggu verifikasi yang dapat disetujui.",
+      );
+    }
     const updated = await tx.residentBill.update({
       where: { id: billId },
       data: {
@@ -829,6 +858,14 @@ export async function verifyResidentBill(
       },
     });
 
+    await notifyPaidPayment(tx, {
+      id: billId,
+      billId,
+      userId: bill.userId,
+      fundType: "IPL",
+      amount: bill.amount,
+      paidAt: updated.paidAt,
+    });
     return {
       id: updated.id,
       userId: updated.userId,
@@ -869,14 +906,20 @@ export async function rejectResidentBill(
     throw new Error("Tagihan yang sudah lunas tidak dapat ditolak");
   }
 
-  const updated = await prisma.residentBill.update({
-    where: { id: billId },
+  const result = await prisma.residentBill.updateMany({
+    where: { id: billId, status: BillStatus.MENUNGGU_VERIFIKASI },
     data: {
       status: BillStatus.BELUM_BAYAR,
       notes: reason
         ? `Bukti pembayaran ditolak: ${reason}`
         : "Bukti pembayaran ditolak oleh pengurus.",
     },
+  });
+
+  if (result.count !== 1)
+    throw new Error("Tagihan tidak lagi menunggu verifikasi.");
+  const updated = await prisma.residentBill.findUniqueOrThrow({
+    where: { id: billId },
   });
 
   return {

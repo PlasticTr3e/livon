@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Leaf } from "lucide-react";
 import { ImageWithFallback } from "@/components/shared/ImageWithFallback";
 import { LOGIN_HERO_IMAGES } from "@/lib/login/login-copy";
@@ -7,6 +10,8 @@ type LoginHeroPanelProps = {
 };
 
 export function LoginHeroPanel({ activeImageIndex }: LoginHeroPanelProps) {
+  const { t: translateUi } = useLanguage();
+
   const activeImage = LOGIN_HERO_IMAGES[activeImageIndex];
 
   return (
@@ -24,7 +29,7 @@ export function LoginHeroPanel({ activeImageIndex }: LoginHeroPanelProps) {
           <Leaf className="h-5 w-5 text-white" />
         </div>
         <span className="text-sm font-extrabold tracking-[0.18em] text-white">
-          LIVON
+          {translateUi("LIVON")}
         </span>
       </div>
 
@@ -39,10 +44,10 @@ export function LoginHeroPanel({ activeImageIndex }: LoginHeroPanelProps) {
 
       <div className="relative z-10 mt-8 text-center">
         <p className="max-w-xs text-xl font-bold leading-snug text-white">
-          Make your neighborhood more
+          {translateUi("Make your neighborhood more")}
           <br />
           <span className="inline-block animate-pulse text-yellow-300">
-            transparent & organized
+            {translateUi("transparent & organized")}
           </span>
         </p>
         <div className="mt-4 flex justify-center gap-2">

@@ -1,28 +1,10 @@
+import { canManage, isDeveloper } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { invalidate } from "@/lib/cache";
 import { getAuthUser, revokeAllUserTokens } from "@/lib/auth";
-import { ok, badRequest, notFound, internalError } from "@/lib/api-response";
+import { ok, badRequest, notFound } from "@/lib/api-response";
 import { Role } from "@/generated/prisma/enums";
-
-const safeCitizenSelect = {
-  id: true,
-  email: true,
-  emailVerified: true,
-  role: true,
-  createdAt: true,
-  updatedAt: true,
-  deletedAt: true,
-  citizenProfile: true,
-} as const;
-
-const updateCitizenSchema = z.object({
-  role: z.nativeEnum(Role).optional(),
-  fullName: z.string().trim().min(1).max(200).optional(),
-  phone: z.string().trim().min(1).max(30).optional(),
-  isVerified: z.boolean().optional(),
-});
 
 /**
  * @swagger
@@ -77,29 +59,12 @@ export async function GET(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
-        { status: 401 },
+        { status: authUser ? 403 : 401 },
       );
     }
-    if (authUser.role === Role.DEVELOPER) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin mengakses data sensitif perumahan/warga",
-        },
-        { status: 403 },
-      );
-    }
-    if (authUser.role !== Role.ADMIN) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden: Admin access required" },
-        { status: 403 },
-      );
-    }
-
     const { id } = await params;
 
     const citizen = await prisma.user.findFirst({
@@ -108,19 +73,24 @@ export async function GET(
         role: Role.WARGA,
         deletedAt: null,
       },
-      select: safeCitizenSelect,
+      include: {
+        citizenProfile: true,
+      },
     });
 
     if (!citizen) {
       return notFound("Citizen not found");
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, ...safeCitizenData } = citizen;
+
     return ok("Citizen details retrieved successfully", {
-      data: citizen,
+      data: safeCitizenData,
     });
   } catch (error) {
     console.error("[AGENCY_CITIZEN_GET]", error);
-    return internalError("Failed to retrieve citizen details");
+    return badRequest("Failed to retrieve citizen details", error);
   }
 }
 
@@ -189,38 +159,20 @@ export async function PUT(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
-        { status: 401 },
+        { status: authUser ? 403 : 401 },
       );
     }
-    if (authUser.role === Role.DEVELOPER) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin mengubah data warga",
-        },
-        { status: 403 },
-      );
-    }
-    if (authUser.role !== Role.ADMIN) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden: Admin access required" },
-        { status: 403 },
-      );
-    }
-
     const { id } = await params;
-    const body: unknown = await req.json();
-
-    const parsed = updateCitizenSchema.safeParse(body);
-    if (!parsed.success) {
-      return badRequest("Validation failed", z.treeifyError(parsed.error));
+    const body = await req.json();
+    if (body.role === Role.DEVELOPER && !isDeveloper(authUser.role)) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden" },
+        { status: 403 },
+      );
     }
-
-    const { role, fullName, phone, isVerified } = parsed.data;
 
     const existingUser = await prisma.user.findFirst({
       where: { id, role: Role.WARGA, deletedAt: null },
@@ -230,32 +182,34 @@ export async function PUT(
       return notFound("Citizen not found");
     }
 
-    const hasProfileUpdate =
-      fullName !== undefined || phone !== undefined || isVerified !== undefined;
-
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        ...(role !== undefined && { role }),
-        ...(hasProfileUpdate && {
-          citizenProfile: {
-            update: {
-              ...(fullName !== undefined && { fullName }),
-              ...(phone !== undefined && { phone }),
-              ...(isVerified !== undefined && { isVerified }),
-            },
+        ...(body.role && { role: body.role }), // Allow role modification if necessary
+        citizenProfile: {
+          update: {
+            ...(body.fullName && { fullName: body.fullName }),
+            ...(body.phone && { phone: body.phone }),
+            ...(body.isVerified !== undefined && {
+              isVerified: body.isVerified,
+            }),
           },
-        }),
+        },
       },
-      select: safeCitizenSelect,
+      include: {
+        citizenProfile: true,
+      },
     });
 
-    if (role !== undefined) await revokeAllUserTokens(id);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, ...safeUpdatedData } = updatedUser;
+
+    if (body.role) await revokeAllUserTokens(id);
     await invalidate("dashboard");
-    return ok("Citizen updated successfully", { data: updatedUser });
+    return ok("Citizen updated successfully", { data: safeUpdatedData });
   } catch (error) {
     console.error("[AGENCY_CITIZEN_PUT]", error);
-    return internalError("Failed to update citizen");
+    return badRequest("Failed to update citizen", error);
   }
 }
 
@@ -303,29 +257,12 @@ export async function DELETE(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access" },
-        { status: 401 },
+        { status: authUser ? 403 : 401 },
       );
     }
-    if (authUser.role === Role.DEVELOPER) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Forbidden: Role DEVELOPER dibatasi dan tidak memiliki izin menghapus akun warga",
-        },
-        { status: 403 },
-      );
-    }
-    if (authUser.role !== Role.ADMIN) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden: Admin access required" },
-        { status: 403 },
-      );
-    }
-
     const { id } = await params;
 
     const existingUser = await prisma.user.findFirst({
@@ -349,6 +286,9 @@ export async function DELETE(
     return ok("Citizen account has been successfully deleted (soft-delete)");
   } catch (error: unknown) {
     console.error("[AGENCY_CITIZEN_DELETE]", error);
-    return internalError("Failed to delete citizen");
+    return badRequest(
+      "Failed to delete citizen",
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 }

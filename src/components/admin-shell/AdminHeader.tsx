@@ -3,8 +3,9 @@ import { AdminDesktopNavigation } from "./AdminDesktopNavigation";
 import { AdminNotificationMenu } from "./AdminNotificationMenu";
 import { AdminSidebarToggle } from "./AdminSidebarToggle";
 import { AdminThemeToggle } from "./AdminThemeToggle";
-import { AdminUserProfileButton } from "./AdminUserProfileButton";
+import { AccountMenu } from "@/components/shared/AccountMenu";
 import type { AdminNotification } from "@/lib/admin-shell/admin-notifications";
+import { LanguageSwitch } from "@/components/shared/LanguageSwitch";
 
 type AdminHeaderProps = {
   isNotificationLoading: boolean;
@@ -17,7 +18,6 @@ type AdminHeaderProps = {
   userRole: string;
   onNotificationOpenChange: (isOpen: boolean) => void;
   onOpenNotifications: () => void;
-  onOpenProfile: () => void;
   onToggleSidebar: () => void;
   onToggleTheme: () => void;
 };
@@ -33,7 +33,6 @@ export function AdminHeader({
   userRole,
   onNotificationOpenChange,
   onOpenNotifications,
-  onOpenProfile,
   onToggleSidebar,
   onToggleTheme,
 }: AdminHeaderProps) {
@@ -46,6 +45,7 @@ export function AdminHeader({
       </div>
 
       <div className="flex items-center space-x-1">
+        <LanguageSwitch />
         <AdminThemeToggle theme={theme} onToggle={onToggleTheme} />
         <AdminNotificationMenu
           isLoading={isNotificationLoading}
@@ -55,11 +55,10 @@ export function AdminHeader({
           onOpenChange={onNotificationOpenChange}
           onNavigate={onOpenNotifications}
         />
-        <AdminUserProfileButton
-          isActive={pathname === "/profile"}
-          role={userRole}
+        <AccountMenu
+          pathname={pathname}
+          userRole={userRole}
           userName={userName}
-          onClick={onOpenProfile}
         />
       </div>
     </header>

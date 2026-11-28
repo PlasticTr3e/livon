@@ -3,6 +3,7 @@ import {
   FundType,
   TransactionType,
 } from "@/generated/prisma/enums";
+import type { BillItemLine } from "@/lib/finance/bill-items";
 
 export interface ResidentBillSummary {
   id: string;
@@ -101,6 +102,7 @@ export interface ResidentBillItem {
   paidAt: string | null;
   paymentProofUrl: string | null;
   notes: string | null;
+  items?: BillItemLine[];
   createdAt: string;
   residentName?: string;
   blockHouse?: string | null;

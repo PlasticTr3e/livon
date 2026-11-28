@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useRef, type ChangeEvent, type Ref } from "react";
 import { ImagePlus, X } from "lucide-react";
@@ -32,6 +33,8 @@ export function CommunityComposerThreadItem({
   onRemove,
   onTextChange,
 }: CommunityComposerThreadItemProps) {
+  const { t: translateUi } = useLanguage();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -58,7 +61,7 @@ export function CommunityComposerThreadItem({
           {onRemove && (
             <button
               type="button"
-              aria-label="Remove this section"
+              aria-label={translateUi("Remove this section")}
               onClick={() => onRemove(item.id)}
               className="-mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-slate-100 hover:text-gray-700 dark:hover:bg-slate-800 dark:hover:text-white"
             >
@@ -71,9 +74,15 @@ export function CommunityComposerThreadItem({
           ref={textareaRef}
           rows={3}
           maxLength={5000}
-          aria-label={isFirst ? "Post content" : "Post continuation"}
+          aria-label={
+            isFirst
+              ? translateUi("Post content")
+              : translateUi("Post continuation")
+          }
           placeholder={
-            isFirst ? "What would you like to share?" : "Continue your post..."
+            isFirst
+              ? translateUi("What would you like to share?")
+              : translateUi("Continue your post...")
           }
           value={item.text}
           onChange={(event) => onTextChange(item.id, event.target.value)}
@@ -84,14 +93,14 @@ export function CommunityComposerThreadItem({
           <div className="relative mt-2 h-40 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
             <ImageWithFallback
               src={item.image}
-              alt="Attachment preview"
+              alt={translateUi("Attachment preview")}
               fill
               unoptimized
               className="object-cover"
             />
             <button
               type="button"
-              aria-label="Remove image"
+              aria-label={translateUi("Remove image")}
               onClick={() => onImageChange(item.id, null)}
               className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
             >
@@ -113,7 +122,11 @@ export function CommunityComposerThreadItem({
           className="-ml-2 mt-1 inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-gray-500 transition-colors hover:bg-slate-100 hover:text-green-700 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-green-400"
         >
           <ImagePlus className="h-[18px] w-[18px]" />
-          <span>{item.image ? "Replace image" : "Add image"}</span>
+          <span>
+            {item.image
+              ? translateUi("Replace image")
+              : translateUi("Add image")}
+          </span>
         </button>
       </div>
     </div>

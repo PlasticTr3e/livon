@@ -34,11 +34,7 @@ function isInitialGroup(name: string) {
 
 function isAgencyRole(userRole?: string) {
   const normalizedRole = userRole?.toUpperCase();
-  return (
-    normalizedRole === "ADMIN" ||
-    normalizedRole === "AGENCY" ||
-    normalizedRole === "DEVELOPER"
-  );
+  return normalizedRole === "AGENCY" || normalizedRole === "DEVELOPER";
 }
 
 export function getUserProfileDisplayName(
@@ -49,14 +45,14 @@ export function getUserProfileDisplayName(
   const profileName =
     user?.citizenProfile?.fullName || user?.agencyProfile?.agencyName;
   const accountName = user?.name && !user.name.includes("@") ? user.name : "";
-  const role = userRole || (user?.agencyProfile ? "admin" : undefined);
+  const role = userRole || (user?.agencyProfile ? "agency" : undefined);
 
   return getUserHeaderDisplayName(profileName || accountName || fallback, role);
 }
 
 export function getUserAvatarClassName(userRole: string) {
   const r = userRole?.toLowerCase();
-  if (r === "admin" || r === "agency") {
+  if (r === "agency") {
     return "bg-gradient-to-br from-blue-400 to-blue-600 text-white";
   }
   if (r === "developer") {
@@ -67,7 +63,7 @@ export function getUserAvatarClassName(userRole: string) {
 
 export function getUserRoleLabel(userRole: string) {
   const r = userRole?.toLowerCase();
-  if (r === "admin" || r === "agency") return "Admin";
+  if (r === "agency") return "Admin";
   if (r === "developer") return "Developer";
   return "Resident";
 }

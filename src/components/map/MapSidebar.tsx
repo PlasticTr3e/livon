@@ -1,3 +1,6 @@
+"use client";
+
+import { UiText, useLanguage } from "@/context/LanguageContext";
 import { memo } from "react";
 import { Search, X } from "lucide-react";
 import { LoadingState } from "@/components/shared/LoadingState";
@@ -31,6 +34,8 @@ export const MapSidebar = memo(function MapSidebar({
   onSearchChange,
   onStatusChange,
 }: MapSidebarProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <aside
       className={cn(
@@ -40,7 +45,9 @@ export const MapSidebar = memo(function MapSidebar({
     >
       <div className="border-b border-gray-200 bg-gradient-to-r from-slate-50 to-green-50 p-4 dark:border-gray-800 dark:from-slate-900 dark:to-slate-800">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-bold text-gray-800 dark:text-white">Projects</h2>
+          <h2 className="font-bold text-gray-800 dark:text-white">
+            <UiText>Projects</UiText>
+          </h2>
           <Button variant="ghost" className="p-1 md:hidden" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -70,7 +77,7 @@ export const MapSidebar = memo(function MapSidebar({
                   : "border-gray-300 bg-white text-gray-600 hover:border-green-400 dark:border-slate-600 dark:bg-[#1F2937] dark:text-white dark:hover:border-green-600",
               )}
             >
-              {status}
+              {translateUi(status)}
             </button>
           ))}
         </div>
@@ -85,7 +92,7 @@ export const MapSidebar = memo(function MapSidebar({
           />
         ) : projects.length === 0 ? (
           <p className="mt-5 text-center text-sm text-gray-500">
-            Tidak ada proyek yang ditemukan.
+            <UiText>Tidak ada proyek yang ditemukan.</UiText>
           </p>
         ) : (
           projects.map((project) => (

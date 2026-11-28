@@ -1,9 +1,12 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
+import { canManage, canManageProjects } from "@/lib/permissions";
+import { LoadingState } from "@/components/shared/LoadingState";
 import {
   fetchAdminNotifications,
   getUnreadAdminNotificationCount,
@@ -20,9 +23,22 @@ type AdminShellProps = {
 const NOTIFICATION_POLL_INTERVAL_MS = 30000;
 
 export function AdminShell({ children }: AdminShellProps) {
+  const { t: translateUi } = useLanguage();
+
   const pathname = usePathname();
   const router = useRouter();
-  const { userRole, userName } = useUser();
+  const { userRole, userName, isAuthenticated, isUserLoading } = useUser();
+  const role = userRole.toUpperCase();
+  const allowed = isAuthenticated && canManage(role);
+  const projectPath =
+    pathname === "/admin/projects" || pathname.startsWith("/admin/projects/");
+  const redirectTo = !allowed
+    ? isAuthenticated
+      ? "/map"
+      : "/auth/login"
+    : projectPath && !canManageProjects(role)
+      ? "/admin/dashboard"
+      : null;
   const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [isNotificationLoading, setIsNotificationLoading] = useState(true);
@@ -30,6 +46,11 @@ export function AdminShell({ children }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    if (!isUserLoading && redirectTo) router.replace(redirectTo);
+  }, [isUserLoading, redirectTo, router]);
+
+  useEffect(() => {
+    if (!allowed) return;
     async function loadNotifications() {
       try {
         setIsNotificationLoading(true);
@@ -43,13 +64,20 @@ export function AdminShell({ children }: AdminShellProps) {
     }
 
     loadNotifications();
+    window.addEventListener("livon:notifications-changed", loadNotifications);
     const interval = window.setInterval(
       loadNotifications,
       NOTIFICATION_POLL_INTERVAL_MS,
     );
 
-    return () => window.clearInterval(interval);
-  }, []);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener(
+        "livon:notifications-changed",
+        loadNotifications,
+      );
+    };
+  }, [allowed]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -72,6 +100,9 @@ export function AdminShell({ children }: AdminShellProps) {
     [notifications],
   );
 
+  if (isUserLoading || redirectTo)
+    return <LoadingState className="min-h-screen" />;
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-50 font-sans dark:bg-[#0B1120]">
       <AdminHeader
@@ -85,7 +116,6 @@ export function AdminShell({ children }: AdminShellProps) {
         userRole={userRole}
         onNotificationOpenChange={setIsNotificationOpen}
         onOpenNotifications={() => router.push("/notifications")}
-        onOpenProfile={() => router.push("/profile")}
         onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         onToggleTheme={toggleTheme}
       />
@@ -94,7 +124,7 @@ export function AdminShell({ children }: AdminShellProps) {
         {sidebarOpen && (
           <button
             type="button"
-            aria-label="Close admin navigation"
+            aria-label={translateUi("Close admin navigation")}
             className="fixed inset-0 z-20 bg-black/50 md:hidden"
             onClick={() => setSidebarOpen(false)}
           />

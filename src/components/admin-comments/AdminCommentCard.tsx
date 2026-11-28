@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Badge, cn } from "@/components/ui/primitives";
 import {
   formatAdminCommentDate,
@@ -14,6 +17,8 @@ type AdminCommentCardProps = {
 };
 
 export function AdminCommentCard({ comment, onDelete }: AdminCommentCardProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div
       className={cn(
@@ -49,7 +54,7 @@ export function AdminCommentCard({ comment, onDelete }: AdminCommentCardProps) {
             onClick={() => onDelete(comment.id)}
             className="flex items-center gap-1 text-xs font-medium text-red-500 transition-colors hover:text-red-700"
           >
-            <Trash2 className="h-3 w-3" /> Delete
+            <Trash2 className="h-3 w-3" /> {translateUi(" Delete")}
           </button>
 
           <div className="flex items-center gap-3">
@@ -69,11 +74,13 @@ export function AdminCommentCard({ comment, onDelete }: AdminCommentCardProps) {
 }
 
 function AdminCommentBadges({ comment }: { comment: AdminCommentItem }) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div className="flex shrink-0 items-center gap-1.5">
       {comment.flag && (
         <Badge className="flex items-center gap-0.5 border-red-300 bg-red-100 text-[10px] text-red-600">
-          <ShieldAlert className="h-3 w-3" /> Ditandai
+          <ShieldAlert className="h-3 w-3" /> {translateUi(" Ditandai")}
         </Badge>
       )}
       <Badge

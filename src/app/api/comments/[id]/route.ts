@@ -1,9 +1,9 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { invalidate } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
-import { ok, notFound, internalError } from "@/lib/api-response";
-import { Role } from "@/generated/prisma/enums";
+import { ok, badRequest, notFound } from "@/lib/api-response";
 
 /**
  * @swagger
@@ -61,7 +61,7 @@ export async function DELETE(
   try {
     const authUser = await getAuthUser(req);
 
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         {
           success: false,
@@ -95,6 +95,6 @@ export async function DELETE(
     return ok("Comment has been successfully moderated (soft-deleted).");
   } catch (error) {
     console.error("[COMMENT_MODERATION_DELETE]", error);
-    return internalError("Failed to moderate comment");
+    return badRequest("Failed to moderate comment", error);
   }
 }

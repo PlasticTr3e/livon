@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -13,6 +14,8 @@ export function CctvPlayerDialog({
   camera: CctvCamera;
   onReturnFocus: () => void;
 }) {
+  const { t: translateUi } = useLanguage();
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackState, setPlaybackState] = useState<
     "loading" | "ready" | "error"
@@ -64,17 +67,18 @@ export function CctvPlayerDialog({
         <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
           <div className="min-w-0">
             <Dialog.Title className="truncate font-bold text-gray-900 dark:text-white">
-              {camera.name}
+              {translateUi(camera.name)}
             </Dialog.Title>
             <Dialog.Description className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
-              {camera.location} · RT {camera.rt} / RW {camera.rw} · Demo
-              recording
+              {translateUi(camera.location)} {translateUi(" · RT ")}
+              {camera.rt} {translateUi(" / RW ")}
+              {camera.rw} {translateUi(" · Demo recording")}
             </Dialog.Description>
           </div>
           <Dialog.Close asChild>
             <button
               type="button"
-              aria-label="Close camera"
+              aria-label={translateUi("Close camera")}
               className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-gray-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 dark:text-gray-300 dark:hover:bg-slate-800"
             >
               <X aria-hidden="true" className="h-5 w-5" />
@@ -92,7 +96,9 @@ export function CctvPlayerDialog({
             playsInline
             loop
             preload="metadata"
-            aria-label={`${camera.name} demo recording`}
+            aria-label={translateUi("{0} demo recording", {
+              0: translateUi(camera.name),
+            })}
             className="h-full w-full object-contain"
             onCanPlay={() => setPlaybackState("ready")}
             onPlaying={() => setPlaybackState("ready")}
@@ -108,7 +114,7 @@ export function CctvPlayerDialog({
                 aria-hidden="true"
                 className="h-5 w-5 animate-spin motion-reduce:animate-none"
               />
-              Loading camera...
+              {translateUi("Loading camera...")}
             </div>
           )}
           {playbackState === "error" && (
@@ -117,21 +123,24 @@ export function CctvPlayerDialog({
               className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950 px-4 text-center text-white"
             >
               <VideoOff aria-hidden="true" className="h-8 w-8 text-slate-400" />
-              <p className="text-sm">This camera could not be loaded.</p>
+              <p className="text-sm">
+                {translateUi("This camera could not be loaded.")}
+              </p>
               <button
                 type="button"
                 onClick={retry}
                 className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
               >
                 <RotateCcw aria-hidden="true" className="h-4 w-4" />
-                Try again
+                {translateUi("Try again")}
               </button>
             </div>
           )}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-5">
           <p className="text-xs text-gray-600 dark:text-gray-400">
-            Recorded demo footage · {camera.id.toUpperCase()}
+            {translateUi("Recorded demo footage · ")}
+            {camera.id.toUpperCase()}
           </p>
           <button
             type="button"
@@ -140,7 +149,7 @@ export function CctvPlayerDialog({
             className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-semibold text-green-700 hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-green-400 dark:hover:bg-green-950/40"
           >
             <Maximize aria-hidden="true" className="h-4 w-4" />
-            Fullscreen
+            {translateUi("Fullscreen")}
           </button>
         </div>
         {fullscreenError && (

@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/components/ui/primitives";
 import type { CommunityPost } from "@/lib/community/community-types";
 import { CommunityAvatar } from "./CommunityAvatar";
@@ -20,6 +23,8 @@ export function CommunityPostContent({
   onOpen,
   onOpenImage,
 }: CommunityPostContentProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <>
       <div className="flex items-center gap-3">
@@ -31,7 +36,9 @@ export function CommunityPostContent({
             </p>
             <CommunityRoleBadge role={post.author.role} />
           </div>
-          <p className="mt-0.5 text-xs text-gray-400">{post.timeLabel}</p>
+          <p className="mt-0.5 text-xs text-gray-400">
+            {translateUi(post.timeLabel)}
+          </p>
         </div>
       </div>
 
@@ -53,7 +60,7 @@ export function CommunityPostContent({
         <div className="mt-3">
           <CommunityImageGrid
             images={post.images}
-            title={`Photo by ${post.author.name}`}
+            title={translateUi("Photo by {0}", { 0: post.author.name })}
             onOpenImage={onOpenImage}
           />
         </div>

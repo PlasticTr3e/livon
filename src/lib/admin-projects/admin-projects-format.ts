@@ -1,3 +1,4 @@
+import { getDisplayLocale } from "@/lib/i18n/display";
 import { getProjectStage } from "@/lib/project-lifecycle";
 import type {
   AdminProjectStatus,
@@ -59,11 +60,13 @@ export function getAdminProjectStatusLabel(status: string) {
 }
 
 export function formatAdminProjectBudget(value?: number | string | null) {
-  return value ? `Rp ${Number(value).toLocaleString("id-ID")}` : "Rp 0";
+  return value
+    ? `Rp ${Number(value).toLocaleString(getDisplayLocale())}`
+    : "Rp 0";
 }
 
 export function formatAdminProjectDate(value?: string | Date | null) {
-  return new Date(value || Date.now()).toLocaleDateString("en-GB", {
+  return new Date(value || Date.now()).toLocaleDateString(getDisplayLocale(), {
     day: "2-digit",
     month: "short",
     year: "numeric",

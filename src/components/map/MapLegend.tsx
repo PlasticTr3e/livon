@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { Layers } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import { getMapStatusStyle, MAP_LEGEND_ITEMS } from "@/lib/map/map-format";
@@ -7,6 +10,8 @@ type MapLegendProps = {
 };
 
 export function MapLegend({ isHidden }: MapLegendProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div
       className={cn(
@@ -18,7 +23,7 @@ export function MapLegend({ isHidden }: MapLegendProps) {
         <div className="mb-2 flex items-center gap-2 px-1">
           <Layers className="h-4 w-4 text-gray-400" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
-            Legend
+            {translateUi("Legend")}
           </span>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -31,7 +36,7 @@ export function MapLegend({ isHidden }: MapLegendProps) {
               )}
             >
               <div className="h-2 w-2 rounded-full bg-current opacity-70" />
-              {label}
+              {translateUi(label)}
             </div>
           ))}
         </div>

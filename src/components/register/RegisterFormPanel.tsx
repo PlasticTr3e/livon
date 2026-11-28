@@ -1,4 +1,8 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import Link from "next/link";
+import { LanguageSwitch } from "@/components/shared/LanguageSwitch";
 import type {
   RegisterFormData,
   RegisterFormErrors,
@@ -35,23 +39,28 @@ export function RegisterFormPanel({
   onTogglePasswordVisibility,
   onToggleConfirmPasswordVisibility,
 }: RegisterFormPanelProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
-    <div className="flex w-full flex-col justify-center overflow-y-auto bg-white px-10 py-10 dark:bg-[#111827] lg:w-[45%]">
+    <div className="relative flex w-full flex-col justify-center overflow-y-auto bg-white px-10 py-20 dark:bg-[#111827] lg:w-[45%]">
+      <div className="absolute right-6 top-6">
+        <LanguageSwitch />
+      </div>
       <div className="mx-auto w-full max-w-[340px]">
         <RegisterBrandMark className="mb-6 lg:hidden" />
 
         <h1 className="mb-2 text-[2.4rem] font-extrabold leading-tight text-gray-900 dark:text-white">
-          Join Now!
+          {translateUi("Join Now!")}
         </h1>
         <p className="mb-6 text-sm leading-relaxed text-gray-400 dark:text-white">
-          Join your neighborhood community on LIVON.
+          {translateUi("Join your neighborhood community on LIVON.")}
           <br />
         </p>
 
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <RegisterTextInput
             type="text"
-            placeholder="Full name"
+            placeholder={translateUi("Full name")}
             value={formData.fullName}
             onChange={(event) => onFieldChange("fullName", event.target.value)}
             error={errors.fullName}
@@ -59,7 +68,7 @@ export function RegisterFormPanel({
 
           <RegisterTextInput
             type="email"
-            placeholder="Email address"
+            placeholder={translateUi("Email address")}
             value={formData.email}
             onChange={(event) => onFieldChange("email", event.target.value)}
             error={errors.email}
@@ -68,7 +77,7 @@ export function RegisterFormPanel({
           />
 
           <RegisterPasswordInput
-            placeholder="Password"
+            placeholder={translateUi("Password")}
             value={formData.password}
             error={errors.password}
             isVisible={isPasswordVisible}
@@ -77,7 +86,7 @@ export function RegisterFormPanel({
           />
 
           <RegisterPasswordInput
-            placeholder="Confirm password"
+            placeholder={translateUi("Confirm password")}
             value={formData.confirmPassword}
             error={errors.confirmPassword}
             isVisible={isConfirmPasswordVisible}
@@ -87,7 +96,7 @@ export function RegisterFormPanel({
 
           <RegisterTextInput
             type="tel"
-            placeholder="Phone"
+            placeholder={translateUi("Phone")}
             value={formData.phone}
             onChange={(event) => onFieldChange("phone", event.target.value)}
             error={errors.phone}
@@ -105,19 +114,19 @@ export function RegisterFormPanel({
             disabled={isSubmitDisabled}
             className="mt-1 h-12 w-full rounded-full bg-green-600 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Register
+            {translateUi("Register")}
           </button>
 
           <RegisterDivider />
           <RegisterGoogleButton />
 
           <p className="mt-1 text-center text-xs text-gray-400">
-            Already have an account?{" "}
+            {translateUi("Already have an account?")}{" "}
             <Link
               href="./login"
               className="font-semibold text-green-600 hover:underline"
             >
-              Login
+              {translateUi("Login")}
             </Link>
           </p>
         </form>

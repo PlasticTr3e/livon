@@ -139,6 +139,7 @@ export const generateBillsSchema = z.object({
   year: z.coerce.number().int().min(2020).max(2100),
   amount: z.coerce
     .number({ message: "Nominal tagihan harus berupa angka" })
+    .int("Nominal tagihan harus dalam rupiah bulat")
     .positive("Nominal tagihan harus berupa angka positif")
     .min(1, "Nominal tagihan minimal Rp 1"),
   title: z.string().trim().min(3).max(100).optional(),

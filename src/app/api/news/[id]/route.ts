@@ -1,28 +1,9 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { cached, invalidate } from "@/lib/cache";
 import { getAuthUser } from "@/lib/auth";
-import { ok, badRequest, notFound, internalError } from "@/lib/api-response";
-import { isSafeMediaUrl } from "@/lib/url-safety";
-import { Role } from "@/generated/prisma/enums";
-
-const updateNewsSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(5, "Title must be at least 5 characters")
-    .optional(),
-  content: z.string().optional().nullable(),
-  thumbnailUrl: z
-    .string()
-    .trim()
-    .refine(isSafeMediaUrl, "Must be a valid URL")
-    .optional()
-    .nullable()
-    .or(z.literal("")),
-  publishedAt: z.coerce.date().optional().nullable(),
-});
+import { ok, badRequest, notFound } from "@/lib/api-response";
 
 /**
  * @swagger
@@ -130,7 +111,10 @@ export async function GET(
     return ok("Detail berita berhasil diambil", { data: news });
   } catch (error: unknown) {
     console.error("[NEWS_DETAIL_GET]", error);
-    return internalError("Gagal mengambil detail berita");
+    return badRequest(
+      "Gagal mengambil detail berita",
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 }
 
@@ -200,7 +184,7 @@ export async function PUT(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         {
           success: false,
@@ -213,16 +197,8 @@ export async function PUT(
 
     const { id } = await params;
 
-    const body: unknown = await req.json();
-    const validation = updateNewsSchema.safeParse(body);
-    if (!validation.success) {
-      return badRequest(
-        "Validasi input berita gagal",
-        z.treeifyError(validation.error),
-      );
-    }
-
-    const { title, content, thumbnailUrl, publishedAt } = validation.data;
+    const body = await req.json();
+    const { title, content, thumbnailUrl, publishedAt } = body;
 
     const existingNews = await prisma.news.findFirst({
       where: {
@@ -238,10 +214,12 @@ export async function PUT(
     const updatedNews = await prisma.news.update({
       where: { id },
       data: {
-        ...(title !== undefined && { title }),
+        ...(title && { title }),
         ...(content !== undefined && { content }),
         ...(thumbnailUrl !== undefined && { thumbnailUrl }),
-        ...(publishedAt !== undefined && { publishedAt }),
+        ...(publishedAt !== undefined && {
+          publishedAt: new Date(publishedAt),
+        }),
       },
       include: {
         author: {
@@ -254,7 +232,10 @@ export async function PUT(
     return ok("Berita berhasil diperbarui", { data: updatedNews });
   } catch (error: unknown) {
     console.error("[NEWS_UPDATE_PUT]", error);
-    return internalError("Gagal memperbarui berita");
+    return badRequest(
+      "Gagal memperbarui berita",
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 }
 
@@ -302,7 +283,7 @@ export async function DELETE(
 ) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || !canManage(authUser.role)) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access." },
         { status: 401 },
@@ -333,6 +314,6 @@ export async function DELETE(
     return ok("Berita berhasil dihapus (ditarik dari penayangan).");
   } catch (error) {
     console.error("[NEWS_DELETE]", error);
-    return internalError("Gagal menghapus berita");
+    return badRequest("Gagal menghapus berita", error);
   }
 }

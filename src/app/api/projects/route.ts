@@ -1,3 +1,4 @@
+import { canManageProjects } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
@@ -6,6 +7,7 @@ import { ok, created, badRequest, internalError } from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { ProjectStatus, Role } from "@/generated/prisma/enums";
 import { broadcastNotification } from "@/lib/notifications";
+import { PROJECT_ADDRESS_MAX_LENGTH } from "@/lib/project-address";
 import { isSafeMediaUrl } from "@/lib/url-safety";
 
 /**
@@ -50,51 +52,19 @@ export async function GET(req: NextRequest) {
     const minLng = searchParams.get("minLng");
     const maxLng = searchParams.get("maxLng");
 
-    const hasBoundingBox =
-      minLat !== null || maxLat !== null || minLng !== null || maxLng !== null;
-
-    let bounds: {
-      minLat: number;
-      maxLat: number;
-      minLng: number;
-      maxLng: number;
-    } | null = null;
-
-    if (hasBoundingBox) {
-      if (!minLat || !maxLat || !minLng || !maxLng) {
-        return badRequest("Incomplete bounding box coordinates");
-      }
-
-      const parsed = {
-        minLat: Number(minLat),
-        maxLat: Number(maxLat),
-        minLng: Number(minLng),
-        maxLng: Number(maxLng),
-      };
-
-      if (
-        !Number.isFinite(parsed.minLat) ||
-        !Number.isFinite(parsed.maxLat) ||
-        !Number.isFinite(parsed.minLng) ||
-        !Number.isFinite(parsed.maxLng)
-      ) {
-        return badRequest("Invalid bounding box coordinates");
-      }
-
-      bounds = parsed;
-    }
-
-    const cacheKey = bounds
-      ? `list:${bounds.minLat}:${bounds.maxLat}:${bounds.minLng}:${bounds.maxLng}`
-      : "list:all";
+    const cacheKey =
+      minLat && maxLat && minLng && maxLng
+        ? `list:${minLat}:${maxLat}:${minLng}:${maxLng}`
+        : "list:all";
 
     const projects = await cached("projects", cacheKey, 60, async () => {
-      if (bounds) {
+      if (minLat && maxLat && minLng && maxLng) {
         return prisma.$queryRaw`
-        SELECT id, title, description, status, latitude, longitude, "budgetTarget", "currentFunding", "estimatedDurationDays", "imageUrls"
+        SELECT id, title, description, status, latitude, longitude, address,
+          "budgetTarget", "currentFunding", "estimatedDurationDays", "imageUrls"
         FROM projects
-        WHERE latitude BETWEEN ${bounds.minLat} AND ${bounds.maxLat}
-          AND longitude BETWEEN ${bounds.minLng} AND ${bounds.maxLng}
+        WHERE latitude BETWEEN ${parseFloat(minLat)} AND ${parseFloat(maxLat)}
+          AND longitude BETWEEN ${parseFloat(minLng)} AND ${parseFloat(maxLng)}
           AND "deletedAt" IS NULL
       `;
       }
@@ -111,6 +81,7 @@ export async function GET(req: NextRequest) {
           imageUrls: true,
           latitude: true,
           longitude: true,
+          address: true,
         },
       });
     });
@@ -134,6 +105,7 @@ const createProjectSchema = z.object({
     .optional(),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
+  address: z.string().trim().max(PROJECT_ADDRESS_MAX_LENGTH).nullish(),
   estimatedDurationDays: z.number().int().positive().optional(),
   categoryId: z.number().int().optional(),
 });
@@ -191,8 +163,14 @@ const createProjectSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.ADMIN) {
-      return badRequest("Forbidden: Only Admins can create projects");
+    if (!authUser || !canManageProjects(authUser.role)) {
+      return Response.json(
+        {
+          success: false,
+          message: "Forbidden: Only Admins can create projects",
+        },
+        { status: authUser ? 403 : 401 },
+      );
     }
 
     const body = await req.json();
@@ -201,7 +179,6 @@ export async function POST(req: NextRequest) {
       return badRequest("Validation failed", z.treeifyError(result.error));
 
     const data = result.data;
-
     const project = await prisma.project.create({
       data: {
         title: data.title,
@@ -213,6 +190,7 @@ export async function POST(req: NextRequest) {
         documentUrl: data.documentUrls || [],
         latitude: data.latitude,
         longitude: data.longitude,
+        address: data.address || null,
         estimatedDurationDays: data.estimatedDurationDays,
         categoryId: data.categoryId,
         agencyId: authUser.userId,

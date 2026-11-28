@@ -5,6 +5,7 @@ import { UserProvider } from "../context/UserContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { AppToasterProvider } from "@/components/shared/AppToaster";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 export const metadata: Metadata = {
   title: "Livon",
@@ -23,15 +24,17 @@ type RootLayoutProps = {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="id" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <UserProvider>
-          <ThemeProvider>
-            <AppToasterProvider>
-              <NuqsAdapter>{children}</NuqsAdapter>
-            </AppToasterProvider>
-          </ThemeProvider>
-        </UserProvider>
+        <LanguageProvider>
+          <UserProvider>
+            <ThemeProvider>
+              <AppToasterProvider>
+                <NuqsAdapter>{children}</NuqsAdapter>
+              </AppToasterProvider>
+            </ThemeProvider>
+          </UserProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

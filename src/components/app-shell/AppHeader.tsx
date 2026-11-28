@@ -4,8 +4,9 @@ import { AppDesktopNavigation } from "./AppDesktopNavigation";
 import { AppNotificationMenu } from "./AppNotificationMenu";
 import { AppSidebarToggle } from "./AppSidebarToggle";
 import { AppThemeToggle } from "./AppThemeToggle";
-import { AppUserProfileButton } from "./AppUserProfileButton";
+import { AccountMenu } from "@/components/shared/AccountMenu";
 import type { AppNotification } from "@/lib/app-shell/notifications";
+import { LanguageSwitch } from "@/components/shared/LanguageSwitch";
 
 type AppHeaderProps = {
   pathname: string;
@@ -22,7 +23,6 @@ type AppHeaderProps = {
   onToggleTheme: () => void;
   onNotificationOpenChange: (isOpen: boolean) => void;
   onOpenNotifications: () => void;
-  onOpenProfile: () => void;
 };
 
 export function AppHeader({
@@ -40,7 +40,6 @@ export function AppHeader({
   onToggleTheme,
   onNotificationOpenChange,
   onOpenNotifications,
-  onOpenProfile,
 }: AppHeaderProps) {
   return (
     <header className="relative z-[2147483645] flex h-[calc(4rem+env(safe-area-inset-top))] flex-none items-center justify-between border-b border-gray-200 bg-white px-4 pt-[env(safe-area-inset-top)] shadow-sm dark:border-gray-800 dark:bg-[#111827]">
@@ -51,6 +50,7 @@ export function AppHeader({
       </div>
 
       <div className="flex items-center space-x-1">
+        <LanguageSwitch />
         <AppThemeToggle theme={theme} onToggle={onToggleTheme} />
         <AppNotificationMenu
           notifications={notifications}
@@ -60,11 +60,10 @@ export function AppHeader({
           onOpenChange={onNotificationOpenChange}
           onNavigate={onOpenNotifications}
         />
-        <AppUserProfileButton
+        <AccountMenu
           pathname={pathname}
           userName={userName}
           userRole={userRole}
-          onClick={onOpenProfile}
         />
       </div>
     </header>

@@ -1,3 +1,6 @@
+"use client";
+
+import { useLanguage } from "@/context/LanguageContext";
 import { CheckCheck } from "lucide-react";
 import { cn } from "@/components/ui/primitives";
 import { getNotificationCategoryLabel } from "@/lib/notifications/notification-format";
@@ -12,6 +15,8 @@ export function NotificationCard({
   notification,
   onMarkAsRead,
 }: NotificationCardProps) {
+  const { t: translateUi } = useLanguage();
+
   return (
     <div
       className={cn(
@@ -33,20 +38,20 @@ export function NotificationCard({
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-start justify-between gap-3">
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-              {notification.title}
+              {translateUi(notification.title)}
             </h3>
             <span className="shrink-0 whitespace-nowrap text-[10px] font-medium text-gray-400 dark:text-white">
-              {notification.time}
+              {translateUi(notification.time)}
             </span>
           </div>
 
           <p className="mb-2 text-xs leading-relaxed text-gray-600 dark:text-white">
-            {notification.desc}
+            {translateUi(notification.desc)}
           </p>
 
           <div className="flex items-center justify-between">
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-[#1F2937] dark:text-white">
-              {getNotificationCategoryLabel(notification.category)}
+              {translateUi(getNotificationCategoryLabel(notification.category))}
             </span>
 
             <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -55,7 +60,7 @@ export function NotificationCard({
                   type="button"
                   onClick={() => onMarkAsRead(notification.id)}
                   className="rounded-lg p-1.5 text-green-600 transition-colors hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900/30"
-                  title="Mark as read"
+                  title={translateUi("Mark as read")}
                 >
                   <CheckCheck className="h-3.5 w-3.5" />
                 </button>

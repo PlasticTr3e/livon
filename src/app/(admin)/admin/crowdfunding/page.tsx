@@ -1,11 +1,6 @@
-import type { Metadata } from "next";
-import { AdminBillingPageContent } from "@/components/admin-billing/AdminBillingPageContent";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Manajemen Keuangan · Admin Livon",
-  description: "Pantau pembayaran IPL, donasi, dan pergerakan dana warga.",
-};
-
-export default function AdminBillingPage() {
-  return <AdminBillingPageContent />;
+/** Old admin Billing & Care URL; the dashboard now lives at /admin/billing. */
+export default function CrowdfundingMonitorPage() {
+  redirect("/admin/billing");
 }

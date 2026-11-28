@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { canManage } from "@/lib/permissions";
+import { NextRequest } from "next/server";
 import { z } from "zod";
 import { getAuthUser } from "@/lib/auth";
-import { Role } from "@/generated/prisma/enums";
 import { created, badRequest, internalError } from "@/lib/api-response";
 import { createDonationSchema } from "@/services/finance/finance-schema";
 import { recordDonation } from "@/services/finance/finance-service";
@@ -53,23 +53,16 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized access." },
-        { status: 401 },
-      );
-    }
-
-    if (authUser.role === Role.DEVELOPER) {
-      return NextResponse.json(
-        {
+    if (!canManage(authUser?.role)) {
+      return new Response(
+        JSON.stringify({
           success: false,
-          message: "Forbidden: Role DEVELOPER tidak diizinkan mencatat donasi.",
-        },
-        { status: 403 },
+          message:
+            "Pencatatan donasi manual hanya untuk pengelola. Gunakan pembayaran donasi.",
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
       );
     }
-
     const body: unknown = await req.json();
 
     const validation = createDonationSchema.safeParse(body);
@@ -80,7 +73,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const transaction = await recordDonation(authUser.userId, validation.data);
+    const transaction = await recordDonation(
+      authUser?.userId || null,
+      validation.data,
+    );
 
     return created("Donasi berhasil dicatat dan saldo telah diperbarui", {
       data: transaction,

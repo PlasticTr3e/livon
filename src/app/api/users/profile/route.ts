@@ -1,3 +1,4 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
@@ -161,7 +162,7 @@ export async function PUT(req: NextRequest) {
           houseNumber: data.houseNumber,
         },
       });
-    } else if (authUser.role === Role.ADMIN) {
+    } else if (canManage(authUser.role)) {
       updatableData = await prisma.agencyProfile.update({
         where: { userId: authUser.userId },
         data: {

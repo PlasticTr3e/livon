@@ -1,3 +1,4 @@
+import { getDisplayLocale } from "@/lib/i18n/display";
 import type {
   AdminCommentApiItem,
   AdminCommentItem,
@@ -14,7 +15,7 @@ import type {
 import { getUserProfileDisplayName } from "@/lib/app-shell/user";
 
 export function formatAdminCommentDateTime(dateString: string) {
-  return new Date(dateString).toLocaleString("en-GB", {
+  return new Date(dateString).toLocaleString(getDisplayLocale(), {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -25,7 +26,7 @@ export function formatAdminCommentDateTime(dateString: string) {
 }
 
 export function formatAdminCommentDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("en-GB", {
+  return new Date(dateString).toLocaleDateString(getDisplayLocale(), {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -33,7 +34,7 @@ export function formatAdminCommentDate(dateString: string) {
 }
 
 export function formatAdminCommentTime(dateString: string) {
-  return new Date(dateString).toLocaleTimeString("en-GB", {
+  return new Date(dateString).toLocaleTimeString(getDisplayLocale(), {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,

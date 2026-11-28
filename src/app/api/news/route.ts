@@ -1,3 +1,4 @@
+import { canManage } from "@/lib/permissions";
 import { NextRequest } from "next/server";
 import z from "zod";
 import prisma from "@/lib/prisma";
@@ -132,7 +133,7 @@ const createNewsSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
-    if (!authUser || authUser.role !== Role.ADMIN) {
+    if (!authUser || !canManage(authUser.role)) {
       return badRequest("Forbidden: Only Admins can publish news");
     }
 

@@ -38,9 +38,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function normalizeUserRole(role?: string | null): UserRole {
   const normalized = role?.toUpperCase();
   if (normalized === "DEVELOPER") return "developer";
-  return normalized === "WARGA" || normalized === "RESIDENT"
-    ? "resident"
-    : "agency";
+  return normalized === "AGENCY" ? "agency" : "resident";
 }
 
 function getDisplayName(user: ApiUserProfile) {
