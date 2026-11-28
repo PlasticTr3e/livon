@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { treeifyError } from "zod";
-import { created, badRequest, notFound, internalError } from "@/lib/api-response";
+import {
+  created,
+  badRequest,
+  notFound,
+  internalError,
+} from "@/lib/api-response";
 import { getAuthUser } from "@/lib/auth";
 import { createCommentSchema } from "@/services/community/community-schema";
 import { addCommunityComment } from "@/services/community/community-service";

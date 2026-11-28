@@ -1,6 +1,7 @@
 import type {
   CreateDonationInput,
   CreateExpenseInput,
+  ExpenditureItem,
   GenerateBillsInput,
   KpiCardsSummary,
   PaginatedBillsResult,
@@ -68,9 +69,10 @@ export async function getFinanceSummary(): Promise<KpiCardsSummary> {
 
 /**
  * Fetch paginated transactions for transparency table.
- * Supports filtering by ?type=IPL or ?type=DONATION.
+ * Supports filtering by ?fund=ipl or ?fund=donation, ?type=IPL or ?type=DONATION.
  */
 export async function getFinanceTransactions(params?: {
+  fund?: "ipl" | "donation" | string;
   type?: "IPL" | "DONATION" | "DONASI" | "ALL" | string;
   fundType?: string;
   search?: string;
@@ -79,6 +81,7 @@ export async function getFinanceTransactions(params?: {
 }): Promise<PaginatedTransactionsResult> {
   const searchParams = new URLSearchParams();
 
+  if (params?.fund) searchParams.set("fund", params.fund);
   if (params?.type) searchParams.set("type", params.type);
   if (params?.fundType) searchParams.set("fundType", params.fundType);
   if (params?.search) searchParams.set("search", params.search);
@@ -89,6 +92,20 @@ export async function getFinanceTransactions(params?: {
   const url = `/api/finance/transactions${qs ? `?${qs}` : ""}`;
 
   return request<PaginatedTransactionsResult>(url, { method: "GET" });
+}
+
+/**
+ * Fetch expenditures by fund ("ipl" | "donation") directly for ExpenditureTransparencyTable
+ */
+export async function getExpendituresByFund(
+  fund: "ipl" | "donation",
+): Promise<ExpenditureItem[]> {
+  const result = await getFinanceTransactions({
+    fund,
+    type: "PENGELUARAN",
+    limit: 100,
+  });
+  return result.expenditures || [];
 }
 
 /**

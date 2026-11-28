@@ -66,7 +66,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
     const query = transactionQuerySchema.parse({
-      fundType: searchParams.get("fundType") || undefined,
+      fund: searchParams.get("fund") || undefined,
+      fundType:
+        searchParams.get("fundType") || searchParams.get("fund") || undefined,
       type: searchParams.get("type") || undefined,
       category: searchParams.get("category") || undefined,
       search: searchParams.get("search") || searchParams.get("q") || undefined,
@@ -81,6 +83,7 @@ export async function GET(req: NextRequest) {
     return ok("Finance transactions retrieved successfully", {
       data: {
         transactions: result.transactions,
+        expenditures: result.expenditures,
         items: result.transactions,
         pagination: result.pagination,
       },

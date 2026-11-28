@@ -2,51 +2,102 @@ import { z } from "zod";
 import { FundType } from "@/generated/prisma/enums";
 import { isSafeMediaUrl } from "@/lib/url-safety";
 
-export const createExpenseSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(3, "Judul pengeluaran minimal 3 karakter")
-    .max(255, "Judul pengeluaran maksimal 255 karakter"),
-  description: z
-    .string()
-    .trim()
-    .max(1000, "Deskripsi maksimal 1000 karakter")
-    .optional()
-    .nullable(),
-  amount: z
-    .number({ message: "Nominal pengeluaran harus berupa angka" })
-    .positive("Nominal pengeluaran harus berupa angka positif")
-    .min(1, "Nominal pengeluaran minimal Rp 1"),
-  fundType: z.preprocess(
-    (val) => {
-      if (typeof val === "string") {
-        const u = val.toUpperCase();
-        if (u === "DONATION") return FundType.DONASI;
-        if (u === "DONASI") return FundType.DONASI;
-        if (u === "IPL") return FundType.IPL;
+function normalizeFundType(value: unknown): FundType | unknown {
+  if (typeof value === "string") {
+    const u = value.trim().toUpperCase();
+    if (u === "DONATION" || u === "DONASI") return FundType.DONASI;
+    if (u === "IPL") return FundType.IPL;
+  }
+  return value;
+}
+
+export const createExpenseSchema = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .max(255, "Judul pengeluaran maksimal 255 karakter")
+      .optional(),
+    description: z
+      .string()
+      .trim()
+      .max(1000, "Deskripsi maksimal 1000 karakter")
+      .optional()
+      .nullable(),
+    amount: z
+      .number({ message: "Nominal pengeluaran harus berupa angka" })
+      .positive("Nominal pengeluaran harus berupa angka positif")
+      .min(1, "Nominal pengeluaran minimal Rp 1"),
+    fund: z.string().trim().optional(),
+    fundType: z.preprocess(
+      normalizeFundType,
+      z
+        .nativeEnum(FundType, {
+          message:
+            "Jenis dana tidak valid. Pilihan: IPL atau DONASI (DONATION)",
+        })
+        .optional(),
+    ),
+    category: z
+      .string()
+      .trim()
+      .min(1, "Kategori pengeluaran wajib diisi")
+      .max(100, "Kategori pengeluaran maksimal 100 karakter"),
+    proofUrl: z
+      .string()
+      .trim()
+      .refine(isSafeMediaUrl, "Format URL bukti kuitansi/struk tidak valid")
+      .optional()
+      .nullable(),
+    date: z.coerce.date().optional(),
+    transactionDate: z.coerce.date().optional(),
+    note: z.string().trim().max(500).optional().nullable(),
+  })
+  .transform((data, ctx) => {
+    const rawTitle = (data.title || data.description || "").trim();
+    if (rawTitle.length < 3) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Judul atau deskripsi pengeluaran minimal 3 karakter",
+        path: ["title"],
+      });
+      return z.NEVER;
+    }
+
+    let resolvedFundType = data.fundType;
+    if (!resolvedFundType && data.fund) {
+      const normalized = normalizeFundType(data.fund);
+      if (normalized === FundType.IPL || normalized === FundType.DONASI) {
+        resolvedFundType = normalized;
+      } else {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Jenis dana tidak valid. Pilihan: IPL atau DONASI (DONATION)",
+          path: ["fund"],
+        });
+        return z.NEVER;
       }
-      return val;
-    },
-    z.nativeEnum(FundType, {
-      message: "Jenis dana tidak valid. Pilihan: IPL atau DONASI (DONATION)",
-    }),
-  ),
-  category: z
-    .string()
-    .trim()
-    .min(1, "Kategori pengeluaran wajib diisi")
-    .max(100, "Kategori pengeluaran maksimal 100 karakter"),
-  proofUrl: z
-    .string()
-    .trim()
-    .refine(isSafeMediaUrl, "Format URL bukti kuitansi/struk tidak valid")
-    .optional()
-    .nullable(),
-  transactionDate: z.coerce.date().optional(),
-});
+    }
+
+    if (!resolvedFundType) {
+      resolvedFundType = FundType.IPL;
+    }
+
+    return {
+      title: rawTitle,
+      description: data.description || data.note || null,
+      amount: data.amount,
+      fundType: resolvedFundType,
+      category: data.category,
+      proofUrl: data.proofUrl || null,
+      transactionDate: data.transactionDate || data.date || new Date(),
+      note: data.note || null,
+    };
+  });
 
 export const transactionQuerySchema = z.object({
+  fund: z.string().trim().optional(),
   fundType: z.string().trim().optional(),
   type: z.string().trim().optional(),
   category: z.string().trim().optional(),
